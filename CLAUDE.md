@@ -62,8 +62,8 @@ symlinks — no reinstall needed. New skills or agents require a reinstall.
 | Tool       | Instruction file         | Skills dir              | Agents dir          |
 |------------|--------------------------|-------------------------|---------------------|
 | Claude     | `~/.claude/CLAUDE.md`    | `~/.claude/skills/`     | `~/.claude/agents/` |
-| Codex      | `~/.codex/AGENTS.md`     | —                       | —                   |
-| Gemini CLI | `~/.gemini/GEMINI.md`    | `~/.gemini/skills/`     | —                   |
+| Codex      | `~/.codex/AGENTS.md`     | `~/.agents/skills/`     | —                   |
+| Gemini CLI | `~/.gemini/GEMINI.md`    | `~/.agents/skills/`     | —                   |
 
 Notes on tool conventions:
 - AGENTS.md (project-level) is a widely adopted standard (Codex, Copilot, Cursor, Aider, etc.)
@@ -71,15 +71,16 @@ Notes on tool conventions:
 - Gemini CLI uses GEMINI.md, not AGENTS.md
 - Codex auto-discovers `~/.codex/AGENTS.md` as its global scope with no extra config needed
 - Claude Code and Gemini CLI scan their skills dirs recursively — whole-dir symlinks work
-- Gemini skills (`tools.gemini.enabled = false` by default): needs a live test to confirm
-  raw dir symlinks work, or whether `gemini skills link --consent` is required
+- General skills target the `~/.agents/skills` cross-tool standard (read by Codex, Antigravity,
+  Gemini, and 30+ tools). Verify Gemini's exact home path before enabling.
 
 ## Skill and Agent Design Notes
 
 **Skills** are organized by scope:
-- `skills/general/` — safe to install for any AGENTS.md-compatible tool
-- `skills/claude/` — Claude Code-specific (uses CC features like `/slash` invocation)
+- `skills/general/` — installs to the cross-tool `~/.agents/skills` standard (read by Codex, Antigravity, Gemini, and 30+ tools) AND to `~/.claude/skills` (Claude Code does not yet read `~/.agents/skills`)
+- `skills/claude/` — Claude Code-specific (uses CC features like `/slash` invocation); installs to `~/.claude/skills` only
 - Each skill is a directory with a `SKILL.md` file; subdirs (`references/`, `scripts/`) are supported
+- `skills/INDEX.md` is auto-generated and human-facing only; agents discover skills via SKILL.md frontmatter, not via the index
 
 **Agents** (Claude Code subagents) frontmatter reference:
 - Required: `name`, `description`

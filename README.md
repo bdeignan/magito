@@ -44,8 +44,9 @@ The model is dead simple: **files live in this repo; the tools read them via sym
    shared/SYSTEM-INSTRUCTIONS.md   ──▶     ~/.claude/CLAUDE.md
                                    ──▶     ~/.codex/AGENTS.md
                                    ──▶     ~/.gemini/GEMINI.md
-   skills/claude/<name>/           ──▶     ~/.claude/skills/<name>/
-   skills/general/<name>/          ──▶     ~/.gemini/skills/<name>/
+   skills/general/<name>/          ──▶     ~/.agents/skills/<name>/  (Codex, Antigravity, Gemini…)
+                                   ──▶     ~/.claude/skills/<name>/  (Claude)
+   skills/claude/<name>/           ──▶     ~/.claude/skills/<name>/  (Claude only)
    agents/<name>.md                ──▶     ~/.claude/agents/<name>.md
 ```
 
@@ -108,8 +109,8 @@ $EDITOR skills/general/<name>/SKILL.md  # needs `name:` + `description:` frontma
 python install.py                       # symlink it + regenerate INDEX.md
 ```
 
-- `skills/general/` → installed to **every** enabled tool that supports skills.
-- `skills/claude/` → installed to **Claude Code only**.
+- `skills/general/` → installed to the cross-tool `~/.agents/skills` standard (Codex, Antigravity, Gemini, and 30+ tools) and to `~/.claude/skills` (Claude Code does not yet read `~/.agents/skills`).
+- `skills/claude/` → installed to `~/.claude/skills` (Claude Code only).
 - A skill is a directory; `references/` and `scripts/` subdirs come along for free
   (the whole dir is symlinked).
 
@@ -170,8 +171,8 @@ magito/
 | Tool       | Instruction file       | Skills dir          | Agents dir          |
 |------------|------------------------|---------------------|---------------------|
 | Claude     | `~/.claude/CLAUDE.md`  | `~/.claude/skills/` | `~/.claude/agents/` |
-| Codex      | `~/.codex/AGENTS.md`   | —                   | —                   |
-| Gemini CLI | `~/.gemini/GEMINI.md`  | `~/.gemini/skills/` | —                   |
+| Codex      | `~/.codex/AGENTS.md`   | `~/.agents/skills/` | —                   |
+| Gemini CLI | `~/.gemini/GEMINI.md`  | `~/.agents/skills/` | —                   |
 
 ---
 
