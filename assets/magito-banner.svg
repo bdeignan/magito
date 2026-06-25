@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="340" viewBox="0 0 880 340" role="img" aria-label="MAGITO — Modular Agent Governance and Task Orchestration">
+  <defs>
+    <linearGradient id="amber" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffe7b0"/>
+      <stop offset="0.5" stop-color="#ff9d2f"/>
+      <stop offset="1" stop-color="#ef5e0e"/>
+    </linearGradient>
+    <filter id="glow" x="-18%" y="-18%" width="136%" height="136%">
+      <feGaussianBlur stdDeviation="2.6" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="softglow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="1.1"/>
+    </filter>
+    <pattern id="scan" width="3" height="3" patternUnits="userSpaceOnUse">
+      <rect width="3" height="1" fill="#000000" opacity="0.09"/>
+    </pattern>
+    <clipPath id="screen"><rect x="8" y="8" width="864" height="324" rx="12"/></clipPath>
+    <style>
+      :root { --edge:#3a2a17; --dim:#8a7355; --amber:#ff9d2f; --green:#62c79c; --warn:#ff6a2a; }
+      @media (prefers-color-scheme: light){ :root{ --edge:#caa46a; --dim:#a98a5e; } }
+      .mono{ font-family:"SF Mono","JetBrains Mono","DejaVu Sans Mono","Menlo","Consolas",ui-monospace,monospace; }
+      .logo{ font-size:22px; font-weight:700; fill:url(#amber); }
+      .tab { font-size:12px; letter-spacing:2px; fill:var(--amber); font-weight:700; }
+      .dim { font-size:11px; letter-spacing:2px; fill:var(--dim); }
+      .sub { font-size:13px; letter-spacing:5px; fill:var(--dim); font-weight:600; }
+      .core{ font-size:13px; letter-spacing:1px; fill:var(--amber); font-weight:700; }
+      .leaf{ font-size:9px; letter-spacing:1px; fill:var(--dim); }
+      .stat{ font-size:14px; letter-spacing:1px; fill:var(--amber); font-weight:700; }
+      .ring{ fill:none; stroke:var(--green); opacity:0.16; }
+      .glyph{ font-size:10px; letter-spacing:1px; fill:var(--green); opacity:0.30; }
+      .glyphf{ font-size:9px; letter-spacing:1px; fill:var(--green); opacity:0.12; }
+      .glyphb{ font-size:11px; letter-spacing:2px; fill:var(--green); opacity:0.07; }
+      .hex { fill:none; stroke:var(--amber); stroke-width:1.4; }
+      .hexf{ fill:var(--amber); opacity:0.18; }
+      .cur { fill:var(--amber); animation:blink 1.05s steps(1) infinite; }
+      @keyframes blink{ 50%{opacity:0} }
+    </style>
+  </defs>
+
+  <!-- CRT panel -->
+  <rect x="8" y="8" width="864" height="324" rx="12" fill="#05070c" stroke="var(--edge)" stroke-width="1.5"/>
+
+  <!-- background data rings + faint glyph columns -->
+  <g clip-path="url(#screen)">
+    <g filter="url(#softglow)">
+      <circle class="ring" cx="-30" cy="170" r="120"/>
+      <circle class="ring" cx="-30" cy="170" r="165"/>
+      <circle class="ring" cx="-30" cy="170" r="210"/>
+      <circle class="ring" cx="-30" cy="170" r="255"/>
+      <circle class="ring" cx="910" cy="170" r="120"/>
+      <circle class="ring" cx="910" cy="170" r="165"/>
+      <circle class="ring" cx="910" cy="170" r="210"/>
+      <circle class="ring" cx="910" cy="170" r="255"/>
+    </g>
+    <!-- faint sequences drifting behind the wordmark (peek through letter hollows) -->
+    <text class="mono glyphb" x="104" y="118">01101001011010010110100101101</text>
+    <text class="mono glyphb" x="104" y="168">10010110100101101001011010010</text>
+    <text class="mono glyphf" x="120" y="64">0110100 1011</text>
+    <text class="mono glyphf" x="612" y="64">1001 01101</text>
+    <text class="mono glyphf" x="150" y="214">10110 0101</text>
+    <text class="mono glyphf" x="560" y="214">011001 10</text>
+    <!-- left gutter column -->
+    <text class="mono glyph" x="20" y="74">01101</text>
+    <text class="mono glyph" x="24" y="92">11001</text>
+    <text class="mono glyph" x="18" y="110">10110</text>
+    <text class="mono glyph" x="26" y="128">00101</text>
+    <text class="mono glyph" x="20" y="170">01001</text>
+    <text class="mono glyph" x="24" y="188">11100</text>
+    <text class="mono glyph" x="18" y="206">10011</text>
+    <!-- right gutter column -->
+    <text class="mono glyph" x="862" y="74"  text-anchor="end">11010</text>
+    <text class="mono glyph" x="858" y="92"  text-anchor="end">00111</text>
+    <text class="mono glyph" x="862" y="110" text-anchor="end">10110</text>
+    <text class="mono glyph" x="858" y="128" text-anchor="end">01011</text>
+    <text class="mono glyph" x="862" y="170" text-anchor="end">10101</text>
+    <text class="mono glyph" x="858" y="188" text-anchor="end">00110</text>
+    <text class="mono glyph" x="862" y="206" text-anchor="end">11010</text>
+  </g>
+
+  <!-- top HUD chrome -->
+  <rect x="22" y="22" width="5" height="15" fill="var(--amber)"/>
+  <text x="36" y="34" class="mono tab">MAGI // SYSTEM CONSOLE</text>
+  <text x="858" y="34" class="mono dim" text-anchor="end">DANANG TYPE-B DEFENSE SCREEN</text>
+  <line x1="22" y1="46" x2="858" y2="46" stroke="var(--edge)" stroke-width="1"/>
+
+  <!-- chunky wordmark -->
+  <text class="mono logo" x="118" y="92" xml:space="preserve" filter="url(#glow)">
+    <tspan x="118" dy="0">███╗   ███╗ █████╗  ██████╗ ██╗████████╗ ██████╗ </tspan>
+    <tspan x="118" dy="20">████╗ ████║██╔══██╗██╔════╝ ██║╚══██╔══╝██╔═══██╗</tspan>
+    <tspan x="118" dy="20">██╔████╔██║███████║██║  ███╗██║   ██║   ██║   ██║</tspan>
+    <tspan x="118" dy="20">██║╚██╔╝██║██╔══██║██║   ██║██║   ██║   ██║   ██║</tspan>
+    <tspan x="118" dy="20">██║ ╚═╝ ██║██║  ██║╚██████╔╝██║   ██║   ╚██████╔╝</tspan>
+    <tspan x="118" dy="20">╚═╝     ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═╝   ╚═╝    ╚═════╝ </tspan>
+  </text>
+
+  <!-- subtitle -->
+  <line x1="118" y1="224" x2="762" y2="224" stroke="var(--edge)" stroke-width="1"/>
+  <text x="440" y="246" class="mono sub" text-anchor="middle">MODULAR AGENT GOVERNANCE &amp; TASK ORCHESTRATION</text>
+
+  <!-- bottom rule -->
+  <line x1="22" y1="268" x2="858" y2="268" stroke="var(--edge)" stroke-width="1"/>
+
+  <!-- MAGI cores -> the three CLIs -->
+  <polygon class="hexf" points="40,283.5 45.6,286.75 45.6,293.25 40,296.5 34.4,293.25 34.4,286.75"/>
+  <polygon class="hex"  points="40,283.5 45.6,286.75 45.6,293.25 40,296.5 34.4,293.25 34.4,286.75"/>
+  <text x="54" y="291" class="mono core">MELCHIOR</text>
+  <text x="54" y="304" class="mono leaf">claude code</text>
+
+  <polygon class="hexf" points="250,283.5 255.6,286.75 255.6,293.25 250,296.5 244.4,293.25 244.4,286.75"/>
+  <polygon class="hex"  points="250,283.5 255.6,286.75 255.6,293.25 250,296.5 244.4,293.25 244.4,286.75"/>
+  <text x="264" y="291" class="mono core">BALTHASAR</text>
+  <text x="264" y="304" class="mono leaf">codex</text>
+
+  <polygon class="hexf" points="470,283.5 475.6,286.75 475.6,293.25 470,296.5 464.4,293.25 464.4,286.75"/>
+  <polygon class="hex"  points="470,283.5 475.6,286.75 475.6,293.25 470,296.5 464.4,293.25 464.4,286.75"/>
+  <text x="484" y="291" class="mono core">CASPER</text>
+  <text x="484" y="304" class="mono leaf">gemini cli</text>
+
+  <!-- status block -->
+  <text x="858" y="288" class="mono dim" text-anchor="end">DELIBERATION · UNANIMOUS</text>
+  <text x="858" y="307" class="mono stat" text-anchor="end">STATUS: READY<tspan class="cur"> █</tspan></text>
+
+  <!-- corner serial easter egg -->
+  <text x="40" y="321" class="mono leaf" fill="var(--warn)">SCREEN No.0666</text>
+
+  <!-- scanlines -->
+  <rect x="8" y="8" width="864" height="324" rx="12" fill="url(#scan)" pointer-events="none"/>
+</svg>
