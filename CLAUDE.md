@@ -1,14 +1,18 @@
-# CLAUDE.md
+# MAGITO
 
-This repo manages cross-agent configuration — skills, agents, and shared instructions — for
-Claude Code, Codex, and Gemini CLI. Files are version-controlled here and installed via
-symlinks to each tool's expected native paths.
+**Modular Agent Governance & Task Orchestration** — a personal, version-controlled
+configuration layer for agentic CLIs. Inspired by the MAGI AI system from Neon Genesis
+Evangelion; this is a miniature, portable approximation of governed multi-agent behavior.
+
+Manages skills, agents, and shared instructions for Claude Code, Codex, and Gemini CLI.
+Files live here and are installed via symlinks to each tool's expected native paths.
+The update cycle is: `git pull && python install.py`.
 
 ## Repo Layout
 
 ```
-coding-agent-configs/
-├── install.py              # Install symlinks; run after any changes
+magito/
+├── install.py              # Install symlinks; run after adding new files
 ├── install.toml            # Your local config (gitignored; copy from install.toml.example)
 ├── install.toml.example    # Template — commit this, not install.toml
 ├── shared/
@@ -31,9 +35,8 @@ python install.py --dry-run   # preview
 python install.py             # apply
 ```
 
-After a `git pull`, re-run `python install.py` to pick up new skills or agents.
-Content-only changes to existing files (SYSTEM-INSTRUCTIONS.md, SKILL.md, etc.) are
-live immediately via symlinks — no reinstall needed.
+Content-only edits (SYSTEM-INSTRUCTIONS.md, SKILL.md, etc.) are live immediately via
+symlinks — no reinstall needed. New skills or agents require a reinstall.
 
 ## Adding a New Skill
 
@@ -49,8 +52,10 @@ live immediately via symlinks — no reinstall needed.
 
 ## Adding a New Tool
 
-1. Add a stanza to `install.toml` (and `install.toml.example`) with `instructions`, and optionally `skills` and/or `agents`
-2. Run `python install.py`
+1. Add a stanza to `install.toml` (and `install.toml.example`) with `instructions`,
+   and optionally `skills` and/or `agents`
+2. Claude Code is detected by the presence of an `agents` key in its stanza
+3. Run `python install.py`
 
 ## Tool Config Paths
 
@@ -60,9 +65,33 @@ live immediately via symlinks — no reinstall needed.
 | Codex      | `~/.codex/AGENTS.md`     | —                       | —                   |
 | Gemini CLI | `~/.gemini/GEMINI.md`    | `~/.gemini/skills/`     | —                   |
 
+Notes on tool conventions:
+- AGENTS.md (project-level) is a widely adopted standard (Codex, Copilot, Cursor, Aider, etc.)
+  but Claude Code uses CLAUDE.md — it does not read AGENTS.md
+- Gemini CLI uses GEMINI.md, not AGENTS.md
+- Codex auto-discovers `~/.codex/AGENTS.md` as its global scope with no extra config needed
+- Claude Code and Gemini CLI scan their skills dirs recursively — whole-dir symlinks work
+- Gemini skills (`tools.gemini.enabled = false` by default): needs a live test to confirm
+  raw dir symlinks work, or whether `gemini skills link --consent` is required
+
+## Skill and Agent Design Notes
+
+**Skills** are organized by scope:
+- `skills/general/` — safe to install for any AGENTS.md-compatible tool
+- `skills/claude/` — Claude Code-specific (uses CC features like `/slash` invocation)
+- Each skill is a directory with a `SKILL.md` file; subdirs (`references/`, `scripts/`) are supported
+
+**Agents** (Claude Code subagents) frontmatter reference:
+- Required: `name`, `description`
+- Optional: `model` (alias: `haiku`, `sonnet`, `opus`, `fable`, or full ID), `tools`,
+  `permissionMode` (`acceptEdits`, `auto`, `bypassPermissions`, etc.), `color`, `effort`
+- No `permissions.allow` block — that's a `settings.json` construct, not valid in agent frontmatter
+
 ## Notes
 
 - `install.py` is idempotent — re-running is always safe
-- `skills/INDEX.md` is gitignored; it's auto-generated on every install run
-- `install.toml` is gitignored; it's machine-local (paths may differ per machine)
+- `install.toml` and `SCRATCH.md` are gitignored (machine-local)
+- `skills/INDEX.md` is gitignored (auto-generated on every install run)
 - Use `--force` to replace symlinks pointing to other targets
+- **install.py gotcha:** never call `.resolve()` on destination paths before `link()` —
+  it follows existing symlinks back to the source file, breaking idempotency
