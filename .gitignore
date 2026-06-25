@@ -1,0 +1,6 @@
+install.toml
+*.bak.*
+__pycache__/
+*.pyc
+skills/INDEX.md
+.claude/settings.local.json

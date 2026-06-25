@@ -1,0 +1,14 @@
+[tools.claude]
+enabled = true
+instructions = "~/.claude/CLAUDE.md"
+skills = "~/.claude/skills"
+agents = "~/.claude/agents"
+
+[tools.codex]
+enabled = true
+instructions = "~/.codex/AGENTS.md"
+
+[tools.gemini]
+enabled = false
+instructions = "~/.gemini/GEMINI.md"
+skills = "~/.gemini/skills"
