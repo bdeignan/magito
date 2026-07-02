@@ -11,6 +11,7 @@ Reads install.toml (copy from install.toml.example and edit). For each enabled t
   - Symlinks shared/SYSTEM-INSTRUCTIONS.md to the tool's user instruction file path
   - Symlinks skills/general/* to ~/.agents/skills (cross-tool standard) and to ~/.claude/skills (Claude only)
   - For Claude (detected by presence of 'agents' key): also links skills/claude/* and agents/*.md
+  - For tools with a 'hooks' key: also links hooks/*.py and merges them into the adjacent settings.json as PreToolUse hooks
   - Regenerates skills/INDEX.md from SKILL.md frontmatter (human reference only; agents discover via SKILL.md)
 
 Safety:
@@ -20,6 +21,7 @@ Safety:
 """
 
 import argparse
+import json
 import tomllib
 from datetime import datetime
 from pathlib import Path
@@ -64,6 +66,48 @@ def link(src: Path, dst: Path, dry_run: bool, force: bool) -> str:
     dst.parent.mkdir(parents=True, exist_ok=True)
     dst.symlink_to(src)
     return "created"
+
+
+def merge_hook_settings(settings_path: Path, commands: list[str], dry_run: bool) -> str:
+    existed = settings_path.exists()
+    settings: dict = {}
+    if existed:
+        text = settings_path.read_text()
+        if text.strip():
+            try:
+                settings = json.loads(text)
+            except json.JSONDecodeError:
+                return "SKIPPED (settings.json unparseable — merge hooks manually)"
+
+    existing_commands = set()
+    for entry in settings.get("hooks", {}).get("PreToolUse", []):
+        for h in entry.get("hooks", []):
+            cmd = h.get("command")
+            if cmd:
+                existing_commands.add(cmd)
+
+    to_add = [cmd for cmd in commands if cmd not in existing_commands]
+    if not to_add:
+        return "already configured"
+
+    if dry_run:
+        return f"would merge {len(to_add)} hook(s)"
+
+    settings.setdefault("hooks", {}).setdefault("PreToolUse", [])
+    for cmd in to_add:
+        settings["hooks"]["PreToolUse"].append(
+            {"matcher": "Bash", "hooks": [{"type": "command", "command": cmd}]}
+        )
+
+    if existed:
+        timestamp = datetime.now().strftime("%Y%m%dT%H%M%S")
+        backup = settings_path.parent / (settings_path.name + f".bak.{timestamp}")
+        settings_path.rename(backup)
+        print(f"    backed up → {backup.name}")
+
+    settings_path.parent.mkdir(parents=True, exist_ok=True)
+    settings_path.write_text(json.dumps(settings, indent=2) + "\n")
+    return f"merged {len(to_add)} hook(s)"
 
 
 def generate_index(repo_root: Path) -> str:
@@ -169,6 +213,26 @@ def main() -> None:
                     dst = agents_dst / agent_file.name
                     status = link(agent_file, dst, args.dry_run, args.force)
                     results.append((tool_name, f"agents/{agent_file.name}", str(dst), status))
+
+        # Hook scripts + settings.json registration
+        hooks_dst_raw = tool_config.get("hooks")
+        if hooks_dst_raw:
+            hooks_dst = Path(hooks_dst_raw).expanduser()
+            hooks_src_dir = repo_root / "hooks"
+            hook_dst_paths: list[str] = []
+            if hooks_src_dir.exists():
+                for hook_file in sorted(hooks_src_dir.glob("*.py")):
+                    dst = hooks_dst / hook_file.name
+                    status = link(hook_file, dst, args.dry_run, args.force)
+                    results.append((tool_name, f"hooks/{hook_file.name}", str(dst), status))
+                    hook_dst_paths.append(str(dst))
+                    if not args.dry_run:
+                        hook_file.chmod(0o755)
+
+            if hook_dst_paths:
+                settings_path = hooks_dst.parent / "settings.json"
+                status = merge_hook_settings(settings_path, hook_dst_paths, args.dry_run)
+                results.append((tool_name, "settings.json (hooks)", str(settings_path), status))
 
     # Regenerate INDEX.md
     index_path = repo_root / "skills" / "INDEX.md"

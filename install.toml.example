@@ -3,6 +3,7 @@ enabled = true
 instructions = "~/.claude/CLAUDE.md"
 skills = "~/.claude/skills"
 agents = "~/.claude/agents"
+hooks = "~/.claude/hooks"
 
 [tools.codex]
 enabled = true

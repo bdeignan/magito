@@ -48,6 +48,7 @@ The model is dead simple: **files live in this repo; the tools read them via sym
                                    ──▶     ~/.claude/skills/<name>/  (Claude)
    skills/claude/<name>/           ──▶     ~/.claude/skills/<name>/  (Claude only)
    agents/<name>.md                ──▶     ~/.claude/agents/<name>.md
+   hooks/<name>.py                 ──▶     ~/.claude/hooks/<name>.py  (+ registered in settings.json)
 ```
 
 `install.py` (stdlib-only Python, 3.11+) reads your machine-local **`install.toml`**,
@@ -55,7 +56,7 @@ then creates those symlinks for every tool you've enabled. Because they're symli
 
 - **Editing the content of an existing file is live instantly** — no reinstall. The tool
   reads through the link to the repo file.
-- **Adding a *new* skill or agent requires a reinstall** — a new file needs a new link.
+- **Adding a *new* skill, agent, or hook requires a reinstall** — a new file needs a new link.
 
 The script is idempotent (safe to re-run), and regenerates `skills/INDEX.md` from each
 skill's frontmatter on every run.
@@ -95,7 +96,7 @@ python install.py        # only strictly needed if NEW skills/agents/tools were 
 | What changed in the pull                                  | Reinstall needed? |
 |-----------------------------------------------------------|-------------------|
 | Edited `SYSTEM-INSTRUCTIONS.md` or an existing `SKILL.md`  | **No** — symlink already points there, change is live |
-| Added a brand-new skill, agent, or tool stanza            | **Yes** — needs a new symlink |
+| Added a brand-new skill, agent, hook, or tool stanza      | **Yes** — needs a new symlink |
 | Not sure                                                  | Just run it — it's idempotent and harmless |
 
 When in doubt, run `python install.py`. It never does damage on a re-run.
@@ -120,6 +121,18 @@ python install.py                       # symlink it + regenerate INDEX.md
 $EDITOR agents/<name>.md   # frontmatter: `name`, `description` (+ optional model/tools/effort)
 python install.py
 ```
+
+### ➕ Adding a new hook (Claude Code)
+
+```bash
+$EDITOR hooks/<name>.py    # PreToolUse hook: tool-call JSON on stdin; deny via JSON, allow via silent exit 0
+python install.py          # symlink to ~/.claude/hooks/ + register in ~/.claude/settings.json
+```
+
+Hooks are the deterministic backstop for rules prose can't guarantee (the staging guard,
+the merge/PR review gate). They must **fail open** — any internal error allows the call.
+`install.py` merges registrations into `settings.json` idempotently and backs the file
+up before writing.
 
 ### ➕ Adding a new tool
 
@@ -160,19 +173,19 @@ magito/
 ├── skills/
 │   ├── INDEX.md            # auto-generated (gitignored)
 │   ├── general/            # cross-tool skills
-│   └── claude/             # Claude Code-only skills
-│       └── grilling/SKILL.md
+│   └── claude/             # Claude Code-only skills (e.g. dispatch/)
+├── hooks/                  # Claude Code PreToolUse hooks (staging guard, review gate)
 └── agents/
     └── haiku-executor.md   # fast/cheap Claude Code subagent for parallel tasks
 ```
 
 ### Tool config paths
 
-| Tool       | Instruction file       | Skills dir          | Agents dir          |
-|------------|------------------------|---------------------|---------------------|
-| Claude     | `~/.claude/CLAUDE.md`  | `~/.claude/skills/` | `~/.claude/agents/` |
-| Codex      | `~/.codex/AGENTS.md`   | `~/.agents/skills/` | —                   |
-| Gemini CLI | `~/.gemini/GEMINI.md`  | `~/.agents/skills/` | —                   |
+| Tool       | Instruction file       | Skills dir          | Agents dir          | Hooks dir          |
+|------------|------------------------|---------------------|---------------------|--------------------|
+| Claude     | `~/.claude/CLAUDE.md`  | `~/.claude/skills/` | `~/.claude/agents/` | `~/.claude/hooks/` |
+| Codex      | `~/.codex/AGENTS.md`   | `~/.agents/skills/` | —                   | —                  |
+| Gemini CLI | `~/.gemini/GEMINI.md`  | `~/.agents/skills/` | —                   | —                  |
 
 ---
 
