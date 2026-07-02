@@ -19,11 +19,15 @@ The seam that makes parallelism safe: each executor's blast radius is **one work
    - **Shared-file cluster** — issues that touch common files. Run these **sequentially** in the main tree (no worktree); parallel worktrees would only collide at merge, and combining their commits is trivial when serialized.
    - **Disjoint issues** — independent file sets. These can run **in parallel**, one worktree each.
 
-3. **Dispatch the disjoint issues.** Create a worktree per issue (`git worktree add`). Launch one `haiku-executor` per worktree with a tight brief: the worktree path, the issue spec, "stage only the files you changed — never `git add -A`," and "reach the `verifying` skill at the seams." Collect each executor's `DONE` (with its staged files) or `BLOCKED`.
+3. **Dispatch the disjoint issues.** Create each worktree as a sibling of the repo, never under `/tmp`: `../<repo-name>.worktrees/<branch>` (e.g. `git worktree add ../myrepo.worktrees/feat-004a-log-transform feat/004a-log-transform`). Launch one `haiku-executor` per worktree with a tight brief: the worktree path, the issue spec, "stage only the files you changed — never `git add -A`," and this verification floor pasted in full — the executor has no Skill tool and cannot reach `verifying` itself, so the brief must carry the discipline:
+   - red-green where the behavior is specifiable (watch the test fail first); characterization / eval-threshold / smoke where it isn't
+   - invariant + schema checks at every data boundary touched: columns/dtypes/nullability, no NaN/inf where forbidden, values in range, row counts / key uniqueness, no train/test leakage
+   - seed all randomness; float asserts with tolerance, never equality
+   Collect each executor's `DONE` (with its staged files) or `BLOCKED`.
 
-4. **Review every result.** Run `reviewing-changes` on each worktree's staged diff against its branch point. An executor's output is a proposal, not a commit.
+4. **Review every result.** Run `reviewing-changes` on every worktree's staged diff against its branch point — non-negotiable, for every worktree. A manual `git diff` eyeball is not a substitute; if you catch yourself doing that instead, stop and run the skill.
 
-5. **Combine and open PRs.** For each accepted result, curate the staged changes into conventional commits, push the branch, and open a PR that closes the issue. Tear down finished worktrees (`git worktree remove`). Surface any `BLOCKED` issue back to the user instead of guessing.
+5. **Combine and open PRs.** Accept a worktree's result only if step 4 produced its `reviewing-changes` two-axis result — no result, no acceptance. For each accepted result, curate the staged changes into conventional commits, push the branch, and open a PR that closes the issue. Tear down finished worktrees (`git worktree remove`); once the last one is removed, the `.worktrees` sibling dir should be empty or gone too. Surface any `BLOCKED` issue back to the user instead of guessing.
 
 ## Cost honesty
 

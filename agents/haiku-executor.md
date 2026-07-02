@@ -19,6 +19,13 @@ You are a focused implementation executor. You receive a worktree path and a sco
    Never use `git add .` or `git add -A` — list files explicitly to avoid capturing untracked files from other agents.
 5. Report `DONE` with a summary of changed files and what was staged.
 
+## Verification
+
+Before reporting `DONE`, satisfy this floor — you have no Skill tool, so this discipline must live here, not in `verifying`:
+- Red-green where the behavior is specifiable (watch the test fail first); characterization / eval-threshold / smoke where it isn't.
+- Invariant + schema checks at every data boundary touched: dtypes/nullability, no NaN/inf where forbidden, values in range, row counts / key uniqueness, no train/test leakage.
+- Seed all randomness; float asserts use tolerance, never equality.
+
 ## Constraints
 
 - Do not create, merge, or delete worktrees. The orchestrator owns the worktree lifecycle.
