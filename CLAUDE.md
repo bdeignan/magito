@@ -100,8 +100,9 @@ failing to enforce — a skill can *ask*, a hook can *block*:
 - `review-gate.py` — denies landing unreviewed work: `gitflow.sh merge|pr` always;
   raw `git merge` (on the base branch) and `gh pr create` only in repos opted in via
   `git config magito.reviewGate true` (set by `setup-project`). The gate checks the
-  marker `reviewing-changes` writes — `<git-dir>/magito/reviewed-<branch>` holding the
-  reviewed SHA — so any commit after the review goes stale and re-blocks.
+  marker `reviewing-changes` writes — `<git-common-dir>/magito/reviewed-<branch>` holding
+  the reviewed SHA — so any commit after the review goes stale and re-blocks. The common
+  git dir makes a review done inside a linked worktree count at merge time.
 - Cross-tool floor: hooks only exist in Claude Code; the same rules stay inlined in the
   skills so Codex/Gemini keep the prose version.
 - Caveat: a project-level `Bash` matcher in `.claude/settings.json` **overrides**

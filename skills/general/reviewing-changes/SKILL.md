@@ -32,5 +32,5 @@ Present under `## Standards` and `## Spec`, verbatim or lightly cleaned. Do **no
 Then record that the review happened, so tooling (e.g. a merge/PR gate) can verify it — the marker pins the review to this branch at this exact commit; any later commit makes it stale and the gate will ask for a re-review.
 
 ```bash
-d="$(git rev-parse --git-dir)/magito" && mkdir -p "$d" && git rev-parse HEAD > "$d/reviewed-$(git rev-parse --abbrev-ref HEAD | tr '/' '-')"
+d="$(git rev-parse --git-common-dir)/magito" && mkdir -p "$d" && git rev-parse HEAD > "$d/reviewed-$(git rev-parse --abbrev-ref HEAD | tr '/' '-')"
 ```

@@ -49,19 +49,21 @@ def split_segments(cmd):
 
 
 def find_git_subcommand(tokens, names):
-    """Return (subcommand, rest_args) if tokens is `git [globals] <name> ...`."""
+    """Return (subcommand, rest_args, chdir) if tokens is `git [globals] <name> ...`."""
     if not tokens or tokens[0] != "git":
-        return None, []
-    i = 1
+        return None, [], None
+    i, chdir = 1, None
     while i < len(tokens):
         tok = tokens[i]
         if tok in names:
-            return tok, tokens[i + 1:]
+            return tok, tokens[i + 1:], chdir
         if tok.startswith("-"):
+            if tok == "-C" and i + 1 < len(tokens):
+                chdir = tokens[i + 1]
             i += 2 if tok in GLOBAL_FLAGS_WITH_ARG else 1
             continue
-        return None, []
-    return None, []
+        return None, [], None
+    return None, [], None
 
 
 def gitflow_action(tokens):
@@ -119,8 +121,10 @@ def current_branch(cwd):
 
 
 def marker_path(branch, cwd):
+    # --git-common-dir so a marker written inside a linked worktree is seen
+    # when merging from the main checkout (and vice versa)
     slug = branch.replace("/", "-")
-    git_dir = git(["rev-parse", "--git-dir"], cwd)
+    git_dir = git(["rev-parse", "--git-common-dir"], cwd)
     return (Path(cwd) / git_dir / "magito" / f"reviewed-{slug}").resolve()
 
 
@@ -179,14 +183,16 @@ def main():
                 return
             continue
 
-        subcmd, args = find_git_subcommand(tokens, ("merge",))
+        subcmd, args, chdir = find_git_subcommand(tokens, ("merge",))
         if subcmd == "merge":
+            # honor `git -C <path>`: judge the repo the merge actually targets
+            repo_cwd = os.path.join(cwd, os.path.expanduser(chdir)) if chdir else cwd
             if any(a in MERGE_IN_PROGRESS_FLAGS for a in args):
                 continue
-            if not opted_in(cwd):
+            if not opted_in(repo_cwd):
                 continue
-            base = get_base_branch(cwd)
-            if base is None or current_branch(cwd) != base:
+            base = get_base_branch(repo_cwd)
+            if base is None or current_branch(repo_cwd) != base:
                 continue
             ref, skip = None, False
             for a in args:
@@ -199,8 +205,8 @@ def main():
                     break
             if ref is None:
                 continue
-            sha = git(["rev-parse", ref], cwd)
-            if gate(ref, sha, cwd):
+            sha = git(["rev-parse", ref], repo_cwd)
+            if gate(ref, sha, repo_cwd):
                 return
 
 
