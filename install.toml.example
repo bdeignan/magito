@@ -3,12 +3,14 @@ enabled = true
 instructions = "~/.claude/CLAUDE.md"
 skills = "~/.claude/skills"
 agents = "~/.claude/agents"
+hooks = "~/.claude/hooks"
 
 [tools.codex]
 enabled = true
 instructions = "~/.codex/AGENTS.md"
+skills = "~/.agents/skills"
 
 [tools.gemini]
 enabled = false
 instructions = "~/.gemini/GEMINI.md"
-skills = "~/.gemini/skills"
+skills = "~/.agents/skills"  # cross-tool standard; verify Gemini's home path before enabling
