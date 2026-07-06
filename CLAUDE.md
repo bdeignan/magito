@@ -8,6 +8,22 @@ Manages skills, agents, and shared instructions for Claude Code, Codex, and Gemi
 Files live here and are installed via symlinks to each tool's expected native paths.
 The update cycle is: `git pull && python install.py`.
 
+## Agent workflow
+
+### Issue tracker
+
+**GitHub** — issues and PRs via `gh` against `bdeignan/magito`; reference issues as `#N`.
+The repo is opted into the merge/PR review gate (`git config magito.reviewGate true`):
+landing work requires a fresh `reviewing-changes` marker.
+
+### Toolchain
+
+- Stdlib-only Python 3.11+ (`install.py`, `hooks/*.py`) — no runtime dependencies by design.
+- No test suite; verify with `python install.py --dry-run` and by driving hooks with
+  synthetic stdin payloads.
+- Markdown (skills, agents, instructions) is the product. Content edits are live via
+  symlink; new files need `python install.py`.
+
 ## Repo Layout
 
 ```
