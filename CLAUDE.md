@@ -106,7 +106,8 @@ Notes on tool conventions:
 
 **Skills** are organized by scope:
 - `skills/general/` — installs to the cross-tool `~/.agents/skills` standard (read by Codex, Antigravity, Gemini, and 30+ tools) AND to `~/.claude/skills` (Claude Code does not yet read `~/.agents/skills`)
-- `skills/claude/` — Claude Code-specific (uses CC features like `/slash` invocation); installs to `~/.claude/skills` only
+- `skills/claude/` — Claude Code-specific: the skill's *content or mechanics* require CC features (e.g. `dispatch` needs subagents); installs to `~/.claude/skills` only
+- The split is about content, not frontmatter: general skills MAY carry Claude-only frontmatter hints (`disable-model-invocation`, `argument-hint`) — the invocation axis depends on them, and other tools ignore unknown fields harmlessly
 - Each skill is a directory with a `SKILL.md` file; subdirs (`references/`, `scripts/`) are supported
 - `skills/INDEX.md` is auto-generated and human-facing only; agents discover skills via SKILL.md frontmatter, not via the index
 
