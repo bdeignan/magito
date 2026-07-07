@@ -7,11 +7,11 @@ argument-hint: "issue number, URL, or path"
 
 # Implement Issue
 
-Take one issue from spec to open PR in a single sequential pass. You own the git lifecycle; the human owns the merge. The deterministic git steps run through [`scripts/gitflow.sh`](./scripts/gitflow.sh); everything else is judgement.
+Take one issue from spec to open PR in a single sequential pass. You own the git lifecycle; the human owns the merge. The deterministic git steps run through [`scripts/gitflow.sh`](./scripts/gitflow.sh) and the deterministic tracker reads/writes through [`scripts/issues.sh`](./scripts/issues.sh); everything else is judgement.
 
 ## Process
 
-1. **Read the issue.** Fetch it from the configured tracker (`gh` or local `.scratch/`; run `/setup-project` if unset). Read the body, acceptance criteria, and blockers. If a blocker is still open, stop and say so.
+1. **Read the issue.** Fetch it from the configured tracker — `bash scripts/issues.sh view <n>` in GitHub mode, or the file under `.scratch/` in local mode (run `/setup-project` if unset). Read the body, acceptance criteria, and blockers. If a blocker is still open, stop and say so.
 
 2. **Plan — conditionally, and announce which path you took.** Skip the plan only if BOTH hold: (a) the change is confined to one file, or is a pure config/text tweak, and (b) it needs no new test seam — verification is just running the existing suite. If so, say it explicitly — "one-liner → skipping the plan step, implementing directly" — then build. An issue with multiple acceptance criteria is never a one-liner; "well-specified" is a reason the plan will be short, not a reason to skip it. Otherwise write a short plan (the seams you'll touch and how you'll test them), then **stop and wait for approval — do not edit any file until the user replies.** Never skip the plan silently, and never dive into a non-trivial issue unplanned.
 
