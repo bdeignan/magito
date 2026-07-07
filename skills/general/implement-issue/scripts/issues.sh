@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 # Deterministic gh-tracker spine, sibling to gitflow.sh. Wraps the issue verbs
-# weaker agents retry freehand: create/list/view/comment/close, plus a generic
-# pr-create. Mandatory args only — missing arg or missing auth fails loudly,
-# never opens an interactive editor or retry-loops.
+# weaker agents retry freehand: create/list/view/comment/close. PR creation
+# stays in gitflow.sh's `pr <issue> <title>` — that's the only PR-creation
+# path review-gate.py's hook recognizes (it pattern-matches the literal Bash
+# command string), so a second wrapper here would silently bypass the gate.
+# Mandatory args only — missing arg or missing auth fails loudly, never opens
+# an interactive editor or retry-loops.
 set -euo pipefail
 
 cmd="${1:-}"; shift || true
@@ -43,16 +46,8 @@ case "$cmd" in
     number="${1:?issue number required}"
     gh issue close "$number"
     ;;
-  pr)
-    # pr <title> <body>   generic PR creation, no issue-closing link.
-    # For the branch-lifecycle PR that closes the issue being implemented,
-    # use gitflow.sh's `pr <issue> <title>` instead.
-    check_auth
-    title="${1:?title required}"; body="${2:?body required}"
-    gh pr create --title "$title" --body "$body"
-    ;;
   *)
-    echo "usage: issues.sh {create <title> <body>|list [gh-list-args...]|view <number>|comment <number> <body>|close <number>|pr <title> <body>}" >&2
+    echo "usage: issues.sh {create <title> <body>|list [gh-list-args...]|view <number>|comment <number> <body>|close <number>}" >&2
     exit 1
     ;;
 esac
