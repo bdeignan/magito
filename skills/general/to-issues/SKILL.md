@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # To Issues
 
-Break a plan into independently-grabbable issues, each a **tracer bullet**: a thin vertical slice that cuts end-to-end through every layer it touches, not a horizontal slice of one. The issue tracker (GitHub via `gh`, or local markdown under `.scratch/`) is declared in the per-repo config — run `/setup-project` if it's missing.
+Break a plan into independently-grabbable issues, each a **tracer bullet**: a thin vertical slice that cuts end-to-end through every layer it touches, not a horizontal slice of one. The issue tracker (GitHub via [`implement-issue/scripts/issues.sh`](../implement-issue/scripts/issues.sh), or local markdown under `.scratch/`) is declared in the per-repo config — run `/setup-project` if it's missing.
 
 ## Process
 
@@ -18,7 +18,7 @@ Break a plan into independently-grabbable issues, each a **tracer bullet**: a th
 
 4. **Quiz the user.** Present the breakdown as a numbered list — for each slice: **Title**, **Blocked by**, and **Covers** (which goals or user stories). Ask: is the granularity right (too coarse / too fine)? Are the dependencies correct? Should any be merged or split? Iterate until approved.
 
-5. **Publish.** In dependency order (blockers first, so you can cite real identifiers), create each issue via the configured tracker using the template below. Mark them ready for an agent unless told otherwise. For a large body of work, optionally open one parent issue holding the problem statement and goals, and reference it from each slice.
+5. **Publish.** In dependency order (blockers first, so you can cite real identifiers), create each issue via the configured tracker — `bash implement-issue/scripts/issues.sh create "<title>" "<body>"` in GitHub mode, or a new file under `.scratch/` in local mode — using the template below. Mark them ready for an agent unless told otherwise. For a large body of work, optionally open one parent issue holding the problem statement and goals, and reference it from each slice.
 
 <issue-template>
 ## What to build
