@@ -14,3 +14,12 @@ skills = "~/.agents/skills"
 enabled = false
 instructions = "~/.gemini/GEMINI.md"
 skills = "~/.agents/skills"  # cross-tool standard; verify Gemini's home path before enabling
+
+[tools.antigravity]
+enabled = false
+# Antigravity is GEMINI.md-primary — it does NOT auto-read AGENTS.md/CLAUDE.md, and it
+# shares the hardcoded ~/.gemini/GEMINI.md path with Gemini CLI (enable only one to own it).
+# Global skills live in ~/.gemini/config/skills — NOT ~/.agents/skills, which Antigravity
+# reads only at workspace scope (<project>/.agents/skills/).
+instructions = "~/.gemini/GEMINI.md"
+skills = "~/.gemini/config/skills"
