@@ -8,10 +8,8 @@ description: On-demand plain-language reset and rewriter. Translates dense text 
 This skill helps you communicate clearly. Use it to reset your writing voice mid-session or rewrite dense text.
 
 ## Mode 1: Reset Register
-When a user asks to write in a plain register or reset, write to the plain-language floor from here on. Follow these constraints:
-- Use everyday language. Avoid jargon.
-- Write sentences under 20 words. Focus on one idea per sentence.
-- Always use active voice.
+When a user asks to write in a plain register or reset, write to the plain-language floor from here on. Start from your system instructions' baseline voice rules (plain word choice, active voice, one idea per sentence, defining coined terms — magito installs these from `shared/SYSTEM-INSTRUCTIONS.md`). This skill adds:
+- Write sentences under 20 words.
 - Use contractions (*it's*, *don't*, *won't*).
 - Never use AI-signature words (*delve*, *foster*, *leverage*, *transformative*). Consult [anti-ai-markers.md](./references/anti-ai-markers.md) for details.
 

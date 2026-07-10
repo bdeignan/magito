@@ -13,6 +13,12 @@ IRREGULAR_PARTICIPLES = {
     'drawn', 'flown', 'ridden', 'driven', 'arisen', 'striven', 'slain'
 }
 
+NON_PARTICIPLE_ADJECTIVES = {
+    'naked', 'wicked', 'sacred', 'rugged', 'jagged', 'ragged', 'crooked',
+    'wretched', 'learned', 'beloved', 'dogged', 'winged', 'legged',
+    'aged', 'red', 'led', 'fed', 'bed', 'wed', 'bred',
+}
+
 ABBREVIATIONS = {
     'e.g.', 'i.e.', 'mr.', 'mrs.', 'ms.', 'dr.', 'prof.', 'vs.', 'etc.', 
     'pr.', 'adr.', 'co.', 'corp.', 'inc.', 'ltd.', 'st.', 'ave.', 'rd.'
@@ -47,9 +53,13 @@ def count_syllables(word):
 
 def is_past_participle(word):
     word = word.lower().strip(".,;:?!()[]'\"-")
-    if word.endswith("ed"):
-        return True
     if word in IRREGULAR_PARTICIPLES:
+        return True
+    if word in NON_PARTICIPLE_ADJECTIVES:
+        return False
+    # Short -ed words ("red", "led") and adjectives with no plausible verb
+    # stem ("naked") aren't past participles; require a real stem to remain.
+    if word.endswith("ed") and len(word) > 4:
         return True
     return False
 
