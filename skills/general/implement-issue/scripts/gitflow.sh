@@ -66,10 +66,14 @@ case "$cmd" in
     git push -u origin "$(current_branch)"
     ;;
   pr)
-    # pr <issue> "<title>"
+    # pr <issue> "<title>" ["<body>"]   body is optional; when given it precedes the Closes line
     guard_not_base
-    issue="${1:?issue required}"; title="${2:?title required}"
-    gh pr create --title "$title" --body "Closes #${issue}"
+    issue="${1:?issue required}"; title="${2:?title required}"; body="${3:-}"
+    if [ -n "$body" ]; then
+      gh pr create --title "$title" --body "${body}"$'\n\n'"Closes #${issue}"
+    else
+      gh pr create --title "$title" --body "Closes #${issue}"
+    fi
     ;;
   merge)
     # merge   --no-ff merge of the current feature branch into the base branch.
@@ -82,7 +86,7 @@ case "$cmd" in
     git merge --no-ff --no-edit "$branch"
     ;;
   *)
-    echo "usage: gitflow.sh {branch <issue> <slug> [kind]|commit <msg> <file>...|push|pr <issue> <title>|merge}" >&2
+    echo "usage: gitflow.sh {branch <issue> <slug> [kind]|commit <msg> <file>...|push|pr <issue> <title> [body]|merge}" >&2
     exit 1
     ;;
 esac
