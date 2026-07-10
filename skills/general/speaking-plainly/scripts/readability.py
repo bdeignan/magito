@@ -68,28 +68,56 @@ def check_passive(words, index):
         break
     return None
 
+def get_sentences(text):
+    sentences = []
+    current_acc = []
+    
+    for line in text.splitlines():
+        line = line.strip()
+        if not line:
+            if current_acc:
+                sentences.append(" ".join(current_acc))
+                current_acc = []
+            continue
+            
+        is_header = line.startswith("#")
+        is_list_item = any(line.startswith(prefix) for prefix in ["- ", "* ", "+ "]) or bool(re.match(r'^\d+\.\s', line))
+        
+        if is_header or is_list_item:
+            if current_acc:
+                sentences.append(" ".join(current_acc))
+                current_acc = []
+            
+            clean_line = line
+            if is_header:
+                clean_line = line.lstrip("#").strip()
+            elif is_list_item:
+                clean_line = re.sub(r'^(?:[-*+]+|\d+\.)\s+', '', line).strip()
+            
+            if clean_line:
+                sentences.append(clean_line)
+            continue
+            
+        raw_splits = re.split(r'(?<=[.!?])\s+', line)
+        for s in raw_splits:
+            if not s.strip():
+                continue
+            current_acc.append(s)
+            last_word = s.split()[-1].lower().rstrip("!?") if s.split() else ""
+            if last_word not in ABBREVIATIONS:
+                sentences.append(" ".join(current_acc))
+                current_acc = []
+                
+    if current_acc:
+        sentences.append(" ".join(current_acc))
+        
+    return sentences
+
 def analyze_text(text):
     if not text.strip():
         return None
         
-    raw_sentences = re.split(r'(?<=[.!?])\s+', text.strip())
-    sentences = []
-    current_sentence = []
-    
-    for s in raw_sentences:
-        if not s.strip():
-            continue
-        current_sentence.append(s)
-        last_word = s.split()[-1].lower().rstrip("!?") if s.split() else ""
-        if last_word in ABBREVIATIONS:
-            continue
-        else:
-            sentences.append(" ".join(current_sentence))
-            current_sentence = []
-            
-    if current_sentence:
-        sentences.append(" ".join(current_sentence))
-        
+    sentences = get_sentences(text)
     if not sentences:
         return None
         
@@ -98,6 +126,7 @@ def analyze_text(text):
     total_syllables = 0
     long_sentences = []
     passive_constructions = []
+    passive_stacking = []
     
     for s in sentences:
         words = []
@@ -119,13 +148,18 @@ def analyze_text(text):
             total_syllables += count_syllables(w)
             
         lower_words = [w.lower() for w in words]
+        sentence_passives = []
         i = 0
         while i < len(lower_words):
             phrase = check_passive(lower_words, i)
             if phrase:
+                sentence_passives.append(phrase)
                 passive_constructions.append((phrase, s))
                 i += len(phrase.split()) - 1
             i += 1
+            
+        if len(sentence_passives) >= 2:
+            passive_stacking.append((sentence_passives, s))
             
     if total_words == 0 or total_sentences == 0:
         return None
@@ -139,7 +173,8 @@ def analyze_text(text):
         'total_words': total_words,
         'total_sentences': total_sentences,
         'long_sentences': long_sentences,
-        'passives': passive_constructions
+        'passives': passive_constructions,
+        'passive_stacking': passive_stacking
     }
 
 def main():
@@ -174,6 +209,12 @@ def main():
         print(f"--- Passive Voice Constructions [{len(results['passives'])} found] ---")
         for phrase, s in results['passives']:
             print(f"Passive phrase: '{phrase}' in: {s.strip()}")
+        print()
+        
+    if results['passive_stacking']:
+        print(f"--- Passive Stacking Warning (>=2 passives in one sentence) [{len(results['passive_stacking'])} found] ---")
+        for phrases, s in results['passive_stacking']:
+            print(f"Stacked passives: {phrases} in: {s.strip()}")
         print()
 
 if __name__ == "__main__":
