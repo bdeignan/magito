@@ -44,8 +44,9 @@ The model is dead simple: **files live in this repo; the tools read them via sym
    shared/SYSTEM-INSTRUCTIONS.md   ──▶     ~/.claude/CLAUDE.md
                                    ──▶     ~/.codex/AGENTS.md
                                    ──▶     ~/.gemini/GEMINI.md
-   skills/general/<name>/          ──▶     ~/.agents/skills/<name>/  (Codex, Antigravity, Gemini…)
-                                   ──▶     ~/.claude/skills/<name>/  (Claude)
+   skills/general/<name>/          ──▶     ~/.agents/skills/<name>/        (Codex, cross-tool)
+                                   ──▶     ~/.gemini/config/skills/<name>/ (Antigravity)
+                                   ──▶     ~/.claude/skills/<name>/        (Claude)
    skills/claude/<name>/           ──▶     ~/.claude/skills/<name>/  (Claude only)
    agents/<name>.md                ──▶     ~/.claude/agents/<name>.md
    hooks/<name>.py                 ──▶     ~/.claude/hooks/<name>.py  (+ registered in settings.json)
@@ -110,7 +111,7 @@ $EDITOR skills/general/<name>/SKILL.md  # needs `name:` + `description:` frontma
 python install.py                       # symlink it + regenerate INDEX.md
 ```
 
-- `skills/general/` → installed to the cross-tool `~/.agents/skills` standard (Codex, Antigravity, Gemini, and 30+ tools) and to `~/.claude/skills` (Claude Code does not yet read `~/.agents/skills`).
+- `skills/general/` → installed to the cross-tool `~/.agents/skills` standard (Codex and 30+ tools that read it at home scope), to `~/.gemini/config/skills` for Antigravity (which reads `~/.agents/skills` only at workspace scope), and to `~/.claude/skills` (Claude Code does not yet read `~/.agents/skills`).
 - `skills/claude/` → installed to `~/.claude/skills` (Claude Code only).
 - A skill is a directory; `references/` and `scripts/` subdirs come along for free
   (the whole dir is symlinked).

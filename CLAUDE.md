@@ -89,23 +89,29 @@ a reinstall.
 
 | Tool       | Instruction file         | Skills dir              | Agents dir          | Hooks dir           |
 |------------|--------------------------|-------------------------|---------------------|---------------------|
-| Claude     | `~/.claude/CLAUDE.md`    | `~/.claude/skills/`     | `~/.claude/agents/` | `~/.claude/hooks/`  |
-| Codex      | `~/.codex/AGENTS.md`     | `~/.agents/skills/`     | —                   | —                   |
-| Gemini CLI | `~/.gemini/GEMINI.md`    | `~/.agents/skills/`     | —                   | —                   |
+| Claude      | `~/.claude/CLAUDE.md`   | `~/.claude/skills/`       | `~/.claude/agents/` | `~/.claude/hooks/`  |
+| Codex       | `~/.codex/AGENTS.md`    | `~/.agents/skills/`       | —                   | —                   |
+| Gemini CLI  | `~/.gemini/GEMINI.md`   | `~/.agents/skills/`       | —                   | —                   |
+| Antigravity | `~/.gemini/GEMINI.md`   | `~/.gemini/config/skills/`| —                   | —                   |
 
 Notes on tool conventions:
 - AGENTS.md (project-level) is a widely adopted standard (Codex, Copilot, Cursor, Aider, etc.)
   but Claude Code uses CLAUDE.md — it does not read AGENTS.md
 - Gemini CLI uses GEMINI.md, not AGENTS.md
+- Antigravity is GEMINI.md-primary: it uses `~/.gemini/GEMINI.md` for global rules (a hardcoded
+  path it shares with Gemini CLI) and does **not** auto-read AGENTS.md/CLAUDE.md. Enabling both
+  Antigravity and Gemini CLI in magito targets the same instruction file — enable only one.
 - Codex auto-discovers `~/.codex/AGENTS.md` as its global scope with no extra config needed
 - Claude Code and Gemini CLI scan their skills dirs recursively — whole-dir symlinks work
-- General skills target the `~/.agents/skills` cross-tool standard (read by Codex, Antigravity,
-  Gemini, and 30+ tools). Verify Gemini's exact home path before enabling.
+- General skills target the `~/.agents/skills` cross-tool standard, read by Codex and 30+ tools at
+  the home level. Antigravity is the exception: it reads `~/.agents/skills` only at workspace scope
+  (`<project>/.agents/skills/`) and uses `~/.gemini/config/skills/` globally, so its stanza points
+  there. Verify Gemini CLI's exact home skills path before enabling it.
 
 ## Skill and Agent Design Notes
 
 **Skills** are organized by scope:
-- `skills/general/` — installs to the cross-tool `~/.agents/skills` standard (read by Codex, Antigravity, Gemini, and 30+ tools) AND to `~/.claude/skills` (Claude Code does not yet read `~/.agents/skills`)
+- `skills/general/` — installs to the cross-tool `~/.agents/skills` standard (read by Codex and 30+ tools at home scope), to `~/.gemini/config/skills` for Antigravity (which reads `~/.agents/skills` only at workspace scope), AND to `~/.claude/skills` (Claude Code does not yet read `~/.agents/skills`)
 - `skills/claude/` — Claude Code-specific: the skill's *content or mechanics* require CC features (e.g. `dispatch` needs subagents); installs to `~/.claude/skills` only
 - The split is about content, not frontmatter: general skills MAY carry Claude-only frontmatter hints (`disable-model-invocation`, `argument-hint`) — the invocation axis depends on them, and other tools ignore unknown fields harmlessly
 - Each skill is a directory with a `SKILL.md` file; subdirs (`references/`, `scripts/`) are supported
