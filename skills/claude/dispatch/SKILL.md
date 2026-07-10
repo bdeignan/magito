@@ -27,7 +27,7 @@ The seam that makes parallelism safe: each executor's blast radius is **one work
 
 4. **Review every result.** Run `reviewing-changes` on every worktree's staged diff against its branch point — non-negotiable, for every worktree. A manual `git diff` eyeball is not a substitute; if you catch yourself doing that instead, stop and run the skill.
 
-5. **Combine and open PRs.** Accept a worktree's result only if step 4 produced its `reviewing-changes` two-axis result — no result, no acceptance. For each accepted result, curate the staged changes into conventional commits, push the branch, and open a PR that closes the issue. Tear down finished worktrees (`git worktree remove`); once the last one is removed, the `.worktrees` sibling dir should be empty or gone too. Surface any `BLOCKED` issue back to the user instead of guessing.
+5. **Combine and open PRs.** Accept a worktree's result only if step 4 produced its `reviewing-changes` two-axis result — no result, no acceptance. For each accepted result, curate the staged changes into conventional commits, push the branch, and open a PR that closes the issue — with a brief 2–4 line body summarizing what changed, not just `Closes #N`, so the squash-merge commit isn't empty. Tear down finished worktrees (`git worktree remove`); once the last one is removed, the `.worktrees` sibling dir should be empty or gone too. Surface any `BLOCKED` issue back to the user instead of guessing.
 
 ## Cost honesty
 

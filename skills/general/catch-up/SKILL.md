@@ -30,8 +30,10 @@ absent from the list.
 
 Then give a tight **where we are / what's next**: the current branch and whether it's
 clean, the issue most likely in progress, what the last handoff flagged, and the
-obvious next action. Surface contradictions (a handoff says X shipped but the branch
-shows otherwise) rather than smoothing them over.
+obvious next action. When the handoff disagrees with live git or the tracker,
+**live state wins** — treat the handoff's backlog and its named next step as a hint
+to re-validate against the tracker, not as ground truth. Surface the contradiction
+(a handoff says X shipped but the branch shows otherwise) rather than smoothing it over.
 
 End the summary with one `sources:` line enumerating every source's status, in the
 order above, e.g.:

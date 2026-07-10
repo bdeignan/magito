@@ -11,6 +11,7 @@ Write a handoff document so a fresh session can continue without re-deriving eve
 
 A good handoff is a condensed brief, not a transcript: **objective**, **current state**, **next steps**, **open threads / decisions still pending**, and a **suggested skills** section naming what the next session should invoke. Keep it tight — the next agent reads this to orient, not to relive the session.
 
+- **Reconcile against live state before writing.** A handoff written from session memory drifts from reality. Before writing, verify the *current state* and *open threads* against live sources — `git status`, `git log`, and the tracker (`bash ../implement-issue/scripts/issues.sh list`) — and correct any claim that disagrees (an issue you think is still open may have merged). This handoff is machine-local (`~/.magito/handoffs/`), so nothing downstream will catch a stale claim; write it from verified live state, not session memory alone.
 - **Don't duplicate artifacts.** PRDs, ADRs, issues, commits, diffs already exist — reference them by path or URL instead of restating them.
 - **Capture durable decisions first.** If terms or architectural decisions crystallized this session and aren't yet written down, run `domain-modeling` to land them in `CONTEXT.md` / ADRs before wrapping — those belong in the repo, not in the handoff.
 - **Redact secrets** — API keys, tokens, PII.

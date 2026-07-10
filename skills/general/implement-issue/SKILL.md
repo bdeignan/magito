@@ -30,5 +30,5 @@ Take one issue from spec to open PR in a single sequential pass. You own the git
 7. **Run the full suite once**, and report the result honestly. A failing suite blocks the PR.
 
 8. **Checkpoint, then land it — branch on the tracker from step 1.**
-   - **GitHub mode:** show the diff and review summary, wait for explicit "ship it," then `bash scripts/gitflow.sh push` and `bash scripts/gitflow.sh pr <issue> "<title>"` to open a PR that closes the issue. **Never merge** — the PR merge button is the human's gate.
+   - **GitHub mode:** show the diff and review summary, wait for explicit "ship it," then `bash scripts/gitflow.sh push` and `bash scripts/gitflow.sh pr <issue> "<title>" "<body>"` to open a PR that closes the issue. Write a 2–4 line body summarizing what changed and why, drawn from your conventional commit messages (step 5) and the issue — this becomes the squash-merge commit body, so don't leave it empty. **Never merge** — the PR merge button is the human's gate.
    - **Local mode:** there's no PR to gate, so this checkpoint IS the human's gate. Show the diff and review summary, stop, and wait for explicit approval — only then `bash scripts/gitflow.sh merge` (a `--no-ff` merge into the base branch), then mark the issue done in `.scratch/`. **Never merge without that explicit approval.**
