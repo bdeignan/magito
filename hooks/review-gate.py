@@ -4,8 +4,11 @@
 Blocks `gitflow.sh merge`/`gitflow.sh pr`, `gh pr create`, and
 `git merge <ref>` onto the base branch unless a matching reviewing-changes
 marker exists for the sha being landed. Repos opt in via
-`git config magito.reviewGate true` (gitflow.sh is always gated). Fails
-open (allows silently) on any parsing, git, or filesystem error.
+`git config magito.reviewGate true` (gitflow.sh is always gated). A leading
+`cd <dir> &&` in the command shifts where later segments are judged from
+(e.g. into a linked worktree). `git merge` already did this for `git -C
+<path>`; this extends the same idea to a plain `cd`. Fails open (allows
+silently) on any parsing, git, or filesystem error.
 """
 import json
 import os
@@ -79,6 +82,16 @@ def is_gh_pr_create(tokens):
         if os.path.basename(tok) == "gh" and tokens[i + 1:i + 3] == ["pr", "create"]:
             return True
     return False
+
+
+def resolve_cd(tokens, cwd):
+    """Resolve a bare `cd <path>` to its target directory. Return None if tokens don't match, or for `cd -` (previous-directory shorthand this hook can't resolve)."""
+    if len(tokens) != 2 or tokens[0] != "cd" or tokens[1] == "-":
+        return None
+    path = os.path.expanduser(tokens[1])
+    if not os.path.isabs(path):
+        path = os.path.join(cwd, path)
+    return os.path.normpath(path)
 
 
 def git(args, cwd):
@@ -165,6 +178,7 @@ def main():
     if not isinstance(command, str) or not isinstance(cwd, str):
         return
 
+    cur_cwd = cwd
     for segment in split_segments(command):
         try:
             tokens = shlex.split(segment)
@@ -173,20 +187,26 @@ def main():
         if not tokens:
             continue
 
+        cd_target = resolve_cd(tokens, cur_cwd)
+        if cd_target is not None:
+            # shifts where later segments in this command are judged from
+            cur_cwd = cd_target
+            continue
+
         if gitflow_action(tokens) is not None:
-            if gate_current_branch(cwd):
+            if gate_current_branch(cur_cwd):
                 return
             continue
 
         if is_gh_pr_create(tokens):
-            if opted_in(cwd) and gate_current_branch(cwd):
+            if opted_in(cur_cwd) and gate_current_branch(cur_cwd):
                 return
             continue
 
         subcmd, args, chdir = find_git_subcommand(tokens, ("merge",))
         if subcmd == "merge":
             # honor `git -C <path>`: judge the repo the merge actually targets
-            repo_cwd = os.path.join(cwd, os.path.expanduser(chdir)) if chdir else cwd
+            repo_cwd = os.path.join(cur_cwd, os.path.expanduser(chdir)) if chdir else cur_cwd
             if any(a in MERGE_IN_PROGRESS_FLAGS for a in args):
                 continue
             if not opted_in(repo_cwd):
