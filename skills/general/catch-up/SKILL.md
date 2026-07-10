@@ -14,9 +14,11 @@ there), or `skipped: <reason>` (deliberately not checked). No source may be sile
 omitted from the final report — if you didn't check it, its status is `skipped`, not
 absent from the list.
 
-1. `CLAUDE.md` / `AGENTS.md` at the repo root.
-2. `CONTEXT.md` (or `CONTEXT-MAP.md`) at the repo root.
-3. The most recent few ADRs under `docs/adr/`.
+1. `CLAUDE.md` / `AGENTS.md` at the repo root. If neither exists, status is `missing`.
+2. `CONTEXT.md` (or `CONTEXT-MAP.md`) at the repo root. If it doesn't exist, status is
+   `missing`.
+3. The most recent few ADRs under `docs/adr/`. If the directory doesn't exist or is
+   empty, status is `missing`.
 4. Open issues from the configured tracker
    (`bash ../implement-issue/scripts/issues.sh list`, or `.scratch/`). If no tracker is
    configured, status is `skipped: no tracker configured — run /setup-project`.
