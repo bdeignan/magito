@@ -1,6 +1,6 @@
 ---
 name: finding-lacunae
-description: Research and diagnose missing keystones in a topic or artifact. Use when an idea, specification, design, or implementation may have an evidence-backed gap that its surrounding field, constraints, or alternatives reveal; do not use to invent a novel product or solution.
+description: Research and diagnose missing essential elements in a topic or artifact. Use when an idea, specification, design, or implementation may have an evidence-backed gap that its surrounding field, constraints, or alternatives reveal; do not use to invent a novel product or solution.
 ---
 
 # Finding Lacunae
@@ -27,10 +27,11 @@ product pitch. A valid conclusion is that no defensible lacuna was found.
 3. **Map the relevant field.** Identify the main approaches, omissions,
    constraints, and trade-offs that bear on the frame. Map only enough to test
    a claim; do not produce a survey for its own sake.
-4. **Form and test hypotheses.** Propose one or more possible axes or missing
-   keystones. Treat every axis as a hypothesis, not a discovered fact. Check
-   whether the apparent gap already exists, is unsupported by the search, is a
-   false dichotomy, or follows from a constraint the target accepts.
+4. **Test axes and locate candidate lacunae.** Propose one or more possible
+   axes or missing keystones. Treat every axis as a hypothesis, not a discovered
+   fact. Locate the implied missing element, then check whether it already
+   exists, is unsupported by the search, is a false dichotomy, or follows from
+   a constraint the target accepts.
 5. **Name the keeping-empty force.** For each surviving candidate, identify a
    concrete mechanism that explains the absence: incentives, cost structure,
    regulation, technical limits, organizational incentives, an explicit design
@@ -46,7 +47,8 @@ product pitch. A valid conclusion is that no defensible lacuna was found.
 ## Output
 
 Start with the stated frame and evidence coverage. Then give a ranked report
-with only candidates that survived the force test:
+with only candidates that survived the force test. Rank by impact on the stated
+goals, then by confidence:
 
 | Rank | Named gap | Evidence and search limit | Keeping-empty force | Classification | Confidence | Recommended response |
 |---|---|---|---|---|---|---|
