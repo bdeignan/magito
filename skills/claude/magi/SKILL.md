@@ -7,13 +7,13 @@ argument-hint: "<question> | deliberate <decision>"
 
 # Magi
 
-Convene a three-seat tribunal to vote on questions with no oracle and high cost-of-error. Three seats — ideally three model families — sit in parallel and vote independently. Dissent is preserved; consensus is never forced. Poll mode gets you a quick verdict. Deliberate mode adds a conditional cross-review round and a chairman summary for decisions where being wrong is expensive.
+Convene a three-seat tribunal to vote on questions with no oracle and high cost-of-error. Three seats — ideally three model families — vote independently in parallel; dissent is preserved.
 
-Never use this for code review: point to `reviewing-changes` instead. If the question is settleable by a test, a dry-run, or five minutes of reading — do that instead. The tribunal's mandate is questions that have no checkable answer.
+Never use this for code review: point to `reviewing-changes` instead. If the question is settleable by a test, a dry-run, or five minutes of reading — do that instead.
 
 ## The bench
 
-Three seats, each meant to be backed by a different model family:
+The three seats:
 
 - **Melchior** = Claude, always a FRESH subagent at the session model — never answer from the main session yourself; you convened the tribunal and helped frame the question, so you are contaminated.
 - **Balthasar** and **Casper** = shell-command seats, resolved from machine-local config.
@@ -27,17 +27,19 @@ cmd = "codex exec --sandbox read-only"
 family = "openai"
 
 [seats.casper]
-cmd = "script -q /dev/null agy --sandbox -p"  # pty wrapper: agy emits nothing when stdout isn't a TTY
+cmd = "gemini --skip-trust -p"
 family = "google"
 ```
 
-Without a `bench.toml`, default to Balthasar = `codex exec --sandbox read-only "<brief>"` (openai) and Casper = `gemini --skip-trust -p "<brief>"` (google). The vetted roster of candidate CLIs — verified headless syntax, auth requirements, quirks — lives in [references/seat-candidates.md](references/seat-candidates.md).
+The vetted roster of candidate CLIs — verified headless syntax, auth requirements, quirks — lives in [references/seat-candidates.md](references/seat-candidates.md).
 
 **Probe first.** A seat is live only if its command answers a ping: send "Reply with exactly: VERDICT-OK" and confirm the token comes back on stdout. Missing binary, auth failure, quota exhaustion, and mid-protocol errors all count the same — the seat is EMPTY.
 
-**Degraded-seat fill:** When a seat is empty, fill it with a stanced subagent. First empty seat → **opus** (red-team the risk). Second empty seat → **sonnet** (voice pragmatics and cost). Never haiku — a weak model votes noise, and a noisy third vote can flip a ruling. Stanced seats get a FORCED STANCE to inject divergence when you don't have genuine model-family separation; seats backed by distinct model families get NO stance and NO persona — send identical neutral briefs to all three, or the vote's information content is corrupted (you couldn't tell genuine dissent from a costume performing its job).
+**Bootstrap.** If `~/.magito/bench.toml` doesn't exist, create it before convening: ping the roster candidates whose binaries are installed, seat the two live commands that maximize family diversity, and write the remaining candidates as commented-out entries the user can enable later. Tell the user what you wrote, then proceed with that bench. If fewer than two candidates answer, write the file anyway (live seats filled, the rest commented) and convene degraded. Never overwrite an existing `bench.toml` — it is the user's file; suggest edits instead.
 
-**Loud degradation.** Report bench composition in every result, with each seat's family, e.g. `Bench: Melchior=claude-fable (anthropic), Balthasar=codex (openai), Casper=DEGRADED→opus (anthropic, stance: risk)`. Count distinct families across the seated bench using the declared `family` values — Melchior and fill seats are anthropic. If the bench spans fewer than two families, print an unmissable banner in the output AND the dossier: `SAME-FAMILY BENCH — treat unanimity with suspicion.` If exactly two of three seats share a family, say so in the bench line: a majority that shares a family is weaker evidence than one that crosses families.
+**Degraded-seat fill:** When a seat is empty, fill it with a stanced subagent. First empty seat → **opus** (red-team the risk). Second empty seat → **sonnet** (voice pragmatics and cost). Never haiku — a weak model votes noise, and a noisy third vote can flip a ruling. Stanced seats get a FORCED STANCE to inject divergence when you don't have genuine model-family separation; seats backed by distinct model families get NO stance and NO persona — send identical neutral briefs to all three, or you can't tell genuine dissent from a costume performing its job.
+
+**Loud degradation.** Report bench composition in every result, with each seat's family, e.g. `Bench: Melchior=<session model> (anthropic), Balthasar=codex (openai), Casper=DEGRADED→opus (anthropic, stance: risk)`. Count distinct families across the seated bench using the declared `family` values — Melchior and fill seats are anthropic. If the bench spans fewer than two families, print an unmissable banner in the output AND the dossier: `SAME-FAMILY BENCH — treat unanimity with suspicion.` If exactly two of three seats share a family, say so in the bench line: a majority that shares a family is weaker evidence than one that crosses families.
 
 ## Poll mode (default)
 
@@ -54,7 +56,7 @@ No chairman, no artifact, no cost confirmation — this is the cheap tier. If th
 
 `/magi deliberate <decision>`: Full tribunal for decisions where being wrong is expensive.
 
-**Cost up front.** State the cost once and ask: roughly "Full tribunal: 3 seats × up to 2 rounds + chairman — several times the cost of a normal query. Convene?" Do not proceed without explicit consent.
+**Cost up front.** State the cost once and ask: roughly "Full tribunal: 3 seats × up to 2 rounds + chairman — 6–8 seat calls if the vote splits, several times the cost of a normal query. Convene?" Do not proceed without explicit consent. (A poll, by contrast, costs roughly 3× a normal query — that's why it needs no gate.)
 
 **Round 1 — Parallel identical verdicts.** Send the same dossier to all three seats (question, context, options considered). Each returns position, reasoning, confidence. Every seat call is STATELESS: prompt in, structured verdict out; never resume a session.
 
@@ -66,7 +68,7 @@ No chairman, no artifact, no cost confirmation — this is the cheap tier. If th
 - Peer positions ANONYMIZED as "Position A" / "Position B" / "Position C" — strip anything that reveals which model wrote them, because brand priors corrupt review.
 - Adversarial instruction: Attempt to refute the peer positions, then reaffirm or revise your vote once.
 
-**Terminal states.** Never coerce convergence; unanimity is explicitly NOT the goal:
+**Terminal states.** Never coerce convergence:
 - **3-0 ruling** — move to chairman.
 - **2-1 ruling** — move to chairman WITH a MINORITY REPORT: the dissent, its confidence, and what evidence would vindicate it. Never blend dissent into a smoothed summary.
 - **1-1-1 hung** — no ruling. Report the three positions and the crux of disagreement. A full-diversity bench finding a question undecidable is itself a finding.
@@ -78,7 +80,3 @@ A fresh-context subagent (session model) that receives ONLY the dossier and the 
 ## The dossier
 
 Deliberate mode always writes `docs/decisions/YYYY-MM-DD-<slug>.md` in the TARGET repo (create `docs/decisions/` if absent). The dossier includes: the question, bench composition (including any degradation), votes per round, the ruling, the minority report, and the chairman's note if any. Offer — don't force — to draft an ADR from the dossier when the decision is architectural. Polls are ephemeral; rulings are recorded.
-
-## Cost honesty
-
-A poll costs roughly 3× a normal query. A full deliberation with a split runs 6–8 seat calls plus the chairman. Reserve deliberate mode for decisions where being wrong is expensive.

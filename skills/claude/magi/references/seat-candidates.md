@@ -5,10 +5,8 @@ candidate needs one thing: a shell command that takes a brief and prints a verdi
 stdout. Configure the chosen seats per machine in `~/.magito/bench.toml` (see
 [SKILL.md](../SKILL.md)); this file is the menu, not the config.
 
-`family` is the model family that actually answers, not the vendor of the CLI. BYOK
-(bring-your-own-key) CLIs run many families — declare the family of the model you
-configured, and never seat a second anthropic-family judge next to Melchior without
-knowing you did it.
+`family` is the model that answers, not the CLI vendor (see [SKILL.md](../SKILL.md)) —
+beware seating a second anthropic-family judge next to Melchior.
 
 | CLI | Family | Headless command | Auth |
 |-----|--------|------------------|------|
@@ -38,8 +36,5 @@ knowing you did it.
 
 - `agy --output-format` (contested) and the `ANTIGRAVITY_API_KEY` env var.
 - omp's JSON output flag (only `-p` is confirmed).
-- aider's 2026 one-shot syntax (historically `aider --message "<brief>"`) and any
-  DeepSeek `deepcode` CLI headless flags.
 
-When a candidate is unverified, smoke-test it first: run the command with the brief
-"Reply with exactly: VERDICT-OK" and confirm the token comes back on stdout.
+When a candidate is unverified, run SKILL.md's probe against it before configuring.
