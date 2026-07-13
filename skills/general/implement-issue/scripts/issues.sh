@@ -46,8 +46,16 @@ case "$cmd" in
     number="${1:?issue number required}"
     gh issue close "$number"
     ;;
+  sub-add)
+    # sub-add <parent-number> <child-number> — link child as a native GitHub sub-issue
+    check_auth
+    parent="${1:?parent issue number required}"; child="${2:?child issue number required}"
+    repo="$(gh repo view --json nameWithOwner -q .nameWithOwner)"
+    child_id="$(gh api "repos/${repo}/issues/${child}" -q .id)"
+    gh api -X POST "repos/${repo}/issues/${parent}/sub_issues" -F sub_issue_id="${child_id}"
+    ;;
   *)
-    echo "usage: issues.sh {create <title> <body>|list [gh-list-args...]|view <number>|comment <number> <body>|close <number>}" >&2
+    echo "usage: issues.sh {create <title> <body>|list [gh-list-args...]|view <number>|comment <number> <body>|close <number>|sub-add <parent> <child>}" >&2
     exit 1
     ;;
 esac
