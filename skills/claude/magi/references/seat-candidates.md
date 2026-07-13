@@ -12,7 +12,8 @@ Any candidate whose command takes a `--model`-style flag (agy, pi, opencode) can
 the `{model}` placeholder convention documented in [SKILL.md](../SKILL.md)'s Seat
 resolution section, so the model choice survives a vendor renaming its flags. codex
 and gemini are close enough to single-family defaults that this usually isn't needed;
-omp and qwen's documented headless commands below take no model flag at all.
+qwen's documented headless command below takes no model flag at all. omp's docs prefer
+`--model` (`--provider` is legacy), so it can use the placeholder too.
 
 | CLI | Family | Headless command | Auth |
 |-----|--------|------------------|------|
@@ -20,7 +21,7 @@ omp and qwen's documented headless commands below take no model flag at all.
 | gemini | google | `gemini --skip-trust -p "<brief>"` | enterprise Code Assist, or paid `GEMINI_API_KEY` |
 | agy (Antigravity) | google by default; can run anthropic and others via `--model` | `script -q /dev/null agy --sandbox -p "<brief>"` | Google account or `ANTIGRAVITY_API_KEY` (key env unconfirmed) |
 | pi | any (BYOK) | `pi -p "<brief>" --provider <name> --model <id> --mode json` | provider API keys |
-| omp | any (BYOK, 40+ providers) | `omp -p "<brief>"` | provider API keys |
+| omp | any (BYOK, 40+ providers; native OpenRouter support) | `omp -p "<brief>" --model {model}` | provider API keys (e.g. `OPENROUTER_API_KEY`) |
 | opencode | any (BYOK); the documented DeepSeek path | `opencode run -m deepseek/deepseek-v4-pro --format json "<brief>"` | `DEEPSEEK_API_KEY` (or other provider keys) |
 | qwen | qwen | `qwen -p "<brief>"` | free-tier OAuth or OpenAI-compatible key |
 
@@ -37,10 +38,17 @@ omp and qwen's documented headless commands below take no model flag at all.
   versions and OpenCode >= v1.14.24 (earlier versions had a headless session bug).
 - **pi**: `--mode json` emits JSON-lines events — the easiest seat to parse verdicts
   from.
+- **OpenRouter as the key behind BYOK seats**: one pay-as-you-go key fronts DeepSeek,
+  Kimi, GLM, Qwen, and frontier models, so pi/omp/opencode seats can each run a
+  different family off the same credential. Declare `family` from the model that
+  answers, never "openrouter". Account quirk: a one-time $10 credit purchase
+  permanently raises the `:free`-model daily cap from 50 to 1,000 requests
+  (20 req/min regardless).
 
 ## Unconfirmed — verify before configuring
 
 - `agy --output-format` (contested) and the `ANTIGRAVITY_API_KEY` env var.
-- omp's JSON output flag (only `-p` is confirmed).
+- omp's JSON output flag, and its `-p "<brief>" --model <id>` combination — `--model`
+  is docs-verified (July 2026) but the pairing hasn't been probed on a real bench yet.
 
 When a candidate is unverified, run SKILL.md's probe against it before configuring.
