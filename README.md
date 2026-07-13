@@ -20,6 +20,9 @@ your shared agent persona, skills, and subagents; an install script symlinks the
 the native config paths each tool expects. Edit once, `git pull` anywhere, and every
 tool on every machine stays in sync.
 
+<details>
+<summary>Why "MAGITO"?</summary>
+
 It's named after — and lightly modeled on — the **MAGI** supercomputer system from
 *Neon Genesis Evangelion*: three semi-independent cores deliberating under one
 governance layer. The MAGI decided the fate of humanity. This decides which markdown
@@ -31,36 +34,24 @@ file your CLI reads. The ambition is, let's say, *scoped*.
 | **BALTHASAR**  | Codex          | Shares the same persona via `AGENTS.md`    |
 | **CASPER**     | Gemini CLI     | Shares the same persona via `GEMINI.md`    |
 
+</details>
+
 All three read from a **single source of truth** (`shared/SYSTEM-INSTRUCTIONS.md`), so
 your standards stay identical no matter which CLI you reach for.
 
 ## How it works
 
 The model is dead simple: **files live in this repo; the tools read them via symlink.**
-
-```
-   this repo (source of truth)            tool's native path (symlink)
-   ─────────────────────────────          ────────────────────────────
-   shared/SYSTEM-INSTRUCTIONS.md   ──▶     ~/.claude/CLAUDE.md
-                                   ──▶     ~/.codex/AGENTS.md
-                                   ──▶     ~/.gemini/GEMINI.md
-   skills/general/<name>/          ──▶     ~/.agents/skills/<name>/        (Codex, cross-tool)
-                                   ──▶     ~/.gemini/config/skills/<name>/ (Antigravity)
-                                   ──▶     ~/.claude/skills/<name>/        (Claude)
-   skills/claude/<name>/           ──▶     ~/.claude/skills/<name>/  (Claude only)
-   agents/<name>.md                ──▶     ~/.claude/agents/<name>.md
-   hooks/<name>.py                 ──▶     ~/.claude/hooks/<name>.py  (+ registered in settings.json)
-```
-
-`install.py` (stdlib-only Python, 3.11+) reads your machine-local **`install.toml`**,
-then creates those symlinks for every tool you've enabled. Because they're symlinks:
+`install.py` (stdlib-only Python, 3.11+) reads your machine-local `install.toml` and
+creates those symlinks for every tool you've enabled. Because they're symlinks:
 
 - **Editing the content of an existing file is live instantly** — no reinstall. The tool
   reads through the link to the repo file.
 - **Adding a *new* skill, agent, or hook requires a reinstall** — a new file needs a new link.
 
 The script is idempotent (safe to re-run), and regenerates `skills/INDEX.md` from each
-skill's frontmatter on every run.
+skill's frontmatter on every run. Exactly which repo path maps to which tool's native
+config path is listed in [`CLAUDE.md`](CLAUDE.md).
 
 ## Quick start (first time on a machine)
 
@@ -102,48 +93,21 @@ python install.py        # only strictly needed if NEW skills/agents/tools were 
 
 When in doubt, run `python install.py`. It never does damage on a re-run.
 
-### ➕ Adding a new skill
+<details>
+<summary>➕ Adding a new skill, subagent, hook, or tool</summary>
 
-```bash
-mkdir -p skills/general/<name>          # cross-tool…
-# …or:  skills/claude/<name>            # …Claude Code-only
-$EDITOR skills/general/<name>/SKILL.md  # needs `name:` + `description:` frontmatter
-python install.py                       # symlink it + regenerate INDEX.md
-```
+Full steps for each — which directory a skill goes in, subagent frontmatter fields, the
+hook contract, wiring up a new tool stanza — live in [`CLAUDE.md`](CLAUDE.md) under
+"Adding a New Skill / Agent / Hook / Tool". That's the file the agents themselves read
+before extending this repo, so it stays the one source of truth for these steps.
 
-- `skills/general/` → installed to the cross-tool `~/.agents/skills` standard (Codex and 30+ tools that read it at home scope), to `~/.gemini/config/skills` for Antigravity (which reads `~/.agents/skills` only at workspace scope), and to `~/.claude/skills` (Claude Code does not yet read `~/.agents/skills`).
-- `skills/claude/` → installed to `~/.claude/skills` (Claude Code only).
-- A skill is a directory; `references/` and `scripts/` subdirs come along for free
-  (the whole dir is symlinked).
+Short version, every case: create the file with the right frontmatter, then run
+`python install.py` to symlink it and regenerate `skills/INDEX.md`.
 
-### ➕ Adding a new subagent (Claude Code)
+</details>
 
-```bash
-$EDITOR agents/<name>.md   # frontmatter: `name`, `description` (+ optional model/tools/effort)
-python install.py
-```
-
-### ➕ Adding a new hook (Claude Code)
-
-```bash
-$EDITOR hooks/<name>.py    # PreToolUse hook: tool-call JSON on stdin; deny via JSON, allow via silent exit 0
-python install.py          # symlink to ~/.claude/hooks/ + register in ~/.claude/settings.json
-```
-
-Hooks are the deterministic backstop for rules prose can't guarantee (the staging guard,
-the merge/PR review gate). They must **fail open** — any internal error allows the call.
-`install.py` merges registrations into `settings.json` idempotently and backs the file
-up before writing.
-
-### ➕ Adding a new tool
-
-1. Add a stanza to **both** `install.toml` and `install.toml.example` with an
-   `instructions` path (and optional `skills` / `agents` paths).
-2. Run `python install.py`.
-
-> A stanza with an `agents` key is treated as Claude Code (gets skills **and** agents).
-
-### 🩺 Troubleshooting
+<details>
+<summary>🩺 Troubleshooting</summary>
 
 ```bash
 python install.py --dry-run     # show what WOULD happen, change nothing
@@ -157,36 +121,12 @@ ls -la ~/.claude/CLAUDE.md       # confirm a link resolves back into this repo
   *destination* path before linking — it follows existing symlinks back to the source
   and breaks idempotency.
 
+</details>
+
 ---
 
-## Repo layout
-
-```
-magito/
-├── README.md               # you are here
-├── install.py              # symlink installer (stdlib-only, 3.11+; idempotent)
-├── install.toml            # your machine-local config (gitignored)
-├── install.toml.example    # committed template — copy to install.toml
-├── assets/
-│   └── magito-banner.svg   # the banner above (dark/light aware)
-├── shared/
-│   └── SYSTEM-INSTRUCTIONS.md   # single source of truth → all tools
-├── skills/
-│   ├── INDEX.md            # auto-generated (gitignored)
-│   ├── general/            # cross-tool skills
-│   └── claude/             # Claude Code-only skills (e.g. dispatch/)
-├── hooks/                  # Claude Code PreToolUse hooks (staging guard, review gate)
-└── agents/
-    └── haiku-executor.md   # fast/cheap Claude Code subagent for parallel tasks
-```
-
-### Tool config paths
-
-| Tool       | Instruction file       | Skills dir          | Agents dir          | Hooks dir          |
-|------------|------------------------|---------------------|---------------------|--------------------|
-| Claude     | `~/.claude/CLAUDE.md`  | `~/.claude/skills/` | `~/.claude/agents/` | `~/.claude/hooks/` |
-| Codex      | `~/.codex/AGENTS.md`   | `~/.agents/skills/` | —                   | —                  |
-| Gemini CLI | `~/.gemini/GEMINI.md`  | `~/.agents/skills/` | —                   | —                  |
+Full repo layout and the per-tool path table live in [`CLAUDE.md`](CLAUDE.md), kept in
+one place so they don't drift out of sync with what the agents actually see.
 
 ---
 
