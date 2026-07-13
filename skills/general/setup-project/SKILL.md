@@ -26,7 +26,9 @@ The conventions `implement-issue` and `verifying` build to. Defaults, overridabl
 - **uv** for environment and dependency management; the **uv build backend**.
 - **`src/` layout** — the package under `src/<pkg>/`.
 - **pytest**, tests under `tests/`.
-- **ruff** for lint/format, if the project uses it.
+- **ruff** for lint/format; **prek** (not pre-commit) runs the hooks.
+
+Templates live in [references/](./references/) — copy and adapt, never regenerate freehand: fill `{{package}}`/`{{project}}`/`{{description}}`, drop pieces the user declines. For a project that already has one of these files, diff the template against the existing file and propose the diff — never overwrite. After scaffolding a fresh project, verify: `uv sync && uv run pytest` must pass on the skeleton.
 
 ## 4. Confirm and write
 
