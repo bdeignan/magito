@@ -38,7 +38,7 @@ examines the staged diff regardless of what the worker claimed.
 config; bills the Claude subscription.
 
 **Shell workers** (any driver): headless CLI commands resolved by name from
-`~/.magito/workers.toml` — machine-local, gitignored, never synced. Each worker
+`~/.magito/workers.toml` — machine-local, never synced. Each worker
 declares `cmd`, a template with `{cwd}` (assigned directory) and `{brief}`
 placeholders. An optional `model` field follows magi's bench convention: substituted
 where `cmd` contains `{model}`, documentation otherwise.
@@ -61,9 +61,11 @@ profiles) so a model sunset is a one-line fix outside this repo.
 ## Bootstrap
 
 First time a worker is named and `~/.magito/workers.toml` doesn't exist: create it.
-Probe the installed candidates — omp, codex, claude, gemini; **never agy** (open
-non-TTY stdout-drop bug, google-antigravity/antigravity-cli#76; no structured output;
-its `-c` resumes globally and cross-contaminates concurrent workers). Write live
+Probe the installed candidates — omp, codex, claude, gemini; **never agy**. It earns
+its magi seat behind a pty wrapper, but a worker needs what it lacks: reliable
+non-TTY output (open stdout-drop bug, google-antigravity/antigravity-cli#76),
+structured completion, and session isolation — its `-c` resumes globally and
+cross-contaminates concurrent workers. Write live
 candidates as entries, comment out the dead, tell the user what you wrote, proceed.
 Never overwrite an existing `workers.toml` — it is the user's file.
 
