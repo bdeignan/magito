@@ -93,6 +93,7 @@ a reinstall.
 | Codex       | `~/.codex/AGENTS.md`    | `~/.agents/skills/`       | —                   | —                   |
 | Gemini CLI  | `~/.gemini/GEMINI.md`   | `~/.agents/skills/`       | —                   | —                   |
 | Antigravity | `~/.gemini/GEMINI.md`   | `~/.gemini/config/skills/`| —                   | —                   |
+| omp (Oh My Pi) | `~/.omp/agent/AGENTS.md` | `~/.agents/skills/`  | —                   | —                   |
 
 Notes on tool conventions:
 - AGENTS.md (project-level) is a widely adopted standard (Codex, Copilot, Cursor, Aider, etc.)
@@ -107,6 +108,13 @@ Notes on tool conventions:
   the home level. Antigravity is the exception: it reads `~/.agents/skills` only at workspace scope
   (`<project>/.agents/skills/`) and uses `~/.gemini/config/skills/` globally, so its stanza points
   there. Verify Gemini CLI's exact home skills path before enabling it.
+- omp (Oh My Pi) auto-discovers other tools' instruction files and `~/.agents/skills` on its own,
+  but its native paths (`~/.omp/agent/AGENTS.md`, `~/.omp/agent/skills`) take priority when present,
+  so its stanza targets those native paths directly rather than relying on cross-tool discovery.
+  omp has its own `agents` directory too, but a different subagent frontmatter contract than Claude
+  Code, and its hooks are JS/TS extension modules, not Python + `settings.json` — its stanza
+  intentionally omits both the `agents` and `hooks` keys (adding `agents` would also misfire
+  `install.py`'s `is_claude` check and misroute Claude-only skills into the shared skills dir).
 
 ## Skill and Agent Design Notes
 
