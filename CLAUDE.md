@@ -110,7 +110,9 @@ Notes on tool conventions:
   there. Verify Gemini CLI's exact home skills path before enabling it.
 - omp (Oh My Pi) auto-discovers other tools' instruction files and `~/.agents/skills` on its own,
   but its native paths (`~/.omp/agent/AGENTS.md`, `~/.omp/agent/skills`) take priority when present,
-  so its stanza targets those native paths directly rather than relying on cross-tool discovery.
+  so its stanza targets the native instruction file directly rather than relying on cross-tool
+  discovery. Skills stay on `~/.agents/skills` (canonical per omp's docs) — magito never creates
+  `~/.omp/agent/skills`, which would shadow it.
   omp has its own `agents` directory too, but a different subagent frontmatter contract than Claude
   Code, and its hooks are JS/TS extension modules, not Python + `settings.json` — its stanza
   intentionally omits both the `agents` and `hooks` keys (adding `agents` would also misfire
