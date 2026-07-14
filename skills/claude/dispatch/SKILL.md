@@ -19,11 +19,7 @@ The seam that makes parallelism safe: each executor's blast radius is **one work
    - **Shared-file cluster** — issues that touch common files. Run these **sequentially** in the main tree (no worktree); parallel worktrees would only collide at merge, and combining their commits is trivial when serialized.
    - **Disjoint issues** — independent file sets. These can run **in parallel**, one worktree each.
 
-3. **Dispatch the disjoint issues.** Create each worktree as a sibling of the repo, never under `/tmp`: `../<repo-name>.worktrees/<branch>` (e.g. `git worktree add ../myrepo.worktrees/feat-004a-log-transform feat/004a-log-transform`). Launch one `haiku-executor` per worktree with a tight brief: the worktree path, the issue spec, "stage only the files you changed — never `git add -A`," and this verification floor pasted in full — the executor has no Skill tool and cannot reach `verifying` itself, so the brief must carry the discipline:
-   - red-green where the behavior is specifiable (watch the test fail first); characterization / eval-threshold / smoke where it isn't
-   - invariant + schema checks at every data boundary touched: columns/dtypes/nullability, no NaN/inf where forbidden, values in range, row counts / key uniqueness, no train/test leakage
-   - seed all randomness; float asserts with tolerance, never equality
-   Collect each executor's `DONE` (with its staged files) or `BLOCKED`.
+3. **Dispatch the disjoint issues.** Create each worktree as a sibling of the repo, never under `/tmp`: `../<repo-name>.worktrees/<branch>` (e.g. `git worktree add ../myrepo.worktrees/feat-004a-log-transform feat/004a-log-transform`). Launch one executor per worktree — `haiku-executor` by default, or a shell worker the user names from `~/.magito/workers.toml` ("12 and 14 via omp, 15 via haiku"); probe a named worker before fan-out and degrade loudly. Build every brief from [the worker contract](../implement-issue/references/worker-contract.md): the worktree path, the full spec pasted in, the verification floor in full, the staging rule, the DONE/BLOCKED protocol. The brief must carry the discipline — executors cannot load skills. Collect each executor's `DONE` (with its staged files) or `BLOCKED`.
 
 4. **Review every result.** Run `reviewing-changes` on every worktree's staged diff against its branch point — non-negotiable, for every worktree. A manual `git diff` eyeball is not a substitute; if you catch yourself doing that instead, stop and run the skill.
 
