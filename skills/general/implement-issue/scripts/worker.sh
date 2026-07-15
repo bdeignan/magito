@@ -13,8 +13,9 @@
 # 124 timeout, otherwise the worker's own exit code.
 set -euo pipefail
 exec python3 - "$@" <<'PYEOF'
-import shlex, subprocess, sys, tomllib
+import os, shlex, signal, subprocess, sys, tomllib
 from pathlib import Path
+from types import SimpleNamespace
 
 ROSTER = Path.home() / ".magito" / "workers.toml"
 BYPASS_PAIRS = {"--approval-mode", "--permission-mode"}  # flag + value
@@ -31,16 +32,25 @@ def die(code, msg):
 def resolve(name):
     if not ROSTER.exists():
         die(2, f"{ROSTER} not found — bootstrap it per worker-contract.md")
-    with open(ROSTER, "rb") as f:
-        data = tomllib.load(f)
+    try:
+        with open(ROSTER, "rb") as f:
+            data = tomllib.load(f)
+    except tomllib.TOMLDecodeError as e:
+        die(2, f"{ROSTER} is not valid TOML: {e}")
     entry = data.get("workers", {}).get(name)
     if entry is None:
         live = ", ".join(data.get("workers", {})) or "none"
         die(2, f"no worker '{name}' in {ROSTER} (live: {live})")
+    if "cmd" not in entry:
+        die(2, f"worker '{name}' declares no cmd")
     return entry
 
 def build_argv(entry, name, cwd, brief):
     tokens = shlex.split(entry["cmd"])
+    for bad in ("&&", "||", "|", ";", "cd"):
+        if bad in tokens:
+            die(2, f"worker '{name}' cmd contains shell operator '{bad}' — "
+                   "cmd is an argv template; drop it (worker.sh sets the cwd itself)")
     model = entry.get("model", "")
     argv = []
     for tok in tokens:
@@ -51,10 +61,6 @@ def build_argv(entry, name, cwd, brief):
         tok = tok.replace("{cwd}", cwd)
         tok = tok.replace("{brief}", brief)
         argv.append(tok)
-    for bad in ("&&", "||", "|", ";", "cd"):
-        if bad in argv[:1] or bad in argv:
-            die(2, f"worker '{name}' cmd contains shell operator '{bad}' — "
-                   "cmd is an argv template; drop it (worker.sh sets the cwd itself)")
     return argv
 
 def strip_bypass(argv):
@@ -66,21 +72,30 @@ def strip_bypass(argv):
         if tok in BYPASS_PAIRS:
             skip = True
             continue
-        if tok.split("=")[0] in BYPASS_PAIRS or tok in BYPASS_SINGLE:
+        if (tok.split("=")[0] in BYPASS_PAIRS or tok in BYPASS_SINGLE
+                or tok.startswith("--dangerously-")):
             continue
         out.append(tok)
     return out
 
 def run(argv, cwd, timeout, capture):
+    pipe = subprocess.PIPE if capture else None
     try:
-        return subprocess.run(
-            argv, cwd=cwd, timeout=timeout, stdin=subprocess.DEVNULL,
-            capture_output=capture, text=True,
+        # New session = own process group, so a timeout kill reaps the worker's
+        # children too, not just the CLI process itself.
+        p = subprocess.Popen(
+            argv, cwd=cwd, stdin=subprocess.DEVNULL, stdout=pipe, stderr=pipe,
+            text=True, start_new_session=True,
         )
     except FileNotFoundError:
         die(2, f"binary not found: {argv[0]}")
+    try:
+        out, err = p.communicate(timeout=timeout)
     except subprocess.TimeoutExpired:
-        die(124, f"worker timed out after {timeout}s")
+        os.killpg(p.pid, signal.SIGKILL)
+        p.wait()
+        die(124, f"worker timed out after {timeout}s (process group killed)")
+    return SimpleNamespace(returncode=p.returncode, stdout=out or "", stderr=err or "")
 
 args = sys.argv[1:]
 if len(args) >= 2 and args[0] == "probe":
@@ -97,7 +112,10 @@ if len(args) >= 2 and args[0] == "probe":
     die(3, f"probe failed for '{name}' (exit {r.returncode}, no VERDICT-OK)")
 elif len(args) >= 4 and args[0] == "run":
     name, cwd, brief_file = args[1], args[2], args[3]
-    timeout = int(args[4]) if len(args) > 4 else 600
+    try:
+        timeout = int(args[4]) if len(args) > 4 else 600
+    except ValueError:
+        die(2, f"timeout must be an integer number of seconds, got: {args[4]}")
     if not Path(cwd).is_dir():
         die(2, f"assigned directory does not exist: {cwd}")
     # Absolute before substitution: a relative {cwd} lands in flags like omp's

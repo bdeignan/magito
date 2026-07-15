@@ -49,6 +49,9 @@ bash <skills>/implement-issue/scripts/worker.sh probe <worker>
 bash <skills>/implement-issue/scripts/worker.sh run <worker> <dir> <brief-file> [timeout]
 ```
 
+(`<skills>` is your tool's installed skills directory — `~/.claude/skills` for Claude
+Code, `~/.agents/skills` for most others.)
+
 Each worker declares `cmd` — an **argv template**, not a shell line: it is split
 into arguments and placeholders are substituted per argument, so it cannot contain
 `&&`, `|`, `;`, or a leading `cd` (the launcher sets the working directory itself,
