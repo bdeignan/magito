@@ -21,23 +21,33 @@ qwen's documented headless command below takes no model flag at all. omp's docs 
 | gemini | google | `gemini --skip-trust -p "<brief>"` | enterprise Code Assist, or paid `GEMINI_API_KEY` |
 | agy (Antigravity) | google by default; can run anthropic and others via `--model` | `script -q /dev/null agy --sandbox -p "<brief>"` | Google account or `ANTIGRAVITY_API_KEY` (key env unconfirmed) |
 | pi | any (BYOK) | `pi -p "<brief>" --provider <name> --model <id> --mode json` | provider API keys |
-| omp | any (BYOK, 40+ providers; native OpenRouter support) | `omp -p "<brief>" --model {model}` | provider API keys (e.g. `OPENROUTER_API_KEY`) |
+| omp | any (BYOK, 40+ providers; native OpenRouter support) | `omp -p --no-session "<brief>" --model {model}` | provider API keys (e.g. `OPENROUTER_API_KEY`) |
 | opencode | any (BYOK); the documented DeepSeek path | `opencode run -m deepseek/deepseek-v4-pro --format json "<brief>"` | `DEEPSEEK_API_KEY` (or other provider keys) |
 | qwen | qwen | `qwen -p "<brief>"` | free-tier OAuth or OpenAI-compatible key |
 
 ## Quirks that will bite
 
-- **gemini**: consumer tiers lost access in June 2026 ("Project ID required" errors
-  mean an ineligible account, not a missing project). Works with enterprise Code
-  Assist or a paid, restricted `GEMINI_API_KEY` — and Google's key-format migration
-  (~September 2026) may break standard keys.
-- **agy**: emits nothing when stdout is not a TTY — a known bug. Shelling out pipes
-  stdout, so always wrap in a pseudo-terminal: `script -q /dev/null agy ...`. Consumer
-  quotas are low; an exhausted quota errors out and counts as an empty seat.
+- **gemini**: consumer tiers (free, Pro, Ultra) lost access on 2026-06-18, replaced by
+  Antigravity CLI ("Project ID required" errors mean an ineligible account, not a
+  missing project). Works with enterprise Code Assist or a paid, restricted
+  `GEMINI_API_KEY` — and Google's key-format migration (~September 2026) may break
+  standard keys.
+- **agy**: emits nothing when stdout is not a TTY — a known bug, tracked upstream as
+  google-antigravity/antigravity-cli#76 (open, no maintainer response as of July 2026).
+  Shelling out pipes stdout, so always wrap in a pseudo-terminal:
+  `script -q /dev/null agy ...`. There is no JSON or structured-output flag — `agy -p`
+  prints plain text only. Consumer quotas are low; an exhausted quota errors out and
+  counts as an empty seat.
 - **opencode**: headless one-shot needs `--dangerously-skip-permissions` in some
   versions and OpenCode >= v1.14.24 (earlier versions had a headless session bug).
 - **pi**: `--mode json` emits JSON-lines events — the easiest seat to parse verdicts
   from.
+- **omp**: probe-verified 2026-07-14 (ping and the `-p ... --model` pairing both
+  answered on a live bench). Give `--model` the full `provider/model` path (e.g.
+  `openrouter/deepseek/deepseek-v4-flash`) — a bare fuzzy name can resolve to a
+  different provider and fail on missing auth. Add `--no-session` so seat calls stay
+  stateless. `--mode json` works but emits a verbose NDJSON event stream (every
+  thinking delta included); plain text output is easier to read verdicts from.
 - **OpenRouter as the key behind BYOK seats**: one pay-as-you-go key fronts DeepSeek,
   Kimi, GLM, Qwen, and frontier models, so pi/omp/opencode seats can each run a
   different family off the same credential. Declare `family` from the model that
@@ -47,8 +57,8 @@ qwen's documented headless command below takes no model flag at all. omp's docs 
 
 ## Unconfirmed — verify before configuring
 
-- `agy --output-format` (contested) and the `ANTIGRAVITY_API_KEY` env var.
-- omp's JSON output flag, and its `-p "<brief>" --model <id>` combination — `--model`
-  is docs-verified (July 2026) but the pairing hasn't been probed on a real bench yet.
+- The `ANTIGRAVITY_API_KEY` env var. (`agy --output-format` is resolved: no such flag
+  exists — see the agy quirk above. omp's flags are resolved: probed 2026-07-14 — see
+  the omp quirk above.)
 
 When a candidate is unverified, run SKILL.md's probe against it before configuring.
