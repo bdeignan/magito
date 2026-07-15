@@ -30,7 +30,7 @@ file your CLI reads. The ambition is, let's say, *scoped*.
 
 | MAGI core      | …governs       | Role here                                  |
 |----------------|----------------|--------------------------------------------|
-| **MELCHIOR**   | Claude Code    | Primary orchestrator + subagents + skills  |
+| **MELCHIOR**   | Claude Code    | Primary orchestrator — subagents, skills, worker delegation |
 | **BALTHASAR**  | Codex          | Shares the same persona via `AGENTS.md`    |
 | **CASPER**     | Gemini CLI     | Shares the same persona via `GEMINI.md`    |
 
@@ -38,6 +38,12 @@ file your CLI reads. The ambition is, let's say, *scoped*.
 
 All three read from a **single source of truth** (`shared/SYSTEM-INSTRUCTIONS.md`), so
 your standards stay identical no matter which CLI you reach for.
+
+The governance layer goes further than shared instructions: the primary orchestrator
+can delegate implementation work to *other* CLIs as headless workers — a cheap model
+builds in an isolated worktree, the orchestrator reviews and lands it. Worker
+commands are machine-local (`~/.magito/workers.toml`), so each machine hires from
+whatever CLIs it actually has.
 
 ## How it works
 
