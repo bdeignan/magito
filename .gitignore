@@ -5,3 +5,4 @@ __pycache__/
 skills/INDEX.md
 .claude/settings.local.json
 SCRATCH.md
+.scratch/
