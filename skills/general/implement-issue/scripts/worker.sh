@@ -86,8 +86,9 @@ args = sys.argv[1:]
 if len(args) >= 2 and args[0] == "probe":
     name = args[1]
     entry = resolve(name)
-    argv = strip_bypass(build_argv(entry, name, ".", PROBE_PROMPT))
-    r = run(argv, ".", 90, capture=True)
+    here = str(Path.cwd())
+    argv = strip_bypass(build_argv(entry, name, here, PROBE_PROMPT))
+    r = run(argv, here, 90, capture=True)
     if r.returncode == 0 and "VERDICT-OK" in r.stdout:
         print(f"PROBE OK: {name}")
         sys.exit(0)
@@ -99,6 +100,9 @@ elif len(args) >= 4 and args[0] == "run":
     timeout = int(args[4]) if len(args) > 4 else 600
     if not Path(cwd).is_dir():
         die(2, f"assigned directory does not exist: {cwd}")
+    # Absolute before substitution: a relative {cwd} lands in flags like omp's
+    # --cwd, which the worker resolves against its own already-changed directory.
+    cwd = str(Path(cwd).resolve())
     try:
         brief = Path(brief_file).read_text()
     except OSError as e:
