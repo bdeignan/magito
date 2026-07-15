@@ -118,6 +118,27 @@ Notes on tool conventions:
   intentionally omits both the `agents` and `hooks` keys (adding `agents` would also misfire
   `install.py`'s `is_claude` check and misroute Claude-only skills into the shared skills dir).
 
+## Machine-Local Config (`~/.magito/`)
+
+Not everything lives in this repo. `~/.magito/` is magito's machine-local config
+directory — per-machine state that never syncs between machines and is never
+committed here:
+
+- `bench.toml` — the magi skill's seat roster: which shell-command seats back
+  Balthasar and Casper on this machine. Self-bootstraps on the first `/magi` run;
+  repaired with `/magi config`.
+- `workers.toml` — the delegation worker roster for `dispatch` and `implement-issue`:
+  named headless CLI commands (`cmd` templates with `{cwd}`, `{brief}`, and optional
+  `{model}` placeholders). Self-bootstraps the first time a worker is named
+  ("via omp"). Contract: `skills/general/implement-issue/references/worker-contract.md`.
+- `handoffs/<repo-slug>.md` — session handoffs written by the `handoff` skill, read
+  by `catch-up`.
+
+Conventions: agents never overwrite an existing file here on their own initiative —
+these are the user's files. Commands in both rosters run in non-interactive shells,
+so any env they need (API keys, cloud project ids) must come from `~/.zshenv` or the
+tool's own auth store, never `.zshrc` alone — see the worker contract's gotchas.
+
 ## Skill and Agent Design Notes
 
 **Skills** are organized by scope:
