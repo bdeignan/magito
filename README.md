@@ -45,6 +45,10 @@ builds in an isolated worktree, the orchestrator reviews and lands it. Worker
 commands are machine-local (`~/.magito/workers.toml`), so each machine hires from
 whatever CLIs it actually has.
 
+Learning to drive it? Start with the **[Playbook](PLAYBOOK.md)** — situation → play
+→ where you stay in the loop, plus the behavior promises magito keeps while the
+internals evolve.
+
 ## How it works
 
 The model is dead simple: **files live in this repo; the tools read them via symlink.**
