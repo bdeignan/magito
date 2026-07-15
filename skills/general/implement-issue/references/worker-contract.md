@@ -45,8 +45,8 @@ config; bills the Claude subscription.
 through the launcher script, never a hand-built command line:
 
 ```bash
-bash <skills>/implement-issue/scripts/worker.sh probe <worker>
-bash <skills>/implement-issue/scripts/worker.sh run <worker> <dir> <brief-file> [timeout]
+python3 <skills>/implement-issue/scripts/worker.py probe <worker>
+python3 <skills>/implement-issue/scripts/worker.py run <worker> <dir> <brief-file> [timeout]
 ```
 
 (`<skills>` is your tool's installed skills directory — `~/.claude/skills` for Claude
@@ -69,11 +69,19 @@ cmd = "omp -p --no-session --no-skills --approval-mode yolo --max-time 600 --cwd
 [workers.omp-slow]
 cmd = "omp -p --no-session --no-skills --approval-mode yolo --max-time 900 --cwd {cwd} --model {model} {brief}"
 model = "openrouter/deepseek/deepseek-v4-pro"
+
+[workers.gemini]
+cmd = "gemini --approval-mode yolo -p {brief} --model {model}"
+model = "gemini-3.5-flash"
 ```
 
-Which model backs a worker is the durable choice; volatile flag syntax stays in
-`cmd`. Prefer each tool's own alias layer (omp modelRoles, claude aliases, codex
-profiles) so a model sunset is a one-line fix outside this repo.
+Worker names are your role tiers: `omp` vs `omp-slow` vs `gemini-pro` are just
+entries pointing at different models, so "cheap by default, strong on request" is a
+naming convention, not a mechanism. Which model backs a worker is the durable
+choice; the volatile id lives only in this machine-local file (one line to update
+on a sunset), or better, in each tool's own alias layer (omp modelRoles, claude
+aliases, codex profiles). CLIs with no working-directory flag (gemini, claude) need
+no `{cwd}` at all — the launcher sets the working directory itself.
 
 ## Bootstrap
 
@@ -126,8 +134,8 @@ doesn't need them.
   session" covers the rest of the batch. Auto mode may deny the launch outright; if
   you're then offered a fallback to `haiku-executor`, present it as a billing
   decision, never a convenience. The launcher's single stable prefix
-  (`bash .../scripts/worker.sh`) is also what makes a tight allow rule possible if
-  the user ever wants zero prompts.
+  (`python3 .../scripts/worker.py`) is also what makes a tight allow rule possible
+  if the user ever wants zero prompts.
 - **Env vars and non-interactive shells**: workers inherit the driver's environment,
   and a driver's shell tool runs non-interactive shells — exports living only in
   `.zshrc` (read by interactive shells alone) may never arrive, depending on how the

@@ -1,19 +1,27 @@
-#!/usr/bin/env bash
-# Deterministic launcher for shell workers (see ../references/worker-contract.md).
-# Resolves a named worker from ~/.magito/workers.toml, substitutes placeholders at
-# the argv level (no shell re-quoting — cmd is an argv template: no &&, |, or cd),
-# runs the worker with its working directory set, and enforces a timeout.
-#
-#   bash worker.sh probe <worker>
-#   bash worker.sh run   <worker> <dir> <brief-file> [timeout-seconds]
-#
-# probe strips approval-bypass flags (a ping needs no permissions) and checks the
-# worker answers VERDICT-OK. Judgement (bootstrap, fallback choice) stays with the
-# driver; this script only fails loudly. Exit: 0 ok, 2 config error, 3 probe fail,
-# 124 timeout, otherwise the worker's own exit code.
-set -euo pipefail
-exec python3 - "$@" <<'PYEOF'
-import os, shlex, signal, subprocess, sys, tomllib
+#!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# ///
+"""Deterministic launcher for shell workers (see ../references/worker-contract.md).
+
+Resolves a named worker from ~/.magito/workers.toml, substitutes placeholders at
+the argv level (no shell re-quoting — cmd is an argv template: no &&, |, or cd),
+runs the worker with its working directory set, and enforces a timeout.
+
+    python3 worker.py probe <worker>
+    python3 worker.py run   <worker> <dir> <brief-file> [timeout-seconds]
+
+probe strips approval-bypass flags (a ping needs no permissions) and checks the
+worker answers VERDICT-OK. Judgement (bootstrap, fallback choice) stays with the
+driver; this script only fails loudly. Exit: 0 ok, 2 config error, 3 probe fail,
+124 timeout, otherwise the worker's own exit code. Stdlib only, by design.
+"""
+import os
+import shlex
+import signal
+import subprocess
+import sys
+import tomllib
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -25,9 +33,11 @@ BYPASS_SINGLE = {
 }
 PROBE_PROMPT = "Reply with exactly: VERDICT-OK"
 
+
 def die(code, msg):
-    print(f"worker.sh: {msg}", file=sys.stderr)
+    print(f"worker.py: {msg}", file=sys.stderr)
     sys.exit(code)
+
 
 def resolve(name):
     if not ROSTER.exists():
@@ -45,12 +55,13 @@ def resolve(name):
         die(2, f"worker '{name}' declares no cmd")
     return entry
 
+
 def build_argv(entry, name, cwd, brief):
     tokens = shlex.split(entry["cmd"])
     for bad in ("&&", "||", "|", ";", "cd"):
         if bad in tokens:
             die(2, f"worker '{name}' cmd contains shell operator '{bad}' — "
-                   "cmd is an argv template; drop it (worker.sh sets the cwd itself)")
+                   "cmd is an argv template; drop it (worker.py sets the cwd itself)")
     model = entry.get("model", "")
     argv = []
     for tok in tokens:
@@ -62,6 +73,7 @@ def build_argv(entry, name, cwd, brief):
         tok = tok.replace("{brief}", brief)
         argv.append(tok)
     return argv
+
 
 def strip_bypass(argv):
     out, skip = [], False
@@ -77,6 +89,7 @@ def strip_bypass(argv):
             continue
         out.append(tok)
     return out
+
 
 def run(argv, cwd, timeout, capture):
     pipe = subprocess.PIPE if capture else None
@@ -97,38 +110,44 @@ def run(argv, cwd, timeout, capture):
         die(124, f"worker timed out after {timeout}s (process group killed)")
     return SimpleNamespace(returncode=p.returncode, stdout=out or "", stderr=err or "")
 
-args = sys.argv[1:]
-if len(args) >= 2 and args[0] == "probe":
-    name = args[1]
-    entry = resolve(name)
-    here = str(Path.cwd())
-    argv = strip_bypass(build_argv(entry, name, here, PROBE_PROMPT))
-    r = run(argv, here, 90, capture=True)
-    if r.returncode == 0 and "VERDICT-OK" in r.stdout:
-        print(f"PROBE OK: {name}")
-        sys.exit(0)
-    print(r.stdout, end="")
-    print(r.stderr, end="", file=sys.stderr)
-    die(3, f"probe failed for '{name}' (exit {r.returncode}, no VERDICT-OK)")
-elif len(args) >= 4 and args[0] == "run":
-    name, cwd, brief_file = args[1], args[2], args[3]
-    try:
-        timeout = int(args[4]) if len(args) > 4 else 600
-    except ValueError:
-        die(2, f"timeout must be an integer number of seconds, got: {args[4]}")
-    if not Path(cwd).is_dir():
-        die(2, f"assigned directory does not exist: {cwd}")
-    # Absolute before substitution: a relative {cwd} lands in flags like omp's
-    # --cwd, which the worker resolves against its own already-changed directory.
-    cwd = str(Path(cwd).resolve())
-    try:
-        brief = Path(brief_file).read_text()
-    except OSError as e:
-        die(2, f"cannot read brief file: {e}")
-    entry = resolve(name)
-    argv = build_argv(entry, name, cwd, brief)
-    r = run(argv, cwd, timeout, capture=False)
-    sys.exit(r.returncode)
-else:
-    die(2, "usage: worker.sh probe <worker> | worker.sh run <worker> <dir> <brief-file> [timeout]")
-PYEOF
+
+def main():
+    args = sys.argv[1:]
+    if len(args) >= 2 and args[0] == "probe":
+        name = args[1]
+        entry = resolve(name)
+        here = str(Path.cwd())
+        argv = strip_bypass(build_argv(entry, name, here, PROBE_PROMPT))
+        r = run(argv, here, 90, capture=True)
+        if r.returncode == 0 and "VERDICT-OK" in r.stdout:
+            print(f"PROBE OK: {name}")
+            sys.exit(0)
+        print(r.stdout, end="")
+        print(r.stderr, end="", file=sys.stderr)
+        die(3, f"probe failed for '{name}' (exit {r.returncode}, no VERDICT-OK)")
+    elif len(args) >= 4 and args[0] == "run":
+        name, cwd, brief_file = args[1], args[2], args[3]
+        try:
+            timeout = int(args[4]) if len(args) > 4 else 600
+        except ValueError:
+            die(2, f"timeout must be an integer number of seconds, got: {args[4]}")
+        if not Path(cwd).is_dir():
+            die(2, f"assigned directory does not exist: {cwd}")
+        # Absolute before substitution: a relative {cwd} lands in flags like omp's
+        # --cwd, which the worker resolves against its own already-changed directory.
+        cwd = str(Path(cwd).resolve())
+        try:
+            brief = Path(brief_file).read_text()
+        except OSError as e:
+            die(2, f"cannot read brief file: {e}")
+        entry = resolve(name)
+        argv = build_argv(entry, name, cwd, brief)
+        r = run(argv, cwd, timeout, capture=False)
+        sys.exit(r.returncode)
+    else:
+        die(2, "usage: worker.py probe <worker> | "
+               "worker.py run <worker> <dir> <brief-file> [timeout]")
+
+
+if __name__ == "__main__":
+    main()
