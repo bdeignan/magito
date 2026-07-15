@@ -32,6 +32,9 @@ the user. Paste, don't reference. Every brief carries:
 The report is not the result. Judge a worker by `git -C <dir> diff --cached` — review
 examines the staged diff regardless of what the worker claimed.
 
+Pass the brief as a file when the CLI supports it (omp: `@/path/to/brief.md`) — a
+long brief survives intact without shell-quoting. Inline only when short.
+
 ## Executors
 
 **Claude subagent** (Claude Code drivers only): `haiku-executor`, the default. Zero
@@ -67,12 +70,19 @@ non-TTY output (open stdout-drop bug, google-antigravity/antigravity-cli#76),
 structured completion, and session isolation — its `-c` resumes globally and
 cross-contaminates concurrent workers. Write live
 candidates as entries, comment out the dead, tell the user what you wrote, proceed.
-Never overwrite an existing `workers.toml` — it is the user's file.
+Never overwrite an existing `workers.toml` — it is the user's file. Expect the
+driver's permission system to ask once before the file is written: the entries are
+templates that launch agents with approval prompts bypassed, so a flag on persisting
+them is correct behavior, not an error.
 
 ## Probe and fallback
 
 Before dispatching to a named worker, ping it once: send "Reply with exactly:
-VERDICT-OK" through its `cmd` and confirm the token on stdout.
+VERDICT-OK" through its `cmd` and confirm the token on stdout — with the
+approval-bypass flags stripped (`--approval-mode yolo`,
+`--permission-mode bypassPermissions`, sandbox overrides). A ping needs no
+permissions, and permission tooling rightly balks at bypass flags on a command that
+doesn't need them.
 
 - **Dead at probe** (missing binary, auth failure, quota, timeout): stop and ask the
   user — fall back to `haiku-executor`, or abort. Never substitute silently: the user
@@ -98,3 +108,12 @@ VERDICT-OK" through its `cmd` and confirm the token on stdout.
 - **Timeouts are the driver's job**: most CLIs enforce no print-mode timeout of their
   own. Pair the worker-side cap (omp `--max-time`) with a driver-side timeout on the
   shell call.
+- **Env vars and non-interactive shells**: workers inherit the driver's environment,
+  and a driver's shell tool runs non-interactive shells — exports living only in
+  `.zshrc` (read by interactive shells alone) may never arrive, depending on how the
+  driver itself was launched. This hits any env prerequisite: BYOK keys like
+  `OPENROUTER_API_KEY`, gemini's cloud-project variables, etc. Diagnose:
+  `zsh -ic 'echo $VAR'` shows it, `zsh -c 'echo $VAR'` doesn't. Fix at the root, per
+  machine: export from `~/.zshenv` (read by every zsh) or use the tool's native auth
+  store (`omp /login`, codex/claude/gemini logins). Never persist `zsh -ic` wrappers
+  into `cmd` templates — that couples the roster to shell-init quirks.
