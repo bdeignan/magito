@@ -1,0 +1,112 @@
+#!/usr/bin/env bash
+# Deterministic launcher for shell workers (see ../references/worker-contract.md).
+# Resolves a named worker from ~/.magito/workers.toml, substitutes placeholders at
+# the argv level (no shell re-quoting — cmd is an argv template: no &&, |, or cd),
+# runs the worker with its working directory set, and enforces a timeout.
+#
+#   bash worker.sh probe <worker>
+#   bash worker.sh run   <worker> <dir> <brief-file> [timeout-seconds]
+#
+# probe strips approval-bypass flags (a ping needs no permissions) and checks the
+# worker answers VERDICT-OK. Judgement (bootstrap, fallback choice) stays with the
+# driver; this script only fails loudly. Exit: 0 ok, 2 config error, 3 probe fail,
+# 124 timeout, otherwise the worker's own exit code.
+set -euo pipefail
+exec python3 - "$@" <<'PYEOF'
+import shlex, subprocess, sys, tomllib
+from pathlib import Path
+
+ROSTER = Path.home() / ".magito" / "workers.toml"
+BYPASS_PAIRS = {"--approval-mode", "--permission-mode"}  # flag + value
+BYPASS_SINGLE = {
+    "--auto-approve", "--yolo", "--full-auto",
+    "--dangerously-skip-permissions", "--dangerously-bypass-approvals-and-sandbox",
+}
+PROBE_PROMPT = "Reply with exactly: VERDICT-OK"
+
+def die(code, msg):
+    print(f"worker.sh: {msg}", file=sys.stderr)
+    sys.exit(code)
+
+def resolve(name):
+    if not ROSTER.exists():
+        die(2, f"{ROSTER} not found — bootstrap it per worker-contract.md")
+    with open(ROSTER, "rb") as f:
+        data = tomllib.load(f)
+    entry = data.get("workers", {}).get(name)
+    if entry is None:
+        live = ", ".join(data.get("workers", {})) or "none"
+        die(2, f"no worker '{name}' in {ROSTER} (live: {live})")
+    return entry
+
+def build_argv(entry, name, cwd, brief):
+    tokens = shlex.split(entry["cmd"])
+    model = entry.get("model", "")
+    argv = []
+    for tok in tokens:
+        if "{model}" in tok:
+            if not model:
+                die(2, f"worker '{name}' cmd uses {{model}} but declares no model")
+            tok = tok.replace("{model}", model)
+        tok = tok.replace("{cwd}", cwd)
+        tok = tok.replace("{brief}", brief)
+        argv.append(tok)
+    for bad in ("&&", "||", "|", ";", "cd"):
+        if bad in argv[:1] or bad in argv:
+            die(2, f"worker '{name}' cmd contains shell operator '{bad}' — "
+                   "cmd is an argv template; drop it (worker.sh sets the cwd itself)")
+    return argv
+
+def strip_bypass(argv):
+    out, skip = [], False
+    for tok in argv:
+        if skip:
+            skip = False
+            continue
+        if tok in BYPASS_PAIRS:
+            skip = True
+            continue
+        if tok.split("=")[0] in BYPASS_PAIRS or tok in BYPASS_SINGLE:
+            continue
+        out.append(tok)
+    return out
+
+def run(argv, cwd, timeout, capture):
+    try:
+        return subprocess.run(
+            argv, cwd=cwd, timeout=timeout, stdin=subprocess.DEVNULL,
+            capture_output=capture, text=True,
+        )
+    except FileNotFoundError:
+        die(2, f"binary not found: {argv[0]}")
+    except subprocess.TimeoutExpired:
+        die(124, f"worker timed out after {timeout}s")
+
+args = sys.argv[1:]
+if len(args) >= 2 and args[0] == "probe":
+    name = args[1]
+    entry = resolve(name)
+    argv = strip_bypass(build_argv(entry, name, ".", PROBE_PROMPT))
+    r = run(argv, ".", 90, capture=True)
+    if r.returncode == 0 and "VERDICT-OK" in r.stdout:
+        print(f"PROBE OK: {name}")
+        sys.exit(0)
+    print(r.stdout, end="")
+    print(r.stderr, end="", file=sys.stderr)
+    die(3, f"probe failed for '{name}' (exit {r.returncode}, no VERDICT-OK)")
+elif len(args) >= 4 and args[0] == "run":
+    name, cwd, brief_file = args[1], args[2], args[3]
+    timeout = int(args[4]) if len(args) > 4 else 600
+    if not Path(cwd).is_dir():
+        die(2, f"assigned directory does not exist: {cwd}")
+    try:
+        brief = Path(brief_file).read_text()
+    except OSError as e:
+        die(2, f"cannot read brief file: {e}")
+    entry = resolve(name)
+    argv = build_argv(entry, name, cwd, brief)
+    r = run(argv, cwd, timeout, capture=False)
+    sys.exit(r.returncode)
+else:
+    die(2, "usage: worker.sh probe <worker> | worker.sh run <worker> <dir> <brief-file> [timeout]")
+PYEOF

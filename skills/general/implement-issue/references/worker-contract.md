@@ -32,8 +32,8 @@ the user. Paste, don't reference. Every brief carries:
 The report is not the result. Judge a worker by `git -C <dir> diff --cached` — review
 examines the staged diff regardless of what the worker claimed.
 
-Pass the brief as a file when the CLI supports it (omp: `@/path/to/brief.md`) — a
-long brief survives intact without shell-quoting. Inline only when short.
+Write the brief to a file and hand the path to the launcher — it passes the content
+to the worker as a single argument, so long briefs survive without shell-quoting.
 
 ## Executors
 
@@ -41,10 +41,21 @@ long brief survives intact without shell-quoting. Inline only when short.
 config; bills the Claude subscription.
 
 **Shell workers** (any driver): headless CLI commands resolved by name from
-`~/.magito/workers.toml` — machine-local, never synced. Each worker
-declares `cmd`, a template with `{cwd}` (assigned directory) and `{brief}`
-placeholders. An optional `model` field follows magi's bench convention: substituted
-where `cmd` contains `{model}`, documentation otherwise.
+`~/.magito/workers.toml` — machine-local, never synced. Always probe and launch
+through the launcher script, never a hand-built command line:
+
+```bash
+bash <skills>/implement-issue/scripts/worker.sh probe <worker>
+bash <skills>/implement-issue/scripts/worker.sh run <worker> <dir> <brief-file> [timeout]
+```
+
+Each worker declares `cmd` — an **argv template**, not a shell line: it is split
+into arguments and placeholders are substituted per argument, so it cannot contain
+`&&`, `|`, `;`, or a leading `cd` (the launcher sets the working directory itself,
+and rejects such entries loudly). `{cwd}` is the assigned directory, `{brief}`
+receives the brief file's content as one argument. An optional `model` field
+follows magi's bench convention: substituted where `cmd` contains `{model}`,
+documentation otherwise.
 
 ```toml
 # ~/.magito/workers.toml — machine-local, never synced
@@ -77,10 +88,9 @@ them is correct behavior, not an error.
 
 ## Probe and fallback
 
-Before dispatching to a named worker, ping it once: send "Reply with exactly:
-VERDICT-OK" through its `cmd` and confirm the token on stdout — with the
-approval-bypass flags stripped (`--approval-mode yolo`,
-`--permission-mode bypassPermissions`, sandbox overrides). A ping needs no
+Before dispatching to a named worker, probe it once: `worker.sh probe <worker>`
+sends "Reply with exactly: VERDICT-OK" and checks the token comes back. The
+launcher strips approval-bypass flags from the probe itself — a ping needs no
 permissions, and permission tooling rightly balks at bypass flags on a command that
 doesn't need them.
 
@@ -108,6 +118,13 @@ doesn't need them.
 - **Timeouts are the driver's job**: most CLIs enforce no print-mode timeout of their
   own. Pair the worker-side cap (omp `--max-time`) with a driver-side timeout on the
   shell call.
+- **Claude Code permission modes**: run dispatch sessions in default (prompting)
+  mode — the first `worker.sh` launch prompts once, and "don't ask again this
+  session" covers the rest of the batch. Auto mode may deny the launch outright; if
+  you're then offered a fallback to `haiku-executor`, present it as a billing
+  decision, never a convenience. The launcher's single stable prefix
+  (`bash .../scripts/worker.sh`) is also what makes a tight allow rule possible if
+  the user ever wants zero prompts.
 - **Env vars and non-interactive shells**: workers inherit the driver's environment,
   and a driver's shell tool runs non-interactive shells — exports living only in
   `.zshrc` (read by interactive shells alone) may never arrive, depending on how the
