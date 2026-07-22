@@ -46,3 +46,7 @@ sources: ledger=read, CLAUDE.md=read, CONTEXT.md=missing, ADRs=missing, tracker=
 
 Then ask what the user wants to pick up — or, if a recent session names a clear next
 step, offer to start there.
+
+Adopting the ledger in a project that has an old magito handoff file or its own notes?
+See [`references/adopting-the-ledger.md`](references/adopting-the-ledger.md) for the
+one-time migration.

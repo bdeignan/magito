@@ -135,11 +135,10 @@ def handoffs_dir() -> Path:
 
 
 def repo_slug(cwd: str) -> str:
-    """The old handoff skill's file-naming rule: the repo root (git toplevel,
-    or the resolved cwd when it's not a git repo) with every '/' replaced by
-    '-', e.g. /Users/x/code/proj -> -Users-x-code-proj."""
-    root = git_toplevel(cwd) or str(Path(cwd).resolve())
-    return root.replace("/", "-")
+    """The old handoff skill's file-naming rule: the folder identity
+    (folder_key — git toplevel, else the resolved cwd) with every '/' replaced
+    by '-', e.g. /Users/x/code/proj -> -Users-x-code-proj."""
+    return folder_key(cwd).replace("/", "-")
 
 
 def get_connection() -> sqlite3.Connection:
@@ -522,6 +521,9 @@ def cmd_import_handoff(conn):
     repo = top or "local"
     session_id = f"imported-{slug}"
 
+    # branch and start_git_hash stay empty: this is a historical import, not a
+    # session running at a known branch/commit. Recording the current git state
+    # would misattribute it to the old handoff.
     conn.execute(
         "INSERT OR IGNORE INTO clock_in "
         "(session_id, alias, started_ts, tool, repo, branch, start_git_hash, launch_pwd) "
@@ -558,8 +560,7 @@ def build_parser():
 
     sub.add_parser("status", help="List open and recent sessions.")
 
-    sub.add_parser("import-handoff",
-                    help="Import this repo's old single-file handoff as one closed session.")
+    sub.add_parser("import-handoff", help="Import this repo's old single-file handoff as one closed session.")
     return p
 
 
