@@ -28,10 +28,17 @@ cmd="${1:-}"; shift || true
 current_branch() { git rev-parse --abbrev-ref HEAD; }
 
 # default_branch: best-effort detection of the repo's base branch.
+# 0) magito.baseBranch, if set — sticky per-repo override (git config magito.baseBranch <branch>)
 # 1) origin/HEAD, if a remote is configured (local-tracker repos often have none)
 # 2) init.defaultBranch, if that branch exists locally
 # 3) local main, then local master
 default_branch() {
+  local override
+  override="$(git config --get magito.baseBranch 2>/dev/null || true)"
+  if [ -n "$override" ]; then
+    echo "$override"
+    return
+  fi
   local ref
   ref="$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null || true)"
   if [ -n "$ref" ]; then
@@ -94,11 +101,12 @@ case "$cmd" in
     # skipped since the PR is already recorded here as a type=output event.
     guard_not_base
     issue="${1:?issue required}"; title="${2:?title required}"; body="${3:-}"
+    base="$(default_branch)"
     pr_url=""
     if [ -n "$body" ]; then
-      pr_url="$(gh pr create --title "$title" --body "${body}"$'\n\n'"Closes #${issue}")"
+      pr_url="$(gh pr create --base "$base" --title "$title" --body "${body}"$'\n\n'"Closes #${issue}")"
     else
-      pr_url="$(gh pr create --title "$title" --body "Closes #${issue}")"
+      pr_url="$(gh pr create --base "$base" --title "$title" --body "Closes #${issue}")"
     fi
     echo "$pr_url"
     checkpoint output "$pr_url" "opened PR"

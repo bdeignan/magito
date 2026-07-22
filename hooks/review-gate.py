@@ -118,6 +118,12 @@ def opted_in(cwd):
 
 def get_base_branch(cwd):
     try:
+        override = git(["config", "--get", "magito.baseBranch"], cwd)
+        if override:
+            return override
+    except Exception:
+        pass
+    try:
         ref = git(["symbolic-ref", "--short", "refs/remotes/origin/HEAD"], cwd)
         return ref[len("origin/"):] if ref.startswith("origin/") else ref
     except Exception:
