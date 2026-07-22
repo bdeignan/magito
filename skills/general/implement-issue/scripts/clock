@@ -444,7 +444,7 @@ def cmd_in(conn):
     cwd = str(Path.cwd())
     session_id = resolve_new_session_id()
     top = git_toplevel(cwd)
-    repo = top or "local"
+    repo = folder_key(cwd)
     branch = git_branch(cwd) if top else ""
     start_hash = git_hash(cwd) if top else ""
 
@@ -554,8 +554,7 @@ def cmd_import_handoff(conn):
 
     summary = path.read_text()
     ts = int(path.stat().st_mtime * 1000)
-    top = git_toplevel(cwd)
-    repo = top or "local"
+    repo = folder_key(cwd)
     session_id = f"imported-{slug}"
 
     # branch and start_git_hash stay empty: this is a historical import, not a
