@@ -14,7 +14,7 @@ there), or `skipped: <reason>` (deliberately not checked). No source may be sile
 omitted from the final report — if you didn't check it, its status is `skipped`, not
 absent from the list.
 
-1. Clock in: run `python3 ../implement-issue/scripts/clock in`. It records this
+1. Clock in: run `~/.magito/bin/clock in`. It records this
    session's `clock_in` row in the ledger and prints an orientation payload — recent
    session summaries for this repo, any unfinished sessions, and a one-line rollup of
    recent activity. Show that payload. If the repo has no earlier sessions, the payload

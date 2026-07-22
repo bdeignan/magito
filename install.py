@@ -12,6 +12,7 @@ Reads install.toml (copy from install.toml.example and edit). For each enabled t
   - Symlinks skills/general/* to ~/.agents/skills (cross-tool standard) and to ~/.claude/skills (Claude only)
   - For Claude (detected by presence of 'agents' key): also links skills/claude/* and agents/*.md
   - For tools with a 'hooks' key: also links hooks/*.py and merges them into the adjacent settings.json as PreToolUse hooks
+  - Symlinks bin/* to ~/.magito/bin/ (the machine-global clock command + its ledger.md, tool-independent)
   - Regenerates skills/INDEX.md from SKILL.md frontmatter (human reference only; agents discover via SKILL.md)
 
 Safety:
@@ -233,6 +234,16 @@ def main() -> None:
                 settings_path = hooks_dst.parent / "settings.json"
                 status = merge_hook_settings(settings_path, hook_dst_paths, args.dry_run)
                 results.append((tool_name, "settings.json (hooks)", str(settings_path), status))
+
+    # Machine-local ledger tooling (clock command + its ledger.md): tool-independent, always installed.
+    bin_src_dir = repo_root / "bin"
+    if bin_src_dir.exists():
+        bin_dst_dir = Path.home() / ".magito" / "bin"
+        for f in sorted(bin_src_dir.iterdir()):
+            if f.is_file() and not f.name.startswith("."):
+                dst = bin_dst_dir / f.name
+                status = link(f, dst, args.dry_run, args.force)
+                results.append(("—", f"bin/{f.name}", str(dst), status))
 
     # Regenerate INDEX.md
     index_path = repo_root / "skills" / "INDEX.md"

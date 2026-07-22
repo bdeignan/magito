@@ -35,6 +35,6 @@
 
 ## Session ledger
 
-- Start of a work session: run `clock in` (or `/catch-up`, which runs it for you). It records the session and shows recent and unfinished sessions for this project.
+- Start of a work session: run `clock in` (or `/catch-up`, which runs it for you). It records the session and shows recent and unfinished sessions for this project. The installed command is `~/.magito/bin/clock`, run by full path.
 - End of a work session: run `clock out "<summary>"` (or `/handoff`, which runs it for you). Write one short paragraph: what you did, what is left, and any gotcha worth keeping.
 - Clock out when the whole session wraps, not after each task. A missed clock-out only loses the summary, never the session record.
