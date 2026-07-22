@@ -17,6 +17,7 @@ Assume the agent that picks up each issue is weaker than the one writing it — 
 - Exact commands over descriptions: "run `python install.py`", not "reinstall".
 - Decisions are made here, not downstream. If a choice is still open, resolve it with the user before publishing — an issue containing an open question is not ready.
 - Acceptance criteria must be checkable by a weak agent: observable behavior, file contents, command output — never "code is clean" or "works well".
+- Write the body in Simple English: short sentences, one idea each, the plainest common word that fits. Keep technical identifiers exact — never rename `clock_in` or `PRAGMA foreign_keys` to sound simpler; define them in plain words instead. This lowers the reading level for a weaker implementer without losing precision. It governs word choice and sentence length, not structure — keep the labeled headings and the checkbox acceptance criteria.
 
 ## Process
 
