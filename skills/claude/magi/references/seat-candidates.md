@@ -45,9 +45,26 @@ qwen's documented headless command below takes no model flag at all. omp's docs 
 - **omp**: probe-verified 2026-07-14 (ping and the `-p ... --model` pairing both
   answered on a live bench). Give `--model` the full `provider/model` path (e.g.
   `openrouter/deepseek/deepseek-v4-flash`) — a bare fuzzy name can resolve to a
-  different provider and fail on missing auth. Add `--no-session` so seat calls stay
-  stateless. `--mode json` works but emits a verbose NDJSON event stream (every
-  thinking delta included); plain text output is easier to read verdicts from.
+  different provider and fail on missing auth (reconfirmed 2026-07-22: bare `gemini`
+  and `kimi` misrouted to their *direct* providers and failed on the missing key,
+  while bare `deepseek` happened to route through OpenRouter). Add `--no-session` so
+  seat calls stay stateless. `--mode json` works but emits a verbose NDJSON event
+  stream (every thinking delta included); plain text output is easier to read verdicts
+  from.
+- **omp roles vs. the responder** (verified 2026-07-22): `--model` also accepts a
+  **role alias** — `@default`, `@slow`, `@plan`, `@smol` — which resolves to whatever
+  model backs that role in the user's omp config *and* makes it the print-mode
+  responder. This is how you bind a seat to a role (it follows the user repointing the
+  role) rather than to a fixed model id — e.g. `--model @slow` seats the deep-reasoning
+  role, the natural fit for a tribunal vote. Do NOT confuse this with the bare
+  `--slow`/`--plan`/`--smol` flags: those *set the model backing a role*, they do not
+  route the one-shot responder. In `-p` print mode the responder is the `default` role
+  (i.e. `--model`); omp only reaches `slow` on its own intent judgment, which is
+  non-deterministic — useless for a stateless seat. So pin the responder with
+  `--model <id>` or `--model @slow`, never `--slow` alone. Two caveats: an
+  *unconfigured* role silently resolves to some cloud model instead of erroring (issue
+  can1357/oh-my-pi#2336), and a role-alias seat's declared `family` is a snapshot —
+  repointing the role can silently make the tag (and magi's diversity count) stale.
 - **OpenRouter as the key behind BYOK seats**: one pay-as-you-go key fronts DeepSeek,
   Kimi, GLM, Qwen, and frontier models, so pi/omp/opencode seats can each run a
   different family off the same credential. Declare `family` from the model that
