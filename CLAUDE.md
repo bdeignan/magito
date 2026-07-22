@@ -131,8 +131,10 @@ committed here:
   named headless CLI commands (`cmd` templates with `{cwd}`, `{brief}`, and optional
   `{model}` placeholders). Self-bootstraps the first time a worker is named
   ("via omp"). Contract: `skills/general/implement-issue/references/worker-contract.md`.
-- `handoffs/<repo-slug>.md` — session handoffs written by the `handoff` skill, read
-  by `catch-up`.
+- `handoffs/<repo-slug>.md` — legacy session handoffs. Superseded by `ledger.db` below
+  as of the `catch-up` / `handoff` refactor (#64): `handoff` now clocks out to the
+  ledger and `catch-up` no longer reads these files. Existing files stay on disk until
+  a later migration step retires them.
 - `ledger.db` — the **session ledger**: an append-only SQLite database of session
   clock-ins, clock-outs, and checkpoint events, written and read only through the
   `clock` script (`skills/general/implement-issue/scripts/clock`); created on the

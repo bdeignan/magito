@@ -365,11 +365,14 @@ def print_orientation(conn, repo, session_id):
             print(f"  {fmt_ts(r['started_ts'])}  {r['alias']:<20} {state:<10} {r['summary'] or ''}")
 
     print()
+    # Totals describe earlier sessions only — the just-inserted current session
+    # is excluded (session_id != ?), so this line can't contradict the "no
+    # earlier sessions" message or disagree by one with the unfinished list above.
     cutoff = now_ms() - 7 * 24 * 3600 * 1000
     total, unfinished = conn.execute(
         "SELECT COUNT(*), COALESCE(SUM(unfinished), 0) FROM sessions "
-        "WHERE repo = ? AND started_ts >= ?",
-        (repo, cutoff),
+        "WHERE repo = ? AND session_id != ? AND started_ts >= ?",
+        (repo, session_id, cutoff),
     ).fetchone()
 
     # Totals line's event breakdown: a GROUP BY over session_event, joined
@@ -379,9 +382,9 @@ def print_orientation(conn, repo, session_id):
     event_rows = conn.execute(
         "SELECT se.type AS type, COUNT(*) AS n FROM session_event se "
         "JOIN clock_in ci ON ci.session_id = se.session_id "
-        "WHERE ci.repo = ? AND se.ts >= ? "
+        "WHERE ci.repo = ? AND ci.session_id != ? AND se.ts >= ? "
         "GROUP BY se.type ORDER BY n DESC",
-        (repo, cutoff),
+        (repo, session_id, cutoff),
     ).fetchall()
     events_str = ", ".join(f"{r['n']} {r['type']}" for r in event_rows) if event_rows else "none yet"
     print(f"last 7 days: {total} sessions, {unfinished} unfinished · events: {events_str}")

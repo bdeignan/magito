@@ -37,11 +37,11 @@ tracker, **live state wins** — treat a session's named next step as a hint to
 re-validate against the tracker, not as ground truth. Surface the contradiction (a
 summary says X shipped but the branch shows otherwise) rather than smoothing it over.
 
-End the summary with one `sources:` line, listing every source's status in this fixed
-order — CLAUDE.md, CONTEXT.md, ADRs, tracker, ledger, git, PRs — e.g.:
+End the summary with one `sources:` line, listing every source's status in the order
+above — ledger, CLAUDE.md, CONTEXT.md, ADRs, tracker, git, PRs — e.g.:
 
 ```
-sources: CLAUDE.md=read, CONTEXT.md=missing, ADRs=missing, tracker=read, ledger=read, git=read, PRs=read
+sources: ledger=read, CLAUDE.md=read, CONTEXT.md=missing, ADRs=missing, tracker=read, git=read, PRs=read
 ```
 
 Then ask what the user wants to pick up — or, if a recent session names a clear next
