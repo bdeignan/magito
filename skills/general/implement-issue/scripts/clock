@@ -141,11 +141,20 @@ def repo_slug(cwd: str) -> str:
     return folder_key(cwd).replace("/", "-")
 
 
-def get_connection() -> sqlite3.Connection:
+def get_connection(create=True) -> sqlite3.Connection | None:
     """The one place a sqlite3 connection is opened. PRAGMA foreign_keys=ON
     is load-bearing for the FK invariants below — without it an orphan
-    clock_out/session_event row would be silently accepted."""
+    clock_out/session_event row would be silently accepted.
+
+    create=False is for commands that only observe or append to an existing
+    session (checkpoint/out/status): when the ledger file doesn't exist yet,
+    there is nothing to act on, so this returns None rather than creating an
+    empty DB — that's what stops a best-effort `clock checkpoint` (fired by
+    every `gitflow` commit) from re-creating the ledger when nothing is
+    clocked in. create=True (in/import-handoff) behaves exactly as before."""
     path = db_path()
+    if not create and not path.exists():
+        return None
     path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(path, timeout=10)
     conn.execute("PRAGMA foreign_keys = ON")
@@ -602,8 +611,24 @@ def build_parser():
 
 def main():
     args = build_parser().parse_args()
-    conn = get_connection()
+    conn = get_connection(create=(args.command in ("in", "import-handoff")))
     try:
+        if conn is None:
+            # No ledger yet, and this command doesn't create one (see
+            # get_connection). Handle each case without touching the
+            # filesystem — this is what keeps a best-effort `clock
+            # checkpoint` from re-creating an empty ledger.
+            if args.command == "checkpoint":
+                # Same stream/format as the already-closed-session skip in
+                # cmd_checkpoint: an exit-0 informational no-op on stdout, no
+                # `clock:` prefix (that prefix is for die()'s error paths).
+                print("no session ledger yet; checkpoint skipped")
+                return
+            elif args.command == "out":
+                die("nothing to clock out — no session ledger yet", code=3)
+            elif args.command == "status":
+                print("no sessions yet")
+                return
         if args.command == "in":
             cmd_in(conn)
         elif args.command == "out":
@@ -615,7 +640,8 @@ def main():
         elif args.command == "import-handoff":
             cmd_import_handoff(conn)
     finally:
-        conn.close()
+        if conn is not None:
+            conn.close()
 
 
 if __name__ == "__main__":
