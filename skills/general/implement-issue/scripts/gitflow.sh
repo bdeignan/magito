@@ -17,7 +17,10 @@ checkpoint() {
   local -a args=(checkpoint --type "$ctype")
   if [ -n "$ref" ]; then args+=(--ref "$ref"); fi
   if [ -n "$summary" ]; then args+=(--summary "$summary"); fi
-  python3 "$SCRIPT_DIR/clock" "${args[@]}" >/dev/null 2>&1 || true
+  # stdin closed (</dev/null): if clock reaches its ambiguous-session prompt it
+  # gets EOF and dies rather than blocking a git verb on a keystroke — a silent
+  # hang would be worse than the abort this best-effort wrapper prevents.
+  python3 "$SCRIPT_DIR/clock" "${args[@]}" </dev/null >/dev/null 2>&1 || true
 }
 
 cmd="${1:-}"; shift || true
