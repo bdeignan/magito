@@ -15,6 +15,11 @@ The update cycle is: `git pull && python install.py`.
 **GitHub** — issues and PRs via `gh` against `bdeignan/magito`; reference issues as `#N`.
 The repo is opted into the merge/PR review gate (`git config magito.reviewGate true`):
 landing work requires a fresh `reviewing-changes` marker.
+By default `gitflow.sh pr`/`merge` target the repo's GitHub default branch (main). Set
+`git config magito.baseBranch develop` to retarget them — and the raw-`git merge` gate's
+notion of the base — to `develop` (e.g. for a migration workflow); `git config --unset
+magito.baseBranch` at cutover. The gate always requires a fresh `reviewing-changes` marker
+to land, independent of the base branch.
 
 ### Toolchain
 

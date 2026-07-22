@@ -117,6 +117,14 @@ def opted_in(cwd):
 
 
 def get_base_branch(cwd):
+    # magito.baseBranch override (sticky per-repo), read fail-open like opted_in:
+    # a missing key / git error raises and is swallowed, falling through to detection.
+    try:
+        override = git(["config", "--get", "magito.baseBranch"], cwd)
+        if override:
+            return override
+    except Exception:
+        pass
     try:
         ref = git(["symbolic-ref", "--short", "refs/remotes/origin/HEAD"], cwd)
         return ref[len("origin/"):] if ref.startswith("origin/") else ref
