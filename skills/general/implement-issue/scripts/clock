@@ -320,38 +320,74 @@ def resolve_session_id(conn, cwd):
 
 # --- orientation payload (clock in) ----------------------------------------
 
-def print_orientation(conn, repo):
-    print()
-    print(f"-- recent sessions for {repo} --")
-    rows = conn.execute(
-        "SELECT alias, started_ts, unfinished, summary FROM sessions "
-        "WHERE repo = ? ORDER BY started_ts DESC LIMIT 5",
-        (repo,),
-    ).fetchall()
-    if not rows:
-        print("  (none yet)")
-    for r in rows:
-        state = "unfinished" if r["unfinished"] else "closed"
-        print(f"  {fmt_ts(r['started_ts'])}  {r['alias']:<20} {state:<10} {r['summary'] or ''}")
+def print_orientation(conn, repo, session_id):
+    """What `clock in` shows, scoped to this repo (unlike `clock status`,
+    which is deliberately cross-repo — see cmd_status). `session_id` is the
+    row `cmd_in` just inserted; it's excluded from the "earlier sessions"
+    view below so a repo's very first clock-in doesn't see itself and call
+    that history."""
+    earlier = conn.execute(
+        "SELECT COUNT(*) FROM sessions WHERE repo = ? AND session_id != ?",
+        (repo, session_id),
+    ).fetchone()[0]
 
     print()
-    print("-- unfinished sessions, most useful first --")
-    rows = conn.execute(
-        "SELECT alias, repo, started_ts, event_count FROM sessions "
-        "WHERE unfinished = 1 ORDER BY event_count DESC, started_ts DESC LIMIT 10"
-    ).fetchall()
-    if not rows:
-        print("  (none)")
-    for r in rows:
-        print(f"  {fmt_ts(r['started_ts'])}  {r['alias']:<20} {r['repo']:<30} events={r['event_count']}")
+    if earlier == 0:
+        print(f"-- session history for {repo} --")
+        print("  no earlier sessions for this repo yet")
+    else:
+        # Unfinished-for-this-repo first, then the recent-summaries view —
+        # so an unfinished session's row is always printed before any
+        # finished session's row, never the reverse.
+        print(f"-- unfinished sessions for {repo} --")
+        rows = conn.execute(
+            "SELECT alias, started_ts, event_count FROM sessions "
+            "WHERE repo = ? AND session_id != ? AND unfinished = 1 "
+            "ORDER BY event_count DESC, started_ts DESC LIMIT 10",
+            (repo, session_id),
+        ).fetchall()
+        if not rows:
+            print("  (none)")
+        for r in rows:
+            print(f"  {fmt_ts(r['started_ts'])}  {r['alias']:<20} events={r['event_count']}")
 
+        print()
+        print(f"-- recent sessions for {repo} --")
+        rows = conn.execute(
+            "SELECT alias, started_ts, unfinished, summary FROM sessions "
+            "WHERE repo = ? AND session_id != ? ORDER BY started_ts DESC LIMIT 5",
+            (repo, session_id),
+        ).fetchall()
+        if not rows:
+            print("  (none yet)")
+        for r in rows:
+            state = "unfinished" if r["unfinished"] else "closed"
+            print(f"  {fmt_ts(r['started_ts'])}  {r['alias']:<20} {state:<10} {r['summary'] or ''}")
+
+    print()
+    # Totals describe earlier sessions only — the just-inserted current session
+    # is excluded (session_id != ?), so this line can't contradict the "no
+    # earlier sessions" message or disagree by one with the unfinished list above.
     cutoff = now_ms() - 7 * 24 * 3600 * 1000
     total, unfinished = conn.execute(
-        "SELECT COUNT(*), COALESCE(SUM(unfinished), 0) FROM sessions WHERE started_ts >= ?",
-        (cutoff,),
+        "SELECT COUNT(*), COALESCE(SUM(unfinished), 0) FROM sessions "
+        "WHERE repo = ? AND session_id != ? AND started_ts >= ?",
+        (repo, session_id, cutoff),
     ).fetchone()
-    print()
-    print(f"last 7 days: {total} sessions, {unfinished} unfinished")
+
+    # Totals line's event breakdown: a GROUP BY over session_event, joined
+    # back to clock_in to scope it to this repo. No events yet (nothing
+    # wires checkpoints in until #65) prints an honest "none yet" rather
+    # than a fabricated PRs-opened/closed count.
+    event_rows = conn.execute(
+        "SELECT se.type AS type, COUNT(*) AS n FROM session_event se "
+        "JOIN clock_in ci ON ci.session_id = se.session_id "
+        "WHERE ci.repo = ? AND ci.session_id != ? AND se.ts >= ? "
+        "GROUP BY se.type ORDER BY n DESC",
+        (repo, session_id, cutoff),
+    ).fetchall()
+    events_str = ", ".join(f"{r['n']} {r['type']}" for r in event_rows) if event_rows else "none yet"
+    print(f"last 7 days: {total} sessions, {unfinished} unfinished · events: {events_str}")
 
 
 # --- subcommands -------------------------------------------------------
@@ -381,7 +417,7 @@ def cmd_in(conn):
     ptr.parent.mkdir(parents=True, exist_ok=True)
     ptr.write_text(session_id)
 
-    print_orientation(conn, row["repo"])
+    print_orientation(conn, row["repo"], session_id)
 
 
 def cmd_out(conn, opts):
