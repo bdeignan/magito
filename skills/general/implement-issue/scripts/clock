@@ -16,6 +16,7 @@ Usage:
     clock out "<summary>" [--session-id <id>]
     clock checkpoint --type <checkpoint|output|gotcha|note> [--ref <ref>] [--summary <text>] [--session-id <id>]
     clock status
+    clock import-handoff
 
 Every connection this script opens issues `PRAGMA foreign_keys = ON` through
 one helper (get_connection) so that rule can never be forgotten on some path.
@@ -124,6 +125,21 @@ def run_dir() -> Path:
     # MAGITO_LEDGER_DB at a throwaway location also relocates the pointer
     # files a test run writes — the real ~/.magito/run/ stays untouched.
     return db_path().parent / "run"
+
+
+def handoffs_dir() -> Path:
+    # Sibling of the db, mirroring run_dir() — this is ~/.magito/handoffs in
+    # real use, and redirectable via $MAGITO_LEDGER_DB for testing without
+    # touching the real handoffs directory.
+    return db_path().parent / "handoffs"
+
+
+def repo_slug(cwd: str) -> str:
+    """The old handoff skill's file-naming rule: the repo root (git toplevel,
+    or the resolved cwd when it's not a git repo) with every '/' replaced by
+    '-', e.g. /Users/x/code/proj -> -Users-x-code-proj."""
+    root = git_toplevel(cwd) or str(Path(cwd).resolve())
+    return root.replace("/", "-")
 
 
 def get_connection() -> sqlite3.Connection:
@@ -485,6 +501,42 @@ def cmd_status(conn):
         print(f"  {fmt_ts(r['started_ts'])}  {r['alias']:<20} {r['repo']:<30} {state:<10} dur={dur:<8} {r['summary'] or ''}")
 
 
+def cmd_import_handoff(conn):
+    """One-time migration: fold this repo's old single-file handoff
+    (~/.magito/handoffs/<repo-slug>.md, from the pre-ledger `handoff` skill)
+    into the ledger as one closed session. Writes clock_in before clock_out
+    (FK order) so the pair always satisfies the foreign-key rule and shows
+    up in the `sessions` view. session_id is deterministic (imported-<slug>)
+    and both inserts are OR IGNORE, so a second run is a no-op rather than a
+    duplicate import. The source file is never touched."""
+    cwd = str(Path.cwd())
+    slug = repo_slug(cwd)
+    path = handoffs_dir() / f"{slug}.md"
+    if not path.exists():
+        print(f"nothing to import: no handoff file at {path}")
+        return
+
+    summary = path.read_text()
+    ts = int(path.stat().st_mtime * 1000)
+    top = git_toplevel(cwd)
+    repo = top or "local"
+    session_id = f"imported-{slug}"
+
+    conn.execute(
+        "INSERT OR IGNORE INTO clock_in "
+        "(session_id, alias, started_ts, tool, repo, branch, start_git_hash, launch_pwd) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (session_id, "imported_handoff", ts, "import", repo, "", "", cwd),
+    )
+    conn.execute(
+        "INSERT OR IGNORE INTO clock_out (session_id, ended_ts, end_git_hash, launch_pwd, summary) "
+        "VALUES (?, ?, ?, ?, ?)",
+        (session_id, ts, "", cwd, summary),
+    )
+    conn.commit()
+    print(f"imported handoff: {session_id} (source file kept at {path})")
+
+
 # --- cli ---------------------------------------------------------------
 
 def build_parser():
@@ -505,6 +557,9 @@ def build_parser():
     p_cp.add_argument("--session-id", default=None, help="Skip the recovery ladder; use this session id.")
 
     sub.add_parser("status", help="List open and recent sessions.")
+
+    sub.add_parser("import-handoff",
+                    help="Import this repo's old single-file handoff as one closed session.")
     return p
 
 
@@ -520,6 +575,8 @@ def main():
             cmd_checkpoint(conn, args)
         elif args.command == "status":
             cmd_status(conn)
+        elif args.command == "import-handoff":
+            cmd_import_handoff(conn)
     finally:
         conn.close()
 
