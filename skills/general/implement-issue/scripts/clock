@@ -287,19 +287,23 @@ def prompt_for_session(candidates):
         choice = input(f"choose 1-{len(candidates)}: ").strip()
     except EOFError:
         die("no answer given (stdin closed) — rerun with --session-id <id> from the list above", code=5)
-    if not choice.isdigit() or not (1 <= int(choice) <= len(candidates)):
+    # isascii() must short-circuit before isdigit()/int(): unicode digits like
+    # '²' (U+00B2) pass str.isdigit() but raise ValueError from int() — this
+    # ordering turns that into the same clean exit-5 as any other bad input.
+    if not (choice.isascii() and choice.isdigit()) or not (1 <= int(choice) <= len(candidates)):
         die(f"invalid choice: {choice!r}", code=5)
     return candidates[int(choice) - 1]["session_id"]
 
 
 def resolve_session_id(conn, cwd):
     """The recovery ladder from #63: exact env var, else narrow by tool, else
-    the folder pointer when it's unambiguous, else disambiguate (PPID
-    heuristic, then ask). The pointer is only trusted when at most one session
-    is open for this folder: it records the *last* clock-in, so with two
-    sessions sharing a folder it names the latest writer, not necessarily the
-    caller — trusting it there would silently close the wrong session, the
-    exact 'never guess' failure the ladder must avoid."""
+    the single live candidate, else the folder pointer as a last resort when
+    nothing is open, else disambiguate (PPID heuristic, then ask). The
+    pointer is trusted only when there are zero open candidates: it records
+    the *last* clock-in, which may since have closed, so preferring it over
+    a live candidate can name a session that already ended — trusting it
+    there would silently close the wrong session, the exact 'never guess'
+    failure the ladder must avoid."""
     env_id = os.environ.get("CLAUDE_CODE_SESSION_ID")
     if env_id:
         return env_id
@@ -324,11 +328,24 @@ def resolve_session_id(conn, cwd):
         if same_tool:
             candidates = same_tool
 
-    if len(candidates) <= 1:
+    if len(candidates) == 1:
+        return candidates[0]["session_id"]
+
+    if not candidates:
+        # Last-resort fallback: the pointer the most recent clock-in wrote.
+        # Trust it only when it still names an existing, unfinished session —
+        # the pointer records the last writer, which may since have closed, and
+        # an empty/truncated pointer would otherwise yield a bogus id.
         ptr = pointer_path(cwd)
         if ptr.exists():
-            return ptr.read_text().strip()
-        return candidates[0]["session_id"] if candidates else None
+            sid = ptr.read_text().strip()
+            if sid:
+                row = conn.execute(
+                    "SELECT unfinished FROM sessions WHERE session_id = ?", (sid,)
+                ).fetchone()
+                if row and row["unfinished"]:
+                    return sid
+        return None
 
     return disambiguate_by_ppid(candidates) or prompt_for_session(candidates)
 
@@ -351,9 +368,10 @@ def print_orientation(conn, repo, session_id):
         print(f"-- session history for {repo} --")
         print("  no earlier sessions for this repo yet")
     else:
-        # Unfinished-for-this-repo first, then the recent-summaries view —
-        # so an unfinished session's row is always printed before any
-        # finished session's row, never the reverse.
+        # Unfinished-for-this-repo first, then the recent-summaries view.
+        # "recent" excludes unfinished sessions (unfinished = 0) so the two
+        # sections never repeat the same session — an unfinished session's
+        # row is always printed once, in the unfinished list only.
         print(f"-- unfinished sessions for {repo} --")
         rows = conn.execute(
             "SELECT alias, started_ts, event_count FROM sessions "
@@ -368,16 +386,20 @@ def print_orientation(conn, repo, session_id):
 
         print()
         print(f"-- recent sessions for {repo} --")
+        # unfinished = 0: those rows already appeared above, and every row here
+        # has a clock_out (that is what unfinished = 0 means), so its state is
+        # always "closed" — a state column would say "closed" on every line,
+        # dropped as noise.
         rows = conn.execute(
-            "SELECT alias, started_ts, unfinished, summary FROM sessions "
-            "WHERE repo = ? AND session_id != ? ORDER BY started_ts DESC LIMIT 5",
+            "SELECT alias, started_ts, summary FROM sessions "
+            "WHERE repo = ? AND session_id != ? AND unfinished = 0 "
+            "ORDER BY started_ts DESC LIMIT 5",
             (repo, session_id),
         ).fetchall()
         if not rows:
             print("  (none yet)")
         for r in rows:
-            state = "unfinished" if r["unfinished"] else "closed"
-            print(f"  {fmt_ts(r['started_ts'])}  {r['alias']:<20} {state:<10} {r['summary'] or ''}")
+            print(f"  {fmt_ts(r['started_ts'])}  {r['alias']:<20} {r['summary'] or ''}")
 
     print()
     # Totals describe earlier sessions only — the just-inserted current session
@@ -406,6 +428,17 @@ def print_orientation(conn, repo, session_id):
 
 
 # --- subcommands -------------------------------------------------------
+
+def resolve_or_die(conn, opts, purpose):
+    """Shared by cmd_out and cmd_checkpoint: get cwd, resolve the session id
+    (--session-id overrides the recovery ladder), or die(code=3) when neither
+    yields one. `purpose` only customizes the error text (e.g. "to close")."""
+    cwd = str(Path.cwd())
+    session_id = opts.session_id or resolve_session_id(conn, cwd)
+    if session_id is None:
+        die(f"could not resolve a session id {purpose} (no env id, no pointer, nothing open here)", code=3)
+    return cwd, session_id
+
 
 def cmd_in(conn):
     cwd = str(Path.cwd())
@@ -436,10 +469,7 @@ def cmd_in(conn):
 
 
 def cmd_out(conn, opts):
-    cwd = str(Path.cwd())
-    session_id = opts.session_id or resolve_session_id(conn, cwd)
-    if session_id is None:
-        die("could not resolve a session id to close (no env id, no pointer, nothing open here)", code=3)
+    cwd, session_id = resolve_or_die(conn, opts, "to close")
 
     top = git_toplevel(cwd)
     try:
@@ -455,10 +485,17 @@ def cmd_out(conn, opts):
 
 
 def cmd_checkpoint(conn, opts):
-    cwd = str(Path.cwd())
-    session_id = opts.session_id or resolve_session_id(conn, cwd)
-    if session_id is None:
-        die("could not resolve a session id for this checkpoint (no env id, no pointer, nothing open here)", code=3)
+    _, session_id = resolve_or_die(conn, opts, "for this checkpoint")
+
+    # A closed session is done accruing history — most commonly a `gitflow`
+    # post-merge commit hook firing after `clock out` already ran. Skip
+    # silently-successful (exit 0) rather than let it inflate event_count.
+    closed = conn.execute(
+        "SELECT 1 FROM clock_out WHERE session_id = ?", (session_id,)
+    ).fetchone()
+    if closed:
+        print(f"session {session_id} already closed; checkpoint skipped")
+        return
 
     try:
         conn.execute(
