@@ -21,6 +21,10 @@ Every connection this script opens issues `PRAGMA foreign_keys = ON` through
 one helper (get_connection) so that rule can never be forgotten on some path.
 All three tables (clock_in, clock_out, session_event) are insert-only —
 nothing here ever runs UPDATE or DELETE. Stdlib only, by design.
+
+Exit codes: 0 ok; 1 usage or other error; 3 no session id could be resolved;
+4 a DB constraint refused the write (UNIQUE / CHECK / FOREIGN KEY); 5 the
+disambiguation prompt got no usable answer.
 """
 import argparse
 import hashlib
@@ -274,8 +278,13 @@ def prompt_for_session(candidates):
 
 
 def resolve_session_id(conn, cwd):
-    """The recovery ladder from #63: exact env var, else the folder pointer
-    when it's unambiguous, else disambiguate (PPID heuristic, then ask)."""
+    """The recovery ladder from #63: exact env var, else narrow by tool, else
+    the folder pointer when it's unambiguous, else disambiguate (PPID
+    heuristic, then ask). The pointer is only trusted when at most one session
+    is open for this folder: it records the *last* clock-in, so with two
+    sessions sharing a folder it names the latest writer, not necessarily the
+    caller — trusting it there would silently close the wrong session, the
+    exact 'never guess' failure the ladder must avoid."""
     env_id = os.environ.get("CLAUDE_CODE_SESSION_ID")
     if env_id:
         return env_id
@@ -287,6 +296,18 @@ def resolve_session_id(conn, cwd):
         "ORDER BY started_ts DESC",
         (key, cwd),
     ).fetchall()
+
+    # `tool` is one of the disambiguation facts #63 names. When we know our own
+    # tool and it singles out exactly one open session, that is an unambiguous
+    # match, not a guess — return it. Narrowing that empties the set (unknown
+    # tool, or none match) is ignored, so it can never hide the real candidates.
+    tool = current_tool()
+    if tool and len(candidates) > 1:
+        same_tool = [c for c in candidates if c["tool"] == tool]
+        if len(same_tool) == 1:
+            return same_tool[0]["session_id"]
+        if same_tool:
+            candidates = same_tool
 
     if len(candidates) <= 1:
         ptr = pointer_path(cwd)

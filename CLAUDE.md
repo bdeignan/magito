@@ -133,9 +133,18 @@ committed here:
   ("via omp"). Contract: `skills/general/implement-issue/references/worker-contract.md`.
 - `handoffs/<repo-slug>.md` — session handoffs written by the `handoff` skill, read
   by `catch-up`.
+- `ledger.db` — the **session ledger**: an append-only SQLite database of session
+  clock-ins, clock-outs, and checkpoint events, written and read only through the
+  `clock` script (`skills/general/implement-issue/scripts/clock`); created on the
+  first `clock in`. Alongside it, `run/<hash>.session` holds small pointer files that
+  map a repo (or launch folder) to the session id its last `clock in` used, so a
+  later `clock out` can re-find the same session. Inspect the DB by hand via the
+  sibling `ledger.md`. Epic #62 is folding the single-file handoffs above into this.
 
-Conventions: agents never overwrite an existing file here on their own initiative —
-these are the user's files. Commands in both rosters run in non-interactive shells,
+Conventions: agents never overwrite an existing *user* file here on their own
+initiative — `bench.toml`, `workers.toml`, and the handoffs are the user's. The
+`clock` script is the exception: it owns `ledger.db` and `run/` outright, creating
+them and appending rows as its job. Commands in both rosters run in non-interactive shells,
 so any env they need (API keys, cloud project ids) must come from `~/.zshenv` or the
 tool's own auth store, never `.zshrc` alone — see the worker contract's gotchas.
 
