@@ -1,0 +1,471 @@
+#!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# dependencies = []
+# ///
+"""
+clock — the append-only session ledger. See issue #62/#63 and the sibling
+ledger.md for how to inspect the database by hand.
+
+The only thing that reads or writes ~/.magito/ledger.db (or $MAGITO_LEDGER_DB,
+if set — an escape hatch for testing without touching the real ledger).
+Nothing else should open that file directly.
+
+Usage:
+    clock in
+    clock out "<summary>" [--session-id <id>]
+    clock checkpoint --type <checkpoint|output|gotcha|note> [--ref <ref>] [--summary <text>] [--session-id <id>]
+    clock status
+
+Every connection this script opens issues `PRAGMA foreign_keys = ON` through
+one helper (get_connection) so that rule can never be forgotten on some path.
+All three tables (clock_in, clock_out, session_event) are insert-only —
+nothing here ever runs UPDATE or DELETE. Stdlib only, by design.
+"""
+import argparse
+import hashlib
+import os
+import random
+import sqlite3
+import subprocess
+import sys
+import time
+from datetime import datetime
+from pathlib import Path
+
+SCHEMA = """
+CREATE TABLE IF NOT EXISTS clock_in (
+    session_id TEXT PRIMARY KEY,
+    alias TEXT NOT NULL,
+    started_ts INTEGER NOT NULL,
+    tool TEXT NOT NULL DEFAULT '',
+    repo TEXT NOT NULL DEFAULT '',
+    branch TEXT NOT NULL DEFAULT '',
+    start_git_hash TEXT NOT NULL DEFAULT '',
+    launch_pwd TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS clock_out (
+    session_id TEXT NOT NULL,
+    ended_ts INTEGER NOT NULL,
+    end_git_hash TEXT NOT NULL DEFAULT '',
+    launch_pwd TEXT NOT NULL,
+    summary TEXT NOT NULL,
+    UNIQUE(session_id),
+    FOREIGN KEY(session_id) REFERENCES clock_in(session_id)
+);
+
+CREATE TABLE IF NOT EXISTS session_event (
+    event_id INTEGER PRIMARY KEY,
+    session_id TEXT NOT NULL,
+    ts INTEGER NOT NULL,
+    type TEXT NOT NULL,
+    ref TEXT NOT NULL DEFAULT '',
+    summary TEXT NOT NULL DEFAULT '',
+    CHECK (type IN ('checkpoint', 'output', 'gotcha', 'note')),
+    FOREIGN KEY(session_id) REFERENCES clock_in(session_id)
+);
+
+CREATE VIEW IF NOT EXISTS sessions AS
+SELECT
+    ci.session_id     AS session_id,
+    ci.alias          AS alias,
+    ci.started_ts     AS started_ts,
+    ci.tool           AS tool,
+    ci.repo           AS repo,
+    ci.branch         AS branch,
+    ci.start_git_hash AS start_git_hash,
+    ci.launch_pwd     AS launch_pwd,
+    co.ended_ts       AS ended_ts,
+    co.end_git_hash   AS end_git_hash,
+    co.summary        AS summary,
+    CASE WHEN co.session_id IS NULL THEN NULL ELSE co.ended_ts - ci.started_ts END AS duration,
+    CASE WHEN co.session_id IS NULL THEN 1 ELSE 0 END AS unfinished,
+    (SELECT COUNT(*) FROM session_event se WHERE se.session_id = ci.session_id) AS event_count
+FROM clock_in ci
+LEFT JOIN clock_out co ON co.session_id = ci.session_id;
+"""
+
+ADJECTIVES = [
+    "happy", "eager", "brave", "calm", "clever", "cosmic", "daring", "gentle",
+    "jolly", "keen", "lively", "merry", "nimble", "patient", "quiet", "quirky",
+    "rapid", "sharp", "steady", "sunny", "swift", "tidy", "vivid", "zesty",
+]
+SURNAMES = [
+    "turing", "curie", "lovelace", "hopper", "darwin", "einstein", "newton",
+    "tesla", "hawking", "franklin", "babbage", "euler", "noether", "galileo",
+    "kepler", "pascal", "boole", "shannon", "feynman", "hertz", "faraday",
+    "mendel", "pasteur", "archimedes",
+]
+
+EVENT_TYPES = ("checkpoint", "output", "gotcha", "note")
+
+
+def die(msg, code=1):
+    print(f"clock: {msg}", file=sys.stderr)
+    sys.exit(code)
+
+
+# --- paths ---------------------------------------------------------------
+
+def db_path() -> Path:
+    override = os.environ.get("MAGITO_LEDGER_DB")
+    if override:
+        return Path(override).expanduser()
+    return Path.home() / ".magito" / "ledger.db"
+
+
+def run_dir() -> Path:
+    # Sibling of the db, not hardcoded to ~/.magito/run, so pointing
+    # MAGITO_LEDGER_DB at a throwaway location also relocates the pointer
+    # files a test run writes — the real ~/.magito/run/ stays untouched.
+    return db_path().parent / "run"
+
+
+def get_connection() -> sqlite3.Connection:
+    """The one place a sqlite3 connection is opened. PRAGMA foreign_keys=ON
+    is load-bearing for the FK invariants below — without it an orphan
+    clock_out/session_event row would be silently accepted."""
+    path = db_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(path, timeout=10)
+    conn.execute("PRAGMA foreign_keys = ON")
+    conn.row_factory = sqlite3.Row
+    conn.executescript(SCHEMA)
+    return conn
+
+
+# --- small helpers ---------------------------------------------------------
+
+def now_ms() -> int:
+    return int(time.time() * 1000)
+
+
+def fmt_ts(ms) -> str:
+    if ms is None:
+        return "-"
+    return datetime.fromtimestamp(ms / 1000).strftime("%Y-%m-%d %H:%M")
+
+
+def sha256_hex(s: str) -> str:
+    return hashlib.sha256(s.encode()).hexdigest()
+
+
+def run_git(args, cwd):
+    try:
+        r = subprocess.run(["git", *args], cwd=cwd, capture_output=True, text=True, timeout=5)
+    except OSError:
+        return None
+    return r.stdout.strip() if r.returncode == 0 else None
+
+
+def git_toplevel(cwd):
+    return run_git(["rev-parse", "--show-toplevel"], cwd)
+
+
+def git_branch(cwd):
+    return run_git(["rev-parse", "--abbrev-ref", "HEAD"], cwd)
+
+
+def git_hash(cwd):
+    return run_git(["rev-parse", "HEAD"], cwd)
+
+
+def folder_key(cwd: str) -> str:
+    """The identity `clock in` and `clock out` must agree on for a folder:
+    the git toplevel when there is one, else the launch dir itself."""
+    return git_toplevel(cwd) or str(Path(cwd).resolve())
+
+
+def pointer_path(cwd: str) -> Path:
+    return run_dir() / f"{sha256_hex(folder_key(cwd))}.session"
+
+
+def gen_alias() -> str:
+    return f"{random.choice(ADJECTIVES)}_{random.choice(SURNAMES)}"
+
+
+def gen_session_id() -> str:
+    return f"{now_ms()}-{random.randint(100000, 999999)}"
+
+
+def resolve_new_session_id() -> str:
+    return os.environ.get("CLAUDE_CODE_SESSION_ID") or gen_session_id()
+
+
+def current_tool() -> str:
+    return os.environ.get("AI_AGENT", "")
+
+
+def ps_start_epoch_ms(pid: int):
+    """Best-effort epoch-ms start time of a running process, via `ps`.
+    None if ps is unavailable, the pid is gone, or its output can't be
+    parsed — callers must treat that as 'give up', never as a match."""
+    try:
+        r = subprocess.run(
+            ["ps", "-o", "lstart=", "-p", str(pid)],
+            capture_output=True, text=True, timeout=5,
+        )
+    except OSError:
+        return None
+    if r.returncode != 0 or not r.stdout.strip():
+        return None
+    try:
+        dt = datetime.strptime(r.stdout.strip(), "%a %b %d %H:%M:%S %Y")
+    except ValueError:
+        return None
+    return int(dt.timestamp() * 1000)
+
+
+# --- recovery ladder (clock out / clock checkpoint) ------------------------
+
+PPID_ABS_TOLERANCE_MS = 15_000  # a session's clock-in should follow its parent process's own start by no more than this
+PPID_MARGIN_MS = 5_000  # the winning candidate must beat the runner-up by at least this much
+
+
+def disambiguate_by_ppid(candidates):
+    """Tier 3, part 1: use $PPID's own process-start time as a proxy for
+    'when did the session that is calling me actually start', and match it
+    to a candidate's started_ts. Two things must both hold before this
+    auto-resolves, or it returns None and the caller falls through to
+    asking:
+      1. the best match is plausibly close in absolute terms (a session
+         normally clocks in within moments of its parent process starting)
+      2. it clearly beats the runner-up, not just by a hair
+    Without requirement 1, two candidates that are merely close to *each
+    other* but both far from the parent's actual start time (e.g. a
+    long-lived dev shell that ran two short-lived test sessions minutes
+    ago) can look like a confident match by pure chance — that is exactly
+    the silent-guess failure mode this ladder must never produce."""
+    start = ps_start_epoch_ms(os.getppid())
+    if start is None:
+        return None
+    scored = sorted(candidates, key=lambda c: abs(c["started_ts"] - start))
+    best = scored[0]
+    best_diff = abs(best["started_ts"] - start)
+    if best_diff > PPID_ABS_TOLERANCE_MS:
+        return None
+    if len(scored) == 1:
+        return best["session_id"]
+    runner_up_diff = abs(scored[1]["started_ts"] - start)
+    if best_diff + PPID_MARGIN_MS < runner_up_diff:
+        return best["session_id"]
+    return None
+
+
+def prompt_for_session(candidates):
+    """Tier 3, part 2: never guess. Print the candidates and ask — the one
+    deliberate interactive prompt this tool allows. Fails loudly (does not
+    hang) when stdin isn't a TTY."""
+    print("clock: multiple unfinished sessions share this folder — which one?", file=sys.stderr)
+    for i, c in enumerate(candidates, start=1):
+        print(
+            f"  [{i}] {c['session_id']}  alias={c['alias']}  tool={c['tool'] or '-'}  "
+            f"started={fmt_ts(c['started_ts'])}  launch_pwd={c['launch_pwd']}",
+            file=sys.stderr,
+        )
+    try:
+        choice = input(f"choose 1-{len(candidates)}: ").strip()
+    except EOFError:
+        die("no answer given (stdin closed) — rerun with --session-id <id> from the list above", code=5)
+    if not choice.isdigit() or not (1 <= int(choice) <= len(candidates)):
+        die(f"invalid choice: {choice!r}", code=5)
+    return candidates[int(choice) - 1]["session_id"]
+
+
+def resolve_session_id(conn, cwd):
+    """The recovery ladder from #63: exact env var, else the folder pointer
+    when it's unambiguous, else disambiguate (PPID heuristic, then ask)."""
+    env_id = os.environ.get("CLAUDE_CODE_SESSION_ID")
+    if env_id:
+        return env_id
+
+    key = folder_key(cwd)
+    candidates = conn.execute(
+        "SELECT session_id, alias, tool, repo, started_ts, launch_pwd FROM sessions "
+        "WHERE unfinished = 1 AND (repo = ? OR launch_pwd = ?) "
+        "ORDER BY started_ts DESC",
+        (key, cwd),
+    ).fetchall()
+
+    if len(candidates) <= 1:
+        ptr = pointer_path(cwd)
+        if ptr.exists():
+            return ptr.read_text().strip()
+        return candidates[0]["session_id"] if candidates else None
+
+    return disambiguate_by_ppid(candidates) or prompt_for_session(candidates)
+
+
+# --- orientation payload (clock in) ----------------------------------------
+
+def print_orientation(conn, repo):
+    print()
+    print(f"-- recent sessions for {repo} --")
+    rows = conn.execute(
+        "SELECT alias, started_ts, unfinished, summary FROM sessions "
+        "WHERE repo = ? ORDER BY started_ts DESC LIMIT 5",
+        (repo,),
+    ).fetchall()
+    if not rows:
+        print("  (none yet)")
+    for r in rows:
+        state = "unfinished" if r["unfinished"] else "closed"
+        print(f"  {fmt_ts(r['started_ts'])}  {r['alias']:<20} {state:<10} {r['summary'] or ''}")
+
+    print()
+    print("-- unfinished sessions, most useful first --")
+    rows = conn.execute(
+        "SELECT alias, repo, started_ts, event_count FROM sessions "
+        "WHERE unfinished = 1 ORDER BY event_count DESC, started_ts DESC LIMIT 10"
+    ).fetchall()
+    if not rows:
+        print("  (none)")
+    for r in rows:
+        print(f"  {fmt_ts(r['started_ts'])}  {r['alias']:<20} {r['repo']:<30} events={r['event_count']}")
+
+    cutoff = now_ms() - 7 * 24 * 3600 * 1000
+    total, unfinished = conn.execute(
+        "SELECT COUNT(*), COALESCE(SUM(unfinished), 0) FROM sessions WHERE started_ts >= ?",
+        (cutoff,),
+    ).fetchone()
+    print()
+    print(f"last 7 days: {total} sessions, {unfinished} unfinished")
+
+
+# --- subcommands -------------------------------------------------------
+
+def cmd_in(conn):
+    cwd = str(Path.cwd())
+    session_id = resolve_new_session_id()
+    top = git_toplevel(cwd)
+    repo = top or "local"
+    branch = git_branch(cwd) if top else ""
+    start_hash = git_hash(cwd) if top else ""
+
+    conn.execute(
+        "INSERT OR IGNORE INTO clock_in "
+        "(session_id, alias, started_ts, tool, repo, branch, start_git_hash, launch_pwd) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (session_id, gen_alias(), now_ms(), current_tool(), repo, branch, start_hash, cwd),
+    )
+    conn.commit()
+
+    row = conn.execute(
+        "SELECT alias, repo FROM clock_in WHERE session_id = ?", (session_id,)
+    ).fetchone()
+    print(f"clocked in: {session_id} ({row['alias']})")
+
+    ptr = pointer_path(cwd)
+    ptr.parent.mkdir(parents=True, exist_ok=True)
+    ptr.write_text(session_id)
+
+    print_orientation(conn, row["repo"])
+
+
+def cmd_out(conn, opts):
+    cwd = str(Path.cwd())
+    session_id = opts.session_id or resolve_session_id(conn, cwd)
+    if session_id is None:
+        die("could not resolve a session id to close (no env id, no pointer, nothing open here)", code=3)
+
+    top = git_toplevel(cwd)
+    try:
+        conn.execute(
+            "INSERT INTO clock_out (session_id, ended_ts, end_git_hash, launch_pwd, summary) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (session_id, now_ms(), git_hash(cwd) if top else "", cwd, opts.summary),
+        )
+        conn.commit()
+    except sqlite3.IntegrityError as e:
+        die(f"cannot record clock_out for {session_id}: {e}", code=4)
+    print(f"clocked out: {session_id}")
+
+
+def cmd_checkpoint(conn, opts):
+    cwd = str(Path.cwd())
+    session_id = opts.session_id or resolve_session_id(conn, cwd)
+    if session_id is None:
+        die("could not resolve a session id for this checkpoint (no env id, no pointer, nothing open here)", code=3)
+
+    try:
+        conn.execute(
+            "INSERT INTO session_event (session_id, ts, type, ref, summary) VALUES (?, ?, ?, ?, ?)",
+            (session_id, now_ms(), opts.type, opts.ref, opts.summary),
+        )
+        conn.commit()
+    except sqlite3.IntegrityError as e:
+        die(f"cannot record session_event for {session_id}: {e}", code=4)
+    ref_part = f" ref={opts.ref}" if opts.ref else ""
+    print(f"checkpoint recorded: {session_id} [{opts.type}]{ref_part}")
+
+
+def cmd_status(conn):
+    print("-- unfinished sessions --")
+    rows = conn.execute(
+        "SELECT session_id, alias, repo, tool, started_ts, event_count FROM sessions "
+        "WHERE unfinished = 1 ORDER BY event_count DESC, started_ts DESC"
+    ).fetchall()
+    if not rows:
+        print("  (none)")
+    for r in rows:
+        print(
+            f"  {fmt_ts(r['started_ts'])}  {r['alias']:<20} {r['repo']:<30} "
+            f"tool={r['tool'] or '-':<10} events={r['event_count']}  {r['session_id']}"
+        )
+
+    print()
+    print("-- recent sessions --")
+    rows = conn.execute(
+        "SELECT session_id, alias, repo, unfinished, started_ts, duration, summary FROM sessions "
+        "ORDER BY started_ts DESC LIMIT 15"
+    ).fetchall()
+    if not rows:
+        print("  (none)")
+    for r in rows:
+        state = "unfinished" if r["unfinished"] else "closed"
+        dur = f"{r['duration'] / 1000:.0f}s" if r["duration"] is not None else "-"
+        print(f"  {fmt_ts(r['started_ts'])}  {r['alias']:<20} {r['repo']:<30} {state:<10} dur={dur:<8} {r['summary'] or ''}")
+
+
+# --- cli ---------------------------------------------------------------
+
+def build_parser():
+    p = argparse.ArgumentParser(prog="clock", description="Session ledger: clock in/out, checkpoints, status.")
+    sub = p.add_subparsers(dest="command", required=True)
+
+    sub.add_parser("in", help="Clock in: record session facts and print an orientation payload.")
+
+    p_out = sub.add_parser("out", help="Clock out: record a session-ending summary.")
+    p_out.add_argument("summary", help="One-line summary of what happened this session.")
+    p_out.add_argument("--session-id", default=None, help="Skip the recovery ladder; close this session id.")
+
+    p_cp = sub.add_parser("checkpoint", help="Record one session_event row.")
+    p_cp.add_argument("--type", required=True,
+                       help=f"one of {', '.join(EVENT_TYPES)} (enforced by the DB CHECK constraint)")
+    p_cp.add_argument("--ref", default="", help="A PR url, commit hash, or file path.")
+    p_cp.add_argument("--summary", default="")
+    p_cp.add_argument("--session-id", default=None, help="Skip the recovery ladder; use this session id.")
+
+    sub.add_parser("status", help="List open and recent sessions.")
+    return p
+
+
+def main():
+    args = build_parser().parse_args()
+    conn = get_connection()
+    try:
+        if args.command == "in":
+            cmd_in(conn)
+        elif args.command == "out":
+            cmd_out(conn, args)
+        elif args.command == "checkpoint":
+            cmd_checkpoint(conn, args)
+        elif args.command == "status":
+            cmd_status(conn)
+    finally:
+        conn.close()
+
+
+if __name__ == "__main__":
+    main()
