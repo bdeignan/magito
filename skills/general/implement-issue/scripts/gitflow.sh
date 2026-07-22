@@ -101,12 +101,20 @@ case "$cmd" in
     # skipped since the PR is already recorded here as a type=output event.
     guard_not_base
     issue="${1:?issue required}"; title="${2:?title required}"; body="${3:-}"
-    base="$(default_branch)"
-    pr_url=""
+    # Build the PR body once (a given body precedes the Closes line).
     if [ -n "$body" ]; then
-      pr_url="$(gh pr create --base "$base" --title "$title" --body "${body}"$'\n\n'"Closes #${issue}")"
+      pr_body="${body}"$'\n\n'"Closes #${issue}"
     else
-      pr_url="$(gh pr create --base "$base" --title "$title" --body "Closes #${issue}")"
+      pr_body="Closes #${issue}"
+    fi
+    # Only override gh's base when magito.baseBranch is set; otherwise omit
+    # --base so gh targets the repo's real GitHub default branch, rather than
+    # force a possibly-stale local origin/HEAD (default_branch's detection).
+    base="$(git config --get magito.baseBranch 2>/dev/null || true)"
+    if [ -n "$base" ]; then
+      pr_url="$(gh pr create --base "$base" --title "$title" --body "$pr_body")"
+    else
+      pr_url="$(gh pr create --title "$title" --body "$pr_body")"
     fi
     echo "$pr_url"
     checkpoint output "$pr_url" "opened PR"
