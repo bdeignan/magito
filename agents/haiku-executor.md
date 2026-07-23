@@ -30,6 +30,7 @@ Before reporting `DONE`, satisfy this floor — you have no Skill tool, so this 
 
 - Do not create, merge, or delete worktrees. The orchestrator owns the worktree lifecycle.
 - Do not commit. Staging is your boundary.
+- Do not touch the session ledger — never run `clock in`/`out`/`checkpoint`. The orchestrator owns all ledger interaction; a `clock out` from here would close the orchestrator's own session.
 - Do not modify files outside the provided worktree path.
 - If the spec is ambiguous and you cannot infer correct behavior from the codebase, report `BLOCKED: <reason>` instead of guessing.
 - If the required change is already in place, report `DONE (no-op)`.
