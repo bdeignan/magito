@@ -672,6 +672,17 @@ def build_parser():
 
 def main():
     args = build_parser().parse_args()
+    # #94: a delegated shell worker (launched via worker.py) inherits the
+    # driver's environment, so any `clock` call it made would act on the
+    # driver's own session — clocking it out, or adding checkpoints, under the
+    # worker's narrow view of the work. worker.py sets MAGITO_WORKER for exactly
+    # this reason. The driver owns all ledger interaction; a worker never does.
+    # Refuse as a silent-success no-op (exit 0) so it never derails the worker's
+    # actual build.
+    if os.environ.get("MAGITO_WORKER"):
+        print("clock: refusing ledger access from inside a delegated worker "
+              "(MAGITO_WORKER set) — the driver owns the ledger", file=sys.stderr)
+        return
     if args.command == "dump":
         # Read-only: dispatched before get_connection() so it never opens
         # the write path or runs the schema script.

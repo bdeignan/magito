@@ -31,7 +31,8 @@ Every brief carries:
    the change is already in place, or `BLOCKED: <reason>` when the spec is ambiguous
    and the codebase doesn't disambiguate — never guess.
 6. **The prohibitions**: no commit, no merge, no push, no worktree create/remove,
-   nothing outside the assigned directory.
+   no session-ledger access (`clock in`/`out`/`checkpoint` — the driver owns the
+   ledger), nothing outside the assigned directory.
 
 ### Referenceable in-worktree docs
 
@@ -161,6 +162,15 @@ doesn't need them.
   decision, never a convenience. The launcher's single stable prefix
   (`python3 .../scripts/worker.py`) is also what makes a tight allow rule possible
   if the user ever wants zero prompts.
+- **Session ledger is off-limits to workers**: because workers inherit the driver's
+  environment, a worker whose instruction file carries magito's "clock out when the
+  session wraps" convention (omp reads `~/.omp/agent/AGENTS.md`, symlinked to the shared
+  system instructions) could otherwise close the *driver's* own session with its narrow
+  subtask summary — this actually happened, see #94. The launcher backstops it: `worker.py`
+  runs every worker with `MAGITO_WORKER=1` set and `CLAUDE_CODE_SESSION_ID` scrubbed, so
+  `~/.magito/bin/clock` refuses any ledger access from inside a worker. Don't strip either
+  from the launcher's worker env; the prohibition above is the prose floor for workers that
+  never reach the launcher.
 - **Env vars and non-interactive shells**: workers inherit the driver's environment,
   and a driver's shell tool runs non-interactive shells — exports living only in
   `.zshrc` (read by interactive shells alone) may never arrive, depending on how the

@@ -91,6 +91,20 @@ def strip_bypass(argv):
     return out
 
 
+def worker_env():
+    """The environment a delegated worker runs in. Two changes from the driver's
+    own env, both about the session ledger (#94): mark the process as a worker so
+    `clock` refuses any ledger access from inside it, and drop
+    CLAUDE_CODE_SESSION_ID so the worker can't inherit — and then clock out — the
+    driver's session identity. The marker is load-bearing; the scrub is defense in
+    depth (without the marker, `clock` would still resolve the driver as the sole
+    open session for the repo and close it anyway)."""
+    env = dict(os.environ)
+    env["MAGITO_WORKER"] = "1"
+    env.pop("CLAUDE_CODE_SESSION_ID", None)
+    return env
+
+
 def run(argv, cwd, timeout, capture):
     pipe = subprocess.PIPE if capture else None
     try:
@@ -98,7 +112,7 @@ def run(argv, cwd, timeout, capture):
         # children too, not just the CLI process itself.
         p = subprocess.Popen(
             argv, cwd=cwd, stdin=subprocess.DEVNULL, stdout=pipe, stderr=pipe,
-            text=True, start_new_session=True,
+            text=True, start_new_session=True, env=worker_env(),
         )
     except FileNotFoundError:
         die(2, f"binary not found: {argv[0]}")
