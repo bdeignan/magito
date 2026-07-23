@@ -16,7 +16,7 @@ Capture once: `git diff <fixed-point>...HEAD` (three-dot, against the merge-base
 ## 2. Find the sources
 
 - **Spec** — the originating issue (`#123`/`Closes #45` in the commit messages, fetched per the issue-tracker config), a path the user passed, or a PRD under `docs/`/`.scratch/`. If there's none, the Spec axis reports "no spec available."
-- **Standards** — `docs/agents/GLOSSARY.md` (domain language), `docs/adr/`, `CODING_STANDARDS.md`/`CONTRIBUTING.md`, and the project's declared toolchain conventions.
+- **Standards** — `docs/agents/INDEX.md` (routing to the docs a touched area's diff should be checked against), `docs/agents/GLOSSARY.md` (domain language), `docs/adr/`, `CODING_STANDARDS.md`/`CONTRIBUTING.md`, and the project's declared toolchain conventions.
 
 ## 3. Run the two axes
 
@@ -26,7 +26,7 @@ If sub-agents are available, spawn both in parallel so they don't pollute each o
 
 **Timebox and fallback for stalled axes:** Give each sub-agent axis a reasonable timebox, roughly 5–15 minutes depending on diff size and network latency. Treat an axis as stalled if it produces no output within that window. Stop waiting and run that axis inline in your own context instead. Say so at the time, not only in the final report. Disclose the fallback in the report too: mark the axis as `inline` rather than `sub-agent`. A fallback is not a failure. It's a pragmatic substitution that keeps the review moving. If the inline attempt also produces no meaningful output after a reasonable effort, mark that axis as `none` in the report. An axis with no result must never be reported as passed.
 
-- **Standards brief**: "Every place the diff violates a documented standard — cite the file and the rule. Separate hard violations from judgement calls. Skip anything tooling enforces. Flag tests that mock the seam under test or assert on implementation details. Under 400 words."
+- **Standards brief**: "Every place the diff violates a documented standard — cite the file and the rule. Separate hard violations from judgement calls. Skip anything tooling enforces. Flag tests that mock the seam under test or assert on implementation details. For the areas the diff touches, consult `docs/agents/INDEX.md`'s routing table and load only the docs it points to for those areas (diff-scoped — never a full sweep); flag any docs the diff now contradicts as stale, any new doc content that fails the two-gate filter (structural / rederivable from code / unstable and likely to rot), and any dead reference naming a file path or symbol that no longer exists. These findings land in the `## Standards` report like any other rule violation. Under 500 words."
 - **Spec brief**: "(a) requirements the spec asked for that are missing or partial; (b) behavior not asked for (scope creep); (c) requirements that look implemented but wrong. Quote the spec line for each finding. Under 400 words."
 
 ## 4. Report
