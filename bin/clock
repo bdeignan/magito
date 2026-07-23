@@ -12,6 +12,10 @@ The only thing that reads or writes ~/.magito/ledger.db (or $MAGITO_LEDGER_DB,
 if set — an escape hatch for testing without touching the real ledger).
 Nothing else should open that file directly.
 
+When $MAGITO_WORKER is set — worker.py sets it for every delegated shell worker
+(#94) — every subcommand refuses with an exit-0 no-op: a worker inherits the
+driver's session identity and must never touch the driver's ledger.
+
 Usage:
     clock in
     clock out "<summary>" [--session-id <id>]
@@ -680,8 +684,11 @@ def main():
     # Refuse as a silent-success no-op (exit 0) so it never derails the worker's
     # actual build.
     if os.environ.get("MAGITO_WORKER"):
-        print("clock: refusing ledger access from inside a delegated worker "
-              "(MAGITO_WORKER set) — the driver owns the ledger", file=sys.stderr)
+        # stdout, no `clock:` prefix — the file's convention for an exit-0
+        # informational no-op (that prefix is for die()'s error paths); matches
+        # the already-closed-session and no-ledger-yet skips below.
+        print("delegated worker (MAGITO_WORKER set); ledger access skipped — "
+              "the driver owns the ledger")
         return
     if args.command == "dump":
         # Read-only: dispatched before get_connection() so it never opens
