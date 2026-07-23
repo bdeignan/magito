@@ -1,0 +1,38 @@
+<!-- INDEX.md — the router for docs/agents/: "working on X → read Y." Auto-loaded every
+     session (imported from CLAUDE.md), so keep it a ROUTER, not a knowledge base: one line
+     per destination, never content that belongs in the target file. Add a row when you add
+     a doc here; delete the row when you delete the doc. New to this folder? Read README.md
+     once — it explains what belongs here and why. -->
+
+# {{project}} — agent docs index
+
+What is this folder and what belongs in it? See [README.md](./README.md) — read once.
+
+## Auto-loaded every session
+The `@docs/agents/INDEX.md` line in `CLAUDE.md` pulls in this INDEX, which imports the rest
+of the bundle so it loads with the session:
+
+@OVERVIEW.md
+@GLOSSARY.md
+
+(OVERVIEW — why this project exists and the deliberate approach; GLOSSARY — project-specific
+vocabulary. Keep these as bare `@`-imports on their own line; a markdown link or backticks
+would stop them loading.)
+
+## Routing — working on X → read Y
+| Working on / question | Read |
+|---|---|
+| Project intent, why it's built this way | [OVERVIEW.md](./OVERVIEW.md) |
+| What a domain term means | [GLOSSARY.md](./GLOSSARY.md) |
+| _(add rows as `CONVENTIONS.md`, `GOTCHAS.md`, `flows/<area>.md` grow)_ | |
+
+## Multi-context repos
+Only if this repo holds more than one bounded context (a monorepo, or distinct subsystems).
+List each area, where it lives, its per-area glossary and flow, and how the areas relate.
+This routing table is the single home for that — there is no separate root map file.
+
+| Area | Lives in | Glossary | Flow |
+|---|---|---|---|
+| _e.g. Ingestion_ | `src/ingestion/` | `src/ingestion/GLOSSARY.md` | `flows/ingestion.md` |
+
+Relationships: _e.g. Ingestion emits a validated `feature frame`; Modeling consumes it._

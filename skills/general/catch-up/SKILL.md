@@ -20,7 +20,7 @@ absent from the list.
    recent activity. Show that payload. If the repo has no earlier sessions, the payload
    says so plainly — that's still `read`, not `missing`.
 2. `CLAUDE.md` / `AGENTS.md` at the repo root. If neither exists, status is `missing`.
-3. `docs/agents/GLOSSARY.md` (or `CONTEXT-MAP.md` at the repo root). If it doesn't exist, status is
+3. `docs/agents/GLOSSARY.md` (in a multi-context repo, routing to per-area glossaries lives in `docs/agents/INDEX.md`). If it doesn't exist, status is
    `missing`.
 4. The most recent few ADRs under `docs/adr/`. If the directory doesn't exist or is
    empty, status is `missing`.

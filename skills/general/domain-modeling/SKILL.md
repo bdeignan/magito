@@ -9,7 +9,7 @@ Actively build and sharpen the project's shared language as you design — the *
 
 ## Files
 
-Single context (most repos): one `docs/agents/GLOSSARY.md`, plus a root `docs/adr/`. Multi-context (a monorepo, or a project with distinct subsystems): a `CONTEXT-MAP.md` at the root pointing to per-area `GLOSSARY.md` files. Create files lazily — `docs/agents/GLOSSARY.md` when the first term resolves, `docs/adr/` when the first ADR is needed. Formats: [GLOSSARY-FORMAT.md](./GLOSSARY-FORMAT.md), [ADR-FORMAT.md](./ADR-FORMAT.md).
+Single context (most repos): one `docs/agents/GLOSSARY.md`, plus a root `docs/adr/`. Multi-context (a monorepo, or a project with distinct subsystems): per-area `GLOSSARY.md` files near the code, routed from `docs/agents/INDEX.md`. Create files lazily — `docs/agents/GLOSSARY.md` when the first term resolves, `docs/adr/` when the first ADR is needed. Formats: [GLOSSARY-FORMAT.md](./GLOSSARY-FORMAT.md), [ADR-FORMAT.md](./ADR-FORMAT.md).
 
 ## During the session
 

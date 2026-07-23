@@ -8,6 +8,9 @@ Manages skills, agents, and shared instructions for Claude Code, Codex, and Gemi
 Files live here and are installed via symlinks to each tool's expected native paths.
 The update cycle is: `git pull && python install.py`.
 
+Project context for agents lives in `docs/agents/` — start at @docs/agents/INDEX.md (its
+INDEX + OVERVIEW + GLOSSARY auto-load every session via this import).
+
 ## Agent workflow
 
 ### Issue tracker
