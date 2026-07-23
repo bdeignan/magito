@@ -15,8 +15,8 @@ take on the governed multi-agent idea — not a framework built for anyone else 
 
 ## Deliberate approach
 - **Install by symlink, not copy.** Each tool's native config path points back at this repo,
-  so editing a skill or instruction is live immediately and there is one source of truth;
-  only adding a new file needs a reinstall.
+  so there is one source of truth and editing a skill or instruction takes effect without a
+  copy step in between.
 - **Stdlib-only Python.** The installer and hooks must run on a bare Python with no
   dependency step — they are plumbing, not an application.
 - **Skills are the product; hooks are the backstop.** Behavior lives in prose skills an agent
@@ -28,7 +28,7 @@ take on the governed multi-agent idea — not a framework built for anyone else 
 ## Rejected alternatives
 - **Copy files into each tool's config** — edits wouldn't be live and the copies would drift
   from the source. Symlinks keep one truth.
-- **A full "reddit" documentation tree** (ARCHITECTURE / MAP / PATTERNS / …) — most of it
+- **A large fixed documentation tree** (ARCHITECTURE / MAP / PATTERNS / …) — most of it
   fails the two-gate filter this very folder enforces; kept deliberately small instead.
 - **Per-repo single-file handoffs** — they overwrote each other under concurrent sessions;
   replaced by the append-only session ledger.

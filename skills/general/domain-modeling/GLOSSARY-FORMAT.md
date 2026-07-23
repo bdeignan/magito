@@ -35,10 +35,10 @@ _Avoid_: contamination, peeking
 per-area `GLOSSARY.md`, and how the areas relate. Its multi-context table:
 
 ```md
-| Area      | Lives in         | Glossary                    |
-|-----------|------------------|-----------------------------|
-| Ingestion | `src/ingestion/` | `src/ingestion/GLOSSARY.md` |
-| Modeling  | `src/modeling/`  | `src/modeling/GLOSSARY.md`  |
+| Area      | Lives in         | Glossary                    | Flow                 |
+|-----------|------------------|-----------------------------|----------------------|
+| Ingestion | `src/ingestion/` | `src/ingestion/GLOSSARY.md` | `flows/ingestion.md` |
+| Modeling  | `src/modeling/`  | `src/modeling/GLOSSARY.md`  | `flows/modeling.md`  |
 
 Relationships: Ingestion emits a validated `feature frame`; Modeling consumes it.
 ```

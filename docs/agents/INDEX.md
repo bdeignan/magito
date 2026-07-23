@@ -9,9 +9,14 @@
 What is this folder and what belongs in it? See [README.md](./README.md) — read once.
 
 ## Auto-loaded every session
-Loaded via the `@docs/agents/INDEX.md` import in `CLAUDE.md`:
-- [OVERVIEW.md](./OVERVIEW.md) — why magito exists and the deliberate approach behind it.
-- [GLOSSARY.md](./GLOSSARY.md) — project vocabulary (deferred; see the file).
+The `@docs/agents/INDEX.md` line in `CLAUDE.md` pulls in this INDEX, which imports the rest
+of the bundle so it loads with the session:
+
+@OVERVIEW.md
+@GLOSSARY.md
+
+(OVERVIEW — why magito exists and the deliberate approach; GLOSSARY — project vocabulary,
+currently deferred, see the file.)
 
 ## Routing — working on X → read Y
 | Working on / question | Read |
