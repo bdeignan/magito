@@ -25,7 +25,7 @@ Take one issue from spec to open PR in a single sequential pass. You own the git
 
 5. **Commit.** `bash scripts/gitflow.sh commit "<conventional message>" <file>...` stages only the files you name, in conventional-commit form. Curate into coherent commits; never `git add -A`.
 
-6. **Self-review.** Run the `reviewing-changes` skill against the branch point before involving the human. Fix what it surfaces — including any doc-staleness finding it flags. The doc fix lands in this same PR as a follow-up commit; that new commit stales the `reviewed-<branch>` marker and forces a re-review, which is the existing review-then-fix loop in this skill, not new machinery.
+6. **Self-review.** Run the `reviewing-changes` skill against the branch point before involving the human. Fix what it surfaces — including any doc-staleness finding it flags, discretionary like any other finding. A doc fix lands in this same PR as a follow-up commit; that new commit stales the `reviewed-<branch>` marker and forces a re-review, which is the existing review-then-fix loop in this skill, not new machinery.
 
 7. **Run the full suite once**, and report the result honestly. A failing suite blocks the PR.
 
