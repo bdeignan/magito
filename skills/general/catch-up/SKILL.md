@@ -20,7 +20,7 @@ absent from the list.
    recent activity. Show that payload. If the repo has no earlier sessions, the payload
    says so plainly — that's still `read`, not `missing`.
 2. `CLAUDE.md` / `AGENTS.md` at the repo root. If neither exists, status is `missing`.
-3. `CONTEXT.md` (or `CONTEXT-MAP.md`) at the repo root. If it doesn't exist, status is
+3. `docs/agents/GLOSSARY.md` (or `CONTEXT-MAP.md` at the repo root). If it doesn't exist, status is
    `missing`.
 4. The most recent few ADRs under `docs/adr/`. If the directory doesn't exist or is
    empty, status is `missing`.
@@ -38,10 +38,10 @@ re-validate against the tracker, not as ground truth. Surface the contradiction 
 summary says X shipped but the branch shows otherwise) rather than smoothing it over.
 
 End the summary with one `sources:` line, listing every source's status in the order
-above — ledger, CLAUDE.md, CONTEXT.md, ADRs, tracker, git, PRs — e.g.:
+above — ledger, CLAUDE.md, docs/agents/GLOSSARY.md, ADRs, tracker, git, PRs — e.g.:
 
 ```
-sources: ledger=read, CLAUDE.md=read, CONTEXT.md=missing, ADRs=missing, tracker=read, git=read, PRs=read
+sources: ledger=read, CLAUDE.md=read, docs/agents/GLOSSARY.md=missing, ADRs=missing, tracker=read, git=read, PRs=read
 ```
 
 Then ask what the user wants to pick up — or, if a recent session names a clear next

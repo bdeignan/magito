@@ -11,7 +11,7 @@ never committed to any repo.
 
 It replaces one thing: magito's own old handoff file
 (`~/.magito/handoffs/<repo-slug>.md`). It does not touch anything else. Your
-project's `README`, its ADRs, `CONTEXT.md`, and any other notes stay exactly
+project's `README`, its ADRs, `docs/agents/GLOSSARY.md`, and any other notes stay exactly
 as they are. The ledger is not a replacement for project documentation — it
 is a replacement for the old scratch handoff file magito wrote for itself.
 

@@ -30,7 +30,7 @@ worth keeping, say so plainly, e.g.:
   disagrees (an issue you think is still open may have merged).
 - **Capture durable decisions first.** If terms or architectural decisions crystallized
   this session and aren't yet written down, run `domain-modeling` to land them in
-  `CONTEXT.md` / ADRs **before** clocking out — those belong in the repo, not in the
+  `docs/agents/GLOSSARY.md` / ADRs **before** clocking out — those belong in the repo, not in the
   summary.
 - **Don't duplicate artifacts.** PRDs, ADRs, issues, commits, diffs already exist —
   reference them by path or URL instead of restating them.
