@@ -1,0 +1,17 @@
+<!-- OVERVIEW.md — project INTENT only: why this exists, the deliberate approach, and the
+     alternatives deliberately rejected. NOT an architecture tour or a feature list.
+     Litmus for every line: "would a pure refactor (moves code, same intent) invalidate
+     this? → then cut it." Hard cap: half a page. Growing past that means you're
+     documenting the code — stop. Auto-loaded every session. -->
+
+# {{project}} — overview
+
+## Purpose
+_(fill: one or two sentences — what problem this project exists to solve, and for whom.)_
+
+## Deliberate approach
+_(fill: the few load-bearing choices about HOW that a newcomer would get wrong by default —
+the why-it's-this-shape, not a component list.)_
+
+## Rejected alternatives
+- _(fill: an alternative that was considered)_ — _(why it was not taken)_.
