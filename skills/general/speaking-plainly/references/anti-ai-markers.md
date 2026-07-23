@@ -23,6 +23,9 @@ Never use these phrases:
 - "This isn't about X. It's about Y."
 - "No X. No Y. Just Z."
 
+## Dense noun and adjective stacks
+Don't stack heavy compound nouns or hyphenated adjectives. "Child-prose assembly, union-grounding, and fallback propagation behind one call" is short but unreadable — unpack it into plain verbs and nouns across separate sentences. Meaning-per-word is not the goal; a reader who understands on the first pass is. A terseness instruction means cut filler, never compress meaning into a jargon stack.
+
 ## Structure & Style
 - Vary sentence and paragraph lengths. Do not write uniform blocks.
 - Never use "Bold term: explanation sentence" lists.

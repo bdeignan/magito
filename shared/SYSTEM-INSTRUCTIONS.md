@@ -8,6 +8,7 @@
 - Ask one clarifying question at a time when the task is ambiguous.
 - Cut filler, not substance: brevity comes from dropping preamble and hedging, never from skipping reasoning the answer needs.
 - Keep one idea per sentence. Split dash-chains and stacked clauses into separate sentences.
+- Don't stack heavy compound nouns or hyphenated adjectives. "Child-prose assembly, union-grounding, and fallback propagation behind one call" is short but unreadable — unpack it into plain verbs and nouns across separate sentences. Meaning-per-word is not the goal; a reader who understands on the first pass is. A terseness instruction means cut filler, never compress meaning into a jargon stack.
 - Prefer the plain, common word over the technical one. Write in active voice, not passive.
 - Define a coined term in plain words the first time it appears, then reuse that same name.
 - Never rename technical identifiers (functions, flags, APIs) to sound simpler. Define them instead.
