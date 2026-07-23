@@ -8,7 +8,11 @@ and stages; the driver owns branch, commit, review, merge, and PR.
 ## The brief
 
 A brief must be self-contained: workers cannot reach the tracker, load skills, or ask
-the user. Paste, don't reference. Every brief carries:
+the user. The default rule is **paste, don't reference** — but it has one qualified
+exception. The contract essentials below are always pasted in full; in-worktree
+standing docs are the only thing that may be named by exact repo-relative path.
+
+Every brief carries:
 
 1. **The assigned directory** — a worktree path (dispatch) or the repo tree on its
    feature branch (implement-issue). The worker never touches files outside it.
@@ -28,6 +32,27 @@ the user. Paste, don't reference. Every brief carries:
    and the codebase doesn't disambiguate — never guess.
 6. **The prohibitions**: no commit, no merge, no push, no worktree create/remove,
    nothing outside the assigned directory.
+
+### Referenceable in-worktree docs
+
+Standing project docs that already live in the repo — conventions, gotchas, the area's
+flow, `docs/agents/GLOSSARY.md`, and similar — may be named by exact repo-relative
+path instead of pasted in full, because `docs/agents/` (and any other tracked doc) is
+physically present inside the worker's assigned directory.
+
+Determinism guard: the **driver** resolves `docs/agents/INDEX.md`'s routing and picks
+the exact file(s) that apply. The brief names that exact path with a one-line reason,
+for example: "read `docs/agents/conventions.md` for the async-job pattern before
+touching the scheduler." The brief must **never** tell the worker to "consult the
+index" or "read what you need" — that would make the worker's context non-deterministic
+and unreviewable.
+
+Reachability basis: tracked files exist in every worktree by construction. A flag like
+`--no-skills` blocks skill auto-discovery, not plain file reads, so the worker can open
+a named path just fine.
+
+This does not change how work is judged. Review still examines the staged diff
+(`git -C <dir> diff --cached`), not the worker's claims about what it read.
 
 The report is not the result. Judge a worker by `git -C <dir> diff --cached` — review
 examines the staged diff regardless of what the worker claimed.
