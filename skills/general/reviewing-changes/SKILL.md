@@ -16,7 +16,7 @@ Capture once: `git diff <fixed-point>...HEAD` (three-dot, against the merge-base
 ## 2. Find the sources
 
 - **Spec** — the originating issue (`#123`/`Closes #45` in the commit messages, fetched per the issue-tracker config), a path the user passed, or a PRD under `docs/`/`.scratch/`. If there's none, the Spec axis reports "no spec available."
-- **Standards** — `CONTEXT.md` (domain language), `docs/adr/`, `CODING_STANDARDS.md`/`CONTRIBUTING.md`, and the project's declared toolchain conventions.
+- **Standards** — `docs/agents/GLOSSARY.md` (domain language), `docs/adr/`, `CODING_STANDARDS.md`/`CONTRIBUTING.md`, and the project's declared toolchain conventions.
 
 ## 3. Run the two axes
 

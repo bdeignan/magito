@@ -10,7 +10,7 @@ Scaffold the per-repo configuration the workflow skills assume. Prompt-driven, n
 
 ## 1. Explore
 
-Read the starting state; don't assume. `git remote -v` (is this GitHub?), `CLAUDE.md`/`AGENTS.md`, `CONTEXT.md`, `docs/adr/`, `pyproject.toml`, `.scratch/`, and any existing `## Agent workflow` block.
+Read the starting state; don't assume. `git remote -v` (is this GitHub?), `CLAUDE.md`/`AGENTS.md`, `docs/agents/GLOSSARY.md`, `docs/adr/`, `pyproject.toml`, `.scratch/`, and any existing `## Agent workflow` block.
 
 ## 2. Section A — Issue tracker
 

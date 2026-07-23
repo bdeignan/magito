@@ -1,4 +1,4 @@
-# CONTEXT.md Format
+# GLOSSARY.md Format
 
 ## Structure
 
@@ -38,12 +38,12 @@ A `CONTEXT-MAP.md` at the root lists each context, where it lives, and how they 
 
 ## Contexts
 
-- [Ingestion](./src/ingestion/CONTEXT.md) — pulls and validates raw source data
-- [Modeling](./src/modeling/CONTEXT.md) — trains and evaluates models
+- [Ingestion](./src/ingestion/GLOSSARY.md) — pulls and validates raw source data
+- [Modeling](./src/modeling/GLOSSARY.md) — trains and evaluates models
 
 ## Relationships
 
 - **Ingestion → Modeling**: Ingestion emits a validated `feature frame`; Modeling consumes it.
 ```
 
-If `CONTEXT-MAP.md` exists, read it to find the contexts. If only a root `CONTEXT.md` exists, single context. If neither, create a root `CONTEXT.md` lazily when the first term resolves.
+If `CONTEXT-MAP.md` exists, read it to find the contexts. If only a `docs/agents/GLOSSARY.md` exists, single context. If neither, create `docs/agents/GLOSSARY.md` lazily when the first term resolves.
