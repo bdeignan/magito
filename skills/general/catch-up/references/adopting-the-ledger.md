@@ -17,9 +17,10 @@ is a replacement for the old scratch handoff file magito wrote for itself.
 
 ## Nothing to install per project
 
-Once the `clock` script exists on a machine and the instruction-file floor
-(`CLAUDE.md` / `AGENTS.md`) is in place, every project on that machine
-already has the ledger available. There is no per-project setup:
+After `python install.py` places `~/.magito/bin/clock` on a machine, and the
+instruction-file floor (`CLAUDE.md` / `AGENTS.md`) is in place, every project
+on that machine already has the ledger available. There is no per-project
+setup:
 
 - `/catch-up` clocks in on its own, at the start of a session.
 - `/handoff` clocks out on its own, at the end of a session.
@@ -49,8 +50,8 @@ Run this once, inside the target project, with an agent:
 ```
 You are turning on the magito session ledger in this project. Do these steps in order and report what you find at each one.
 
-1. Run `clock in` once. Confirm it created or opened the ledger and printed an orientation payload.
-2. Run `clock import-handoff`. It looks for this repo's old handoff file and, if it finds one, saves its text as a single closed "imported" session. It does not delete the file. Report whether a file was found and imported.
-3. Run `clock status` and confirm both the current session and (if there was one) the imported session show up.
+1. Run `~/.magito/bin/clock in` once. Confirm it created or opened the ledger and printed an orientation payload.
+2. Run `~/.magito/bin/clock import-handoff`. It looks for this repo's old handoff file and, if it finds one, saves its text as a single closed "imported" session. It does not delete the file. Report whether a file was found and imported.
+3. Run `~/.magito/bin/clock status` and confirm both the current session and (if there was one) the imported session show up.
 4. Tell me if this project has its own notes or handoff habit I should know about. The ledger does not replace the project's own docs — only magito's old handoff file.
 ```

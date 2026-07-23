@@ -7,7 +7,7 @@ argument-hint: "what the next session will focus on"
 
 # Handoff
 
-Close out the session by running `python3 ../implement-issue/scripts/clock out "<summary>"`.
+Close out the session by running `~/.magito/bin/clock out "<summary>"`.
 It records a `clock_out` row in the machine-local session ledger — there is no file to
 write, and nothing lands in the workspace.
 
@@ -20,7 +20,7 @@ Keep it tight — a sentence per point, not a transcript. If the session landed 
 worth keeping, say so plainly, e.g.:
 
 ```
-python3 ../implement-issue/scripts/clock out "abandoned, nothing landed"
+~/.magito/bin/clock out "abandoned, nothing landed"
 ```
 
 - **Reconcile against live state before writing.** A summary written from session

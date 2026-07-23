@@ -36,6 +36,7 @@ magito/
 ├── install.py              # Install symlinks; run after adding new files
 ├── install.toml            # Your local config (gitignored; copy from install.toml.example)
 ├── install.toml.example    # Template — commit this, not install.toml
+├── bin/                    # Machine-global clock command + its ledger.md doc, symlinked to ~/.magito/bin/
 ├── shared/
 │   └── SYSTEM-INSTRUCTIONS.md  # Symlinked to each tool's user instruction file
 ├── skills/
@@ -142,16 +143,21 @@ committed here:
   a later migration step retires them.
 - `ledger.db` — the **session ledger**: an append-only SQLite database of session
   clock-ins, clock-outs, and checkpoint events, written and read only through the
-  `clock` script (`skills/general/implement-issue/scripts/clock`); created on the
+  `clock` script (`~/.magito/bin/clock`); created on the
   first `clock in`. Alongside it, `run/<hash>.session` holds small pointer files that
   map a repo (or launch folder) to the session id its last `clock in` used, so a
   later `clock out` can re-find the same session. Inspect the DB by hand via the
-  sibling `ledger.md`. Epic #62 is folding the single-file handoffs above into this.
+  `ledger.md` installed alongside `clock`. Epic #62 is folding the single-file handoffs above into this.
+- `bin/` — holds the magito-managed `clock` command and its `ledger.md`, symlinked
+  from the repo's `bin/` by `install.py` (issue #84). Not a user file: reinstalling
+  refreshes it the same way it refreshes any other symlink.
 
 Conventions: agents never overwrite an existing *user* file here on their own
-initiative — `bench.toml`, `workers.toml`, and the handoffs are the user's. The
-`clock` script is the exception: it owns `ledger.db` and `run/` outright, creating
-them and appending rows as its job. Commands in both rosters run in non-interactive shells,
+initiative — `bench.toml`, `workers.toml`, and the handoffs are the user's.
+`ledger.db`, `run/`, and `bin/` are magito-managed, not user files: `clock` owns
+`ledger.db` and `run/` outright, creating them and appending rows as its job, and
+`install.py` owns `bin/` outright, creating and refreshing its symlinks on every
+run. Commands in both rosters run in non-interactive shells,
 so any env they need (API keys, cloud project ids) must come from `~/.zshenv` or the
 tool's own auth store, never `.zshrc` alone — see the worker contract's gotchas.
 

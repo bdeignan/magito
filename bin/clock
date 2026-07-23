@@ -4,8 +4,9 @@
 # dependencies = []
 # ///
 """
-clock — the append-only session ledger. See issue #62/#63 and the sibling
-ledger.md for how to inspect the database by hand.
+clock — the append-only session ledger. Installed to ~/.magito/bin/clock by
+install.py; see issue #62/#63 and the ledger.md installed alongside it there
+for how to inspect the database by hand.
 
 The only thing that reads or writes ~/.magito/ledger.db (or $MAGITO_LEDGER_DB,
 if set — an escape hatch for testing without touching the real ledger).
@@ -17,11 +18,14 @@ Usage:
     clock checkpoint --type <checkpoint|output|gotcha|note> [--ref <ref>] [--summary <text>] [--session-id <id>]
     clock status
     clock import-handoff
+    clock dump [--table clock_in|clock_out|session_event]
 
 Every connection this script opens issues `PRAGMA foreign_keys = ON` through
 one helper (get_connection) so that rule can never be forgotten on some path.
 All three tables (clock_in, clock_out, session_event) are insert-only —
-nothing here ever runs UPDATE or DELETE. Stdlib only, by design.
+nothing here ever runs UPDATE or DELETE. `dump` is the exception to
+get_connection itself: it opens the database read-only and never touches the
+write path, so a snapshot can never mutate the ledger. Stdlib only, by design.
 
 Exit codes: 0 ok; 1 usage or other error; 3 no session id could be resolved;
 4 a DB constraint refused the write (UNIQUE / CHECK / FOREIGN KEY); 5 the
@@ -29,6 +33,7 @@ disambiguation prompt got no usable answer.
 """
 import argparse
 import hashlib
+import json
 import os
 import random
 import sqlite3
@@ -104,6 +109,7 @@ SURNAMES = [
 ]
 
 EVENT_TYPES = ("checkpoint", "output", "gotcha", "note")
+TABLES = ("clock_in", "clock_out", "session_event")
 
 
 def die(msg, code=1):
@@ -584,6 +590,32 @@ def cmd_import_handoff(conn):
     print(f"imported handoff: {session_id} (source file kept at {path})")
 
 
+def cmd_dump(opts):
+    """Point-in-time JSONL snapshot of the ledger — folded in from the old
+    clock-dump.py (#84). Opens the database in SQLite's read-only URI mode,
+    so a dump can never write to the ledger, and never goes through
+    get_connection (no schema script, no write path). JSONL, not CSV: a
+    clock_out or session_event summary can contain newlines, and CSV breaks
+    on that."""
+    path = db_path()
+    if not path.exists():
+        die(f"no ledger at {path}")
+
+    conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+    conn.row_factory = sqlite3.Row
+
+    tables = (opts.table,) if opts.table else TABLES
+    try:
+        for table in tables:
+            # table is drawn only from the fixed TABLES tuple above (argparse
+            # choices=), never from free text, so this is not injectable.
+            for row in conn.execute(f"SELECT * FROM {table} ORDER BY rowid"):
+                record = {"_table": table, **dict(row)}
+                sys.stdout.write(json.dumps(record) + "\n")
+    finally:
+        conn.close()
+
+
 # --- cli ---------------------------------------------------------------
 
 def build_parser():
@@ -606,11 +638,19 @@ def build_parser():
     sub.add_parser("status", help="List open and recent sessions.")
 
     sub.add_parser("import-handoff", help="Import this repo's old single-file handoff as one closed session.")
+
+    p_dump = sub.add_parser("dump", help="Dump the ledger to JSONL, one object per line (read-only).")
+    p_dump.add_argument("--table", choices=TABLES, help="Dump only this table (default: all three).")
     return p
 
 
 def main():
     args = build_parser().parse_args()
+    if args.command == "dump":
+        # Read-only: dispatched before get_connection() so it never opens
+        # the write path or runs the schema script.
+        cmd_dump(args)
+        return
     conn = get_connection(create=(args.command in ("in", "import-handoff")))
     try:
         if conn is None:

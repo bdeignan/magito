@@ -4,14 +4,13 @@
 # Staging is always explicit — this script never runs `git add -A`/`git add .`.
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-
 # Best-effort ledger checkpoint (issue #65). Never aborts the git verb: any
 # failure (nothing clocked in, clock/python missing) is swallowed so the git
-# work still succeeds. Resolves the sibling `clock` script by this script's
-# own dir, not the caller's cwd, since gitflow.sh is invoked by absolute path
-# from other repos — the ledger itself is global regardless of which repo the
-# git work happened in. type=$1, ref=$2 (optional), summary=$3 (optional).
+# work still succeeds. Calls the machine-global `~/.magito/bin/clock`
+# (issue #84) rather than a sibling script — the ledger is global regardless
+# of which repo the git work happened in, so there is nothing to resolve
+# relative to this script's own dir. type=$1, ref=$2 (optional), summary=$3
+# (optional).
 checkpoint() {
   local ctype="$1" ref="${2:-}" summary="${3:-}"
   local -a args=(checkpoint --type "$ctype")
@@ -20,7 +19,7 @@ checkpoint() {
   # stdin closed (</dev/null): if clock reaches its ambiguous-session prompt it
   # gets EOF and dies rather than blocking a git verb on a keystroke — a silent
   # hang would be worse than the abort this best-effort wrapper prevents.
-  python3 "$SCRIPT_DIR/clock" "${args[@]}" </dev/null >/dev/null 2>&1 || true
+  python3 "$HOME/.magito/bin/clock" "${args[@]}" </dev/null >/dev/null 2>&1 || true
 }
 
 cmd="${1:-}"; shift || true

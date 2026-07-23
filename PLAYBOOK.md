@@ -23,7 +23,9 @@ What magito guarantees you, no matter how the internals change:
    subscription.
 5. **Machine-local files are yours.** `~/.magito/` (bench.toml, workers.toml,
    handoffs) is bootstrapped once with your consent and never overwritten by an
-   agent on its own initiative.
+   agent on its own initiative. The exceptions are magito-managed: `ledger.db`
+   and `run/` (owned by `clock`) and `bin/` (owned by `install.py`) are refreshed
+   automatically and aren't user files.
 6. **Staging is always explicit.** No agent bulk-stages — a hook blocks
    `git add -A` everywhere, in every repo.
 7. **Costs are stated before they're incurred.** Dispatch declares its executor
