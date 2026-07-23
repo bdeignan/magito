@@ -111,6 +111,8 @@ SURNAMES = [
 EVENT_TYPES = ("checkpoint", "output", "gotcha", "note")
 TABLES = ("clock_in", "clock_out", "session_event")
 
+SCHEMA_VERSION = 1  # current ledger schema version; bump on DDL changes
+
 
 def die(msg, code=1):
     print(f"clock: {msg}", file=sys.stderr)
@@ -147,6 +149,29 @@ def repo_slug(cwd: str) -> str:
     return folder_key(cwd).replace("/", "-")
 
 
+def migrate(conn: sqlite3.Connection) -> None:
+    """Apply schema migrations. Existing data tables are never dropped or
+    rewritten; only the derived `sessions` view is recreated freely, then
+    PRAGMA user_version is bumped."""
+    stored = conn.execute("PRAGMA user_version").fetchone()[0]
+    if stored >= SCHEMA_VERSION:
+        # Already current; leave every table and view untouched.
+        return
+    # v1 needs nothing but a view refresh: re-running SCHEMA rebuilds the
+    # derived `sessions` view from the current DDL, while its CREATE TABLE
+    # IF NOT EXISTS statements no-op on existing data tables. A future
+    # version that changes a *data* table cannot ride this path — it must
+    # add its own explicit, row-preserving step (ALTER/backfill) here,
+    # guarded by `stored < N`, before this view refresh. Bumping
+    # SCHEMA_VERSION alone never migrates table data.
+    conn.execute("DROP VIEW IF EXISTS sessions")
+    conn.executescript(SCHEMA)  # re-creates the view from current DDL
+    # PRAGMA user_version cannot be parameterized; the value is a local
+    # integer constant, never user input, so interpolation is safe here.
+    conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
+    conn.commit()
+
+
 def get_connection(create=True) -> sqlite3.Connection | None:
     """The one place a sqlite3 connection is opened. PRAGMA foreign_keys=ON
     is load-bearing for the FK invariants below — without it an orphan
@@ -166,6 +191,7 @@ def get_connection(create=True) -> sqlite3.Connection | None:
     conn.execute("PRAGMA foreign_keys = ON")
     conn.row_factory = sqlite3.Row
     conn.executescript(SCHEMA)
+    migrate(conn)
     return conn
 
 
