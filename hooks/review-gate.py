@@ -7,8 +7,10 @@ marker exists for the sha being landed. Repos opt in via
 `git config magito.reviewGate true` (gitflow.sh is always gated). A leading
 `cd <dir> &&` in the command shifts where later segments are judged from
 (e.g. into a linked worktree). `git merge` already did this for `git -C
-<path>`; this extends the same idea to a plain `cd`. Fails open (allows
-silently) on any parsing, git, or filesystem error.
+<path>`; this extends the same idea to a plain `cd`. Merging the base
+branch's own remote-tracking ref (e.g. `git merge origin/main` while on
+main) is exempted as a fast-forward sync, not a landing of new work. Fails
+open (allows silently) on any parsing, git, or filesystem error.
 """
 import json
 import os
@@ -19,8 +21,18 @@ from pathlib import Path
 
 GLOBAL_FLAGS_WITH_ARG = {"-C", "-c", "--git-dir", "--work-tree", "--namespace", "--exec-path"}
 MERGE_IN_PROGRESS_FLAGS = ("--abort", "--continue", "--quit")
-# merge flags that consume the next token, so it must not be mistaken for the ref
-MERGE_FLAGS_WITH_ARG = {"-m", "-F", "-X", "-s", "-S", "--gpg-sign", "--log", "--cleanup", "--into-name"}
+# merge flags that take a MANDATORY value as a separate token, so it must not be
+# mistaken for the ref (both short and long spellings — verified against `git merge -h`
+# and by observing actual merge behavior on git 2.40). -S/--gpg-sign and --log take only
+# an *optional* value, attached via `-Skey`/`--log=n` with no space — never as a separate
+# token — so they are deliberately excluded: listing them here would swallow the next
+# token (often the ref itself), recreating the same bug this set exists to prevent. The
+# `--flag=value` compound form needs no entry either way: it's one token starting with
+# "-", so it never matches the bare ref check below regardless of this set's contents.
+MERGE_FLAGS_WITH_ARG = {
+    "-m", "--message", "-F", "--file", "-s", "--strategy", "-X", "--strategy-option",
+    "--cleanup", "--into-name",
+}
 
 
 def split_segments(cmd):
@@ -141,6 +153,25 @@ def current_branch(cwd):
     return git(["rev-parse", "--abbrev-ref", "HEAD"], cwd)
 
 
+def is_own_upstream(ref, branch, cwd):
+    """True if `ref` is exactly `branch`'s configured @{upstream} (e.g. `origin/main`
+    while on `main`) — a fast-forward sync of the base branch, not a landing of new
+    work, so it isn't gated. Resolved via git's own upstream tracking rather than a
+    literal "origin/<branch>" string match, so it still works with other remote names
+    or a differently-named tracking branch. Deliberately narrow: merging any OTHER
+    ref (a feature branch, another remote's branch, even a plain SHA that happens to
+    equal origin's tip) still gates normally — pushing work to origin first does not
+    launder it through this exemption, since `git merge <that-ref>` isn't the branch's
+    own upstream.
+    """
+    try:
+        upstream = git(["rev-parse", "--abbrev-ref", f"{branch}@{{upstream}}"], cwd)
+        resolved = git(["rev-parse", "--abbrev-ref", ref], cwd)
+        return resolved == upstream
+    except Exception:
+        return False
+
+
 def marker_path(branch, cwd):
     # --git-common-dir so a marker written inside a linked worktree is seen
     # when merging from the main checkout (and vice versa)
@@ -220,7 +251,8 @@ def main():
             if not opted_in(repo_cwd):
                 continue
             base = get_base_branch(repo_cwd)
-            if base is None or current_branch(repo_cwd) != base:
+            branch = current_branch(repo_cwd)
+            if base is None or branch != base:
                 continue
             ref, skip = None, False
             for a in args:
@@ -232,6 +264,10 @@ def main():
                     ref = a
                     break
             if ref is None:
+                continue
+            if is_own_upstream(ref, branch, repo_cwd):
+                # fast-forward sync of the base branch from its own remote tracking
+                # ref (e.g. `git merge origin/main` while on main) — not new work
                 continue
             sha = git(["rev-parse", ref], repo_cwd)
             if gate(ref, sha, repo_cwd):
