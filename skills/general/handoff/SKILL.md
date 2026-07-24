@@ -33,8 +33,10 @@ only record of the session.
 - **Reconcile against live state before writing.** A summary written from session
   memory drifts from reality. Before clocking out, verify what you're about to claim
   against live sources — `git status`, `git log`, and the tracker
-  (`bash ../implement-issue/scripts/issues.sh list`) — and correct any claim that
-  disagrees (an issue you think is still open may have merged).
+  (`bash <skills>/implement-issue/scripts/issues.sh list` — `<skills>` is your tool's
+  installed skills directory, `~/.claude/skills` for Claude Code or `~/.agents/skills`
+  for most others) — and correct any claim that disagrees (an issue you think is still
+  open may have merged).
 - **Capture durable decisions first.** If terms or architectural decisions crystallized
   this session and aren't yet written down, run `domain-modeling` to land them in
   `docs/agents/GLOSSARY.md` / ADRs **before** clocking out — those belong in the repo, not in the

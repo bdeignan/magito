@@ -28,8 +28,10 @@ didn't check it, its status is `skipped`, not absent from the list.
 4. The most recent few ADRs under `docs/adr/`. If the directory doesn't exist or is
    empty, status is `missing`.
 5. Open issues from the configured tracker
-   (`bash ../implement-issue/scripts/issues.sh list`, or `.scratch/`). If no tracker is
-   configured, status is `skipped: no tracker configured — run /setup-project`.
+   (`bash <skills>/implement-issue/scripts/issues.sh list` — `<skills>` is your tool's
+   installed skills directory, `~/.claude/skills` for Claude Code or `~/.agents/skills`
+   for most others — or `.scratch/`). If no tracker is configured, status is
+   `skipped: no tracker configured — run /setup-project`.
 6. Git reality: the current branch, `git status`, and the last few commits.
 7. Open PRs (`gh pr list`).
 
