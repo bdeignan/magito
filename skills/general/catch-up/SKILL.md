@@ -10,15 +10,18 @@ Rebuild context at the start of a session by working through this checklist in o
 then summarizing. Don't act yet — orient first.
 
 Every source below resolves to exactly one status: `read`, `missing` (checked, not
-there), or `skipped: <reason>` (deliberately not checked). No source may be silently
-omitted from the final report — if you didn't check it, its status is `skipped`, not
-absent from the list.
+there), `skipped: <reason>` (deliberately not checked), or `failed: <reason>` (checked,
+the attempt errored). No source may be silently omitted from the final report — if you
+didn't check it, its status is `skipped`, not absent from the list.
 
 1. Clock in: run `~/.magito/bin/clock in`. It records this
    session's `clock_in` row in the ledger and prints an orientation payload — recent
    session summaries for this repo, any unfinished sessions, and a one-line rollup of
    recent activity. Show that payload. If the repo has no earlier sessions, the payload
-   says so plainly — that's still `read`, not `missing`.
+   says so plainly — that's still `read`, not `missing`. If `clock in` exits non-zero,
+   status is `failed: <clock's error message>` — show the error and move on. A ledger
+   failure never stops the rest of this checklist; every other source below is still
+   readable on its own.
 2. `CLAUDE.md` / `AGENTS.md` at the repo root. If neither exists, status is `missing`.
 3. `docs/agents/GLOSSARY.md` (in a multi-context repo, routing to per-area glossaries lives in `docs/agents/INDEX.md`). If it doesn't exist, status is
    `missing`.

@@ -23,6 +23,13 @@ worth keeping, say so plainly, e.g.:
 ~/.magito/bin/clock out "abandoned, nothing landed"
 ```
 
+If `clock out` exits non-zero, the summary was not recorded — do not discard it. Show
+the full summary text to the user along with the error `clock` printed, and say plainly
+that the clock-out failed. If the error lists more than one open session for this
+folder, rerun with `--session-id <id>` from that list — that case recovers in place. For
+any other failure, no retry fixes it here, and the text you show the user becomes the
+only record of the session.
+
 - **Reconcile against live state before writing.** A summary written from session
   memory drifts from reality. Before clocking out, verify what you're about to claim
   against live sources — `git status`, `git log`, and the tracker
