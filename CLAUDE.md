@@ -29,7 +29,9 @@ independent of the base branch.
 
 ### Toolchain
 
-- Stdlib-only Python 3.11+ everywhere in this repo — `install.py`, `hooks/*.py`, `bin/clock`, any skill's `scripts/*.py` — no runtime dependencies by design.
+- Stdlib-only Python 3.11+ everywhere in this repo, with no runtime dependencies by
+  design. That covers `install.py`, `hooks/*.py`, `bin/clock`, and any skill's
+  `scripts/*.py`.
 - No test suite; verify with `python install.py --dry-run` and by driving hooks with
   synthetic stdin payloads.
 - Markdown (skills, agents, instructions) is the product. Content edits are live via

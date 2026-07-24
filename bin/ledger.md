@@ -4,7 +4,7 @@ The session ledger is a single SQLite file, machine-local, never checked into
 a repo. Default location: `~/.magito/ledger.db`. `clock` (installed at
 `~/.magito/bin/clock`, alongside this doc) honors `$MAGITO_LEDGER_DB` if it's
 set, pointing it at a different file instead — useful for testing without
-touching your real ledger. `clock dump` honors the same override.
+touching your real ledger. `~/.magito/bin/clock dump` honors the same override.
 
 ## Poking at it with the sqlite3 CLI
 
@@ -52,7 +52,7 @@ fix is a later row (a `note` event, say), not a mutation of history.
 
 ## Getting a snapshot instead
 
-For scripting or archiving, prefer `clock dump` over hand-written SQL. It
+For scripting or archiving, prefer `~/.magito/bin/clock dump` over hand-written SQL. It
 emits one JSON object per line (JSONL, not CSV — a summary can contain
 newlines, which breaks CSV) for every row in all three tables, each tagged
 with `_table`:
@@ -67,6 +67,7 @@ with `_table`:
 `clock`, installed at `~/.magito/bin/clock` (this doc sits alongside it,
 installed from the same repo-root `bin/`), is the only thing that reads or
 writes `ledger.db` from magito's own tooling. If some other script needs
-data from the ledger, prefer shelling out to `clock status` or `clock dump`
+data from the ledger, prefer shelling out to `~/.magito/bin/clock status` or
+`~/.magito/bin/clock dump`
 over opening the database directly — that way a schema change only ever has
 one caller to update.

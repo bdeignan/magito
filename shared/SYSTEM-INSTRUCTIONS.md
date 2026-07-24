@@ -40,4 +40,4 @@
 - Start of a work session: run `~/.magito/bin/clock in` (or `/catch-up`, which runs it for you). It records the session and shows recent and unfinished sessions for this project.
 - End of a work session: run `~/.magito/bin/clock out "<summary>"` (or `/handoff`, which runs it for you). Write one short paragraph: what you did, what is left, and any gotcha worth keeping.
 - Clock out when the whole session wraps, not after each task. A missed clock-out only loses the summary, never the session record.
-- An agent handed a scoped task by another agent does not touch the ledger — clocking in or out is the driver's job alone.
+- An agent handed a scoped task by another agent does not touch the ledger. Clocking in and out belongs to the agent that started the session.

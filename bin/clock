@@ -219,8 +219,9 @@ def get_connection(create=True) -> sqlite3.Connection | None:
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
     except OSError as e:
-        die(f"cannot create ledger directory {path.parent} (permission denied) — "
-            f"check permissions on its parent directory", code=6)
+        # Report the real errno reason — a full disk, a non-directory in the
+        # path, and a permissions problem each need a different remedy.
+        die(f"cannot create ledger directory {path.parent}: {e.strerror or e}", code=6)
     try:
         conn = sqlite3.connect(path, timeout=10)
         conn.execute("PRAGMA foreign_keys = ON")
