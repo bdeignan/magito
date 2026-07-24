@@ -33,17 +33,21 @@ file your CLI reads. The ambition is, let's say, *scoped*.
 | **MELCHIOR**   | Claude Code    | Primary orchestrator — subagents, skills, worker delegation |
 | **BALTHASAR**  | Codex          | Shares the same persona via `AGENTS.md`    |
 | **CASPER**     | Gemini CLI     | Shares the same persona via `GEMINI.md`    |
+| —              | Antigravity    | Shares Gemini CLI's persona via the same `GEMINI.md` (enable only one) |
+| —              | omp (Oh My Pi) | Shares the same persona via `AGENTS.md`    |
 
 </details>
 
-All three read from a **single source of truth** (`shared/SYSTEM-INSTRUCTIONS.md`), so
+Every tool reads from a **single source of truth** (`shared/SYSTEM-INSTRUCTIONS.md`), so
 your standards stay identical no matter which CLI you reach for.
 
 The governance layer goes further than shared instructions: the primary orchestrator
 can delegate implementation work to *other* CLIs as headless workers — a cheap model
 builds in an isolated worktree, the orchestrator reviews and lands it. Worker
 commands are machine-local (`~/.magito/workers.toml`), so each machine hires from
-whatever CLIs it actually has.
+whatever CLIs it actually has. It also keeps a session ledger — clock in/out records
+of what happened and what's unfinished — so a fresh session can pick up where the
+last one left off.
 
 Learning to drive it? Start with the **[Playbook](PLAYBOOK.md)** — situation → play
 → where you stay in the loop, plus the behavior promises magito keeps while the
@@ -90,7 +94,7 @@ on machine B:
 ```bash
 cd ~/code/magito
 git pull
-python install.py        # only strictly needed if NEW skills/agents/tools were added
+python install.py        # only strictly needed if NEW skills/agents/tools/bin files were added
 ```
 
 **Rule of thumb for whether you need `install.py` after a pull:**
@@ -98,7 +102,7 @@ python install.py        # only strictly needed if NEW skills/agents/tools were 
 | What changed in the pull                                  | Reinstall needed? |
 |-----------------------------------------------------------|-------------------|
 | Edited `SYSTEM-INSTRUCTIONS.md` or an existing `SKILL.md`  | **No** — symlink already points there, change is live |
-| Added a brand-new skill, agent, hook, or tool stanza      | **Yes** — needs a new symlink |
+| Added a brand-new skill, agent, hook, tool stanza, or `bin/` file (e.g. `clock`) | **Yes** — needs a new symlink |
 | Not sure                                                  | Just run it — it's idempotent and harmless |
 
 When in doubt, run `python install.py`. It never does damage on a re-run.

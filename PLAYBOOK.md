@@ -12,8 +12,9 @@ What magito guarantees you, no matter how the internals change:
 1. **You own every merge.** Agents branch, commit, and open PRs; the merge is
    always yours. The review gate blocks unreviewed landings mechanically, not by
    politeness.
-2. **Nothing lands unreviewed.** Every PR or merge needs a fresh two-axis review
-   (Standards + Spec). Any commit after the review goes stale and re-blocks. (The
+2. **Nothing lands unreviewed.** Every PR or merge needs a fresh review — the full
+   two-axis pass (Standards + Spec), or a lightweight single-pass review for small,
+   low-risk diffs. Any commit after the review goes stale and re-blocks. (The
    mechanical block on raw `git merge`/`gh pr create` arms in repos opted in via
    `/setup-project`; the skills demand the review everywhere regardless.)
 3. **Delegation is explicit.** No work goes to an external model unless you name a
@@ -98,9 +99,9 @@ target repo's `docs/decisions/`; enough of them become the corpus for a future t
 - **Fresh quota, exploratory work** (winning): drive in-session. Delegation adds
   overhead and saves nothing that matters.
 - **Subscription burning, mechanical backlog** (losing): shift implementation to
-  prepaid workers — "via omp" at home, "via gemini" at work. The roster
-  (`~/.magito/workers.toml`) is per-machine; worker names are your tiers
-  (`omp` cheap and fast, `omp-slow` stronger, `gemini-pro` at work).
+  prepaid workers — e.g. "via omp". The roster (`~/.magito/workers.toml`) is
+  per-machine, so check it for the worker names actually configured on this
+  machine rather than assuming a name here.
 - **Unsure** (tied): call the default plays. They never delegate, never spend
   prepaid credits, and always stop at your gates.
 

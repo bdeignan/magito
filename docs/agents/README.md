@@ -24,7 +24,9 @@ filters the rest (that keeps it honest).
 ## The auto-load bundle
 INDEX + OVERVIEW + a small GLOSSARY load every session via a native `@docs/agents/INDEX.md`
 import in `CLAUDE.md` (a prose pointer in `AGENTS.md` for tools without imports). Everything
-else is pulled on demand through INDEX's routing table.
+else is pulled on demand through INDEX's routing table. magito itself has no root
+`AGENTS.md`, so in this repo only Claude Code's import picks up the bundle — Codex and
+Gemini don't.
 
 ## The file set
 | File | Job | Auto-loaded? | Created |
