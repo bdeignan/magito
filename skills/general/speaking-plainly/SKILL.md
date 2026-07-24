@@ -25,6 +25,6 @@ When given text to rewrite plainly:
 4. **Verify fidelity**: Ensure every extracted acceptance criterion, fact, number, and identifier is present in the rewrite. Do not drop or rename any of these.
 5. **Run the readability checker**:
    - Write the draft to a temporary file.
-   - Run the script: `python ./scripts/readability.py <temp_file>` (relative to the skill directory).
+   - Run the script: `python3 ./scripts/readability.py <temp_file>` (relative to the skill directory).
    - If the script flags sentences over 25 words or passive voice stacking, rewrite those sections.
 6. **Output the final result**: Present the text to the user. Do not include introductory filler or chat preamble.
