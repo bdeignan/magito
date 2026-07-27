@@ -1,5 +1,12 @@
 # The handoff is machine-local; catch-up trusts live state over it
 
+**Status:** superseded in part by ADR-0008. The handoff-file half of this decision is
+dead. `handoff` no longer writes `~/.magito/handoffs/<repo-slug>.md`; it clocks out into
+the session ledger instead. Existing files stay on disk, and `clock import-handoff` reads
+one when a project first adopts the ledger. The title's rule still holds:
+`catch-up` still trusts live git and the tracker over the recorded summary when they
+disagree.
+
 Session handoffs live outside the repo at `~/.magito/handoffs/<repo-slug>.md`
 (machine-local, latest-wins) so they can't be committed or shared — which also means
 they go stale silently, and a stale handoff kept steering sessions at an already-merged

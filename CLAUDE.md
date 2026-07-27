@@ -4,7 +4,8 @@
 configuration layer for agentic CLIs. Inspired by the MAGI AI system from Neon Genesis
 Evangelion; this is a miniature, portable approximation of governed multi-agent behavior.
 
-Manages skills, agents, and shared instructions for Claude Code, Codex, and Gemini CLI.
+Manages skills, agents, and shared instructions for Claude Code, Codex, Gemini CLI,
+Antigravity, and omp — see the Tool Config Paths table below for where each one reads.
 Files live here and are installed via symlinks to each tool's expected native paths.
 The update cycle is: `git pull && python install.py`.
 
@@ -18,15 +19,19 @@ INDEX + OVERVIEW + GLOSSARY auto-load every session via this import).
 **GitHub** — issues and PRs via `gh` against `bdeignan/magito`; reference issues as `#N`.
 The repo is opted into the merge/PR review gate (`git config magito.reviewGate true`):
 landing work requires a fresh `reviewing-changes` marker.
-By default `gitflow.sh pr`/`merge` target the repo's GitHub default branch (main). Set
-`git config magito.baseBranch develop` to retarget them — and the raw-`git merge` gate's
-notion of the base — to `develop` (e.g. for a migration workflow); `git config --unset
-magito.baseBranch` at cutover. The gate always requires a fresh `reviewing-changes` marker
-to land, independent of the base branch.
+By default `gitflow.sh pr` targets the repo's GitHub default branch (main); `gitflow.sh
+merge` never consults GitHub — it detects the base locally instead (`origin/HEAD`, then
+`init.defaultBranch`, then local `main`/`master`). Set `git config magito.baseBranch
+develop` to retarget both — and the raw-`git merge` gate's notion of the base — to
+`develop` (e.g. for a migration workflow); `git config --unset magito.baseBranch` at
+cutover. The gate always requires a fresh `reviewing-changes` marker to land,
+independent of the base branch.
 
 ### Toolchain
 
-- Stdlib-only Python 3.11+ (`install.py`, `hooks/*.py`) — no runtime dependencies by design.
+- Stdlib-only Python 3.11+ everywhere in this repo, with no runtime dependencies by
+  design. That covers `install.py`, `hooks/*.py`, `bin/clock`, and any skill's
+  `scripts/*.py`.
 - No test suite; verify with `python install.py --dry-run` and by driving hooks with
   synthetic stdin payloads.
 - Markdown (skills, agents, instructions) is the product. Content edits are live via
@@ -39,7 +44,12 @@ magito/
 ├── install.py              # Install symlinks; run after adding new files
 ├── install.toml            # Your local config (gitignored; copy from install.toml.example)
 ├── install.toml.example    # Template — commit this, not install.toml
+├── README.md               # Entry point — what this is, quick start, user guide
+├── PLAYBOOK.md             # Situation → play — behavior promises, not mechanics
 ├── bin/                    # Machine-global clock command + its ledger.md doc, symlinked to ~/.magito/bin/
+├── docs/
+│   ├── adr/                # Architecture decision log
+│   └── agents/             # Project context for agents — see docs/agents/README.md
 ├── shared/
 │   └── SYSTEM-INSTRUCTIONS.md  # Symlinked to each tool's user instruction file
 ├── skills/
@@ -150,7 +160,7 @@ committed here:
   first `clock in`. Alongside it, `run/<hash>.session` holds small pointer files that
   map a repo (or launch folder) to the session id its last `clock in` used, so a
   later `clock out` can re-find the same session. Inspect the DB by hand via the
-  `ledger.md` installed alongside `clock`. Epic #62 is folding the single-file handoffs above into this.
+  `ledger.md` installed alongside `clock`. Epic #62 folded the single-file handoffs above into this.
 - `bin/` — holds the magito-managed `clock` command and its `ledger.md`, symlinked
   from the repo's `bin/` by `install.py` (issue #84). Not a user file: reinstalling
   refreshes it the same way it refreshes any other symlink.
@@ -182,8 +192,9 @@ failing to enforce — a skill can *ask*, a hook can *block*:
   marker `reviewing-changes` writes — `<git-common-dir>/magito/reviewed-<branch>` holding
   the reviewed SHA — so any commit after the review goes stale and re-blocks. The common
   git dir makes a review done inside a linked worktree count at merge time.
-- Cross-tool floor: hooks only exist in Claude Code; the same rules stay inlined in the
-  skills so Codex/Gemini keep the prose version.
+- Cross-tool floor: hooks only exist in Claude Code. The staging rule and the review-gate
+  rule are both restated in `shared/SYSTEM-INSTRUCTIONS.md` (every tool's instruction file)
+  so Codex/Gemini/omp keep the prose version.
 - Caveat: a project-level `Bash` matcher in `.claude/settings.json` **overrides**
   user-level hooks entirely for that project — ours silently stop firing there.
 
@@ -196,7 +207,8 @@ failing to enforce — a skill can *ask*, a hook can *block*:
 ## Notes
 
 - `install.py` is idempotent — re-running is always safe
-- `install.toml` and `SCRATCH.md` are gitignored (machine-local)
+- `install.toml`, `SCRATCH.md`, `FOOTGUN-NOTES.md`, `.scratch/`, and
+  `.claude/settings.local.json` are gitignored (machine-local)
 - `skills/INDEX.md` is gitignored (auto-generated on every install run)
 - Use `--force` to replace symlinks pointing to other targets
 - **install.py gotcha:** never call `.resolve()` on destination paths before `link()` —

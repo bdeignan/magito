@@ -29,16 +29,16 @@ setup:
 
 If this project has an old handoff file from before the ledger existed,
 import it once. Paste the prompt below to an agent, inside the project. It
-runs `clock import-handoff`, which reads the old file, saves its text as one
-closed "imported" session in the ledger, and leaves the old file in place —
-nothing is deleted. After that, forget the old file; the ledger is the
-source of history going forward.
+runs `~/.magito/bin/clock import-handoff`, which reads the old file, saves
+its text as one closed "imported" session in the ledger, and leaves the old
+file in place — nothing is deleted. After that, forget the old file; the
+ledger is the source of history going forward.
 
 ## Checking it worked
 
 Two ways to confirm the import landed:
 
-- `clock status` lists the imported session alongside any other sessions
+- `~/.magito/bin/clock status` lists the imported session alongside any other sessions
   for this repo.
 - `/catch-up` shows it in the recent-sessions list the next time you clock
   in.

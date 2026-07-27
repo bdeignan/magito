@@ -24,7 +24,8 @@ filters the rest (that keeps it honest).
 ## The auto-load bundle
 INDEX + OVERVIEW + a small GLOSSARY load every session via a native `@docs/agents/INDEX.md`
 import in `CLAUDE.md` (a prose pointer in `AGENTS.md` for tools without imports). Everything
-else is pulled on demand through INDEX's routing table.
+else is pulled on demand through INDEX's routing table. Without that pointer, tools that
+read `AGENTS.md` never see the bundle at all.
 
 ## The file set
 | File | Job | Auto-loaded? | Created |

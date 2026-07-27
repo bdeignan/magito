@@ -32,10 +32,12 @@
 - Respect the surrounding code. Match its conventions; don't restyle or refactor code you weren't asked to touch.
 - Add only what the task needs. Ask before expanding scope.
 - Write tests that exercise real behavior and the edge cases that actually break — not heavy mocking that passes while the real path fails.
-- Stage only the files you changed. Never `git add -A`.
+- Stage only the files you changed. Never `git add -A`, `--all`, `.`, or `git commit -a`.
+- Don't land unreviewed work: no merge to the base branch and no PR without a fresh review. Claude Code blocks this mechanically; other tools have no enforcement, only this rule.
 
 ## Session ledger
 
-- Start of a work session: run `clock in` (or `/catch-up`, which runs it for you). It records the session and shows recent and unfinished sessions for this project. The installed command is `~/.magito/bin/clock`, run by full path.
-- End of a work session: run `clock out "<summary>"` (or `/handoff`, which runs it for you). Write one short paragraph: what you did, what is left, and any gotcha worth keeping.
+- Start of a work session: run `~/.magito/bin/clock in` (or `/catch-up`, which runs it for you). It records the session and shows recent and unfinished sessions for this project.
+- End of a work session: run `~/.magito/bin/clock out "<summary>"` (or `/handoff`, which runs it for you). Write one short paragraph: what you did, what is left, and any gotcha worth keeping.
 - Clock out when the whole session wraps, not after each task. A missed clock-out only loses the summary, never the session record.
+- An agent handed a scoped task by another agent does not touch the ledger. Clocking in and out belongs to the agent that started the session.

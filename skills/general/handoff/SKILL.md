@@ -23,11 +23,20 @@ worth keeping, say so plainly, e.g.:
 ~/.magito/bin/clock out "abandoned, nothing landed"
 ```
 
+If `clock out` exits non-zero, the summary was not recorded — do not discard it. Show
+the full summary text to the user along with the error `clock` printed, and say plainly
+that the clock-out failed. If the error lists more than one open session for this
+folder, rerun with `--session-id <id>` from that list — that case recovers in place. For
+any other failure, no retry fixes it here, and the text you show the user becomes the
+only record of the session.
+
 - **Reconcile against live state before writing.** A summary written from session
   memory drifts from reality. Before clocking out, verify what you're about to claim
   against live sources — `git status`, `git log`, and the tracker
-  (`bash ../implement-issue/scripts/issues.sh list`) — and correct any claim that
-  disagrees (an issue you think is still open may have merged).
+  (`bash <skills>/implement-issue/scripts/issues.sh list` — `<skills>` is your tool's
+  installed skills directory, `~/.claude/skills` for Claude Code or `~/.agents/skills`
+  for most others) — and correct any claim that disagrees (an issue you think is still
+  open may have merged).
 - **Capture durable decisions first.** If terms or architectural decisions crystallized
   this session and aren't yet written down, run `domain-modeling` to land them in
   `docs/agents/GLOSSARY.md` / ADRs **before** clocking out — those belong in the repo, not in the

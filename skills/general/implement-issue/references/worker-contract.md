@@ -125,7 +125,7 @@ them is correct behavior, not an error.
 
 ## Probe and fallback
 
-Before dispatching to a named worker, probe it once: `worker.sh probe <worker>`
+Before dispatching to a named worker, probe it once: `python3 <skills>/implement-issue/scripts/worker.py probe <worker>`
 sends "Reply with exactly: VERDICT-OK" and checks the token comes back. The
 launcher strips approval-bypass flags from the probe itself — a ping needs no
 permissions, and permission tooling rightly balks at bypass flags on a command that
@@ -156,7 +156,7 @@ doesn't need them.
   own. Pair the worker-side cap (omp `--max-time`) with a driver-side timeout on the
   shell call.
 - **Claude Code permission modes**: run dispatch sessions in default (prompting)
-  mode — the first `worker.sh` launch prompts once, and "don't ask again this
+  mode — the first `python3 .../scripts/worker.py` launch prompts once, and "don't ask again this
   session" covers the rest of the batch. Auto mode may deny the launch outright; if
   you're then offered a fallback to `haiku-executor`, present it as a billing
   decision, never a convenience. The launcher's single stable prefix

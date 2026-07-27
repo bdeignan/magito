@@ -12,12 +12,42 @@ import sys
 
 DENY_REASON = (
     "magito staging guard: stage files explicitly (git add <file>...) — "
-    "bulk staging (-A/--all/. or commit -a) is blocked. List the files you "
-    "actually changed."
+    "bulk staging is blocked — that means `git add` with -A, --all, or a "
+    "catch-all path like `.`, `..`, `:/`, or `*`, and `git commit -a`. "
+    "List the files you actually changed."
 )
 
 # git global flags that consume the following token as a value.
 GLOBAL_FLAGS_WITH_ARG = {"-C", "-c", "--git-dir", "--work-tree", "--namespace", "--exec-path"}
+
+# `git add` pathspecs that mean "everything from here down", same as ".".
+# Verified against real git: ":" and ":/" both anchor at the repo root with no
+# filter, ".." / "../" walk up to the parent dir, and a bare "*" (whether the
+# shell expanded it or git received it literally, quoted) recurses through
+# every directory entry — none of these narrow the selection at all.
+ADD_ALL_PATHSPECS = {".", "./", "..", "../", ":", ":/", "*"}
+
+# Spellings of `--all` that git accepts, including unambiguous abbreviations.
+# Verified via `git add --<prefix> --dry-run`: --a/--al/--all are the only
+# prefixes of --all that don't collide with another git-add long option
+# (--ig*, --i, --p*, --r*, --n* etc. are all ambiguous with something else).
+ADD_ALL_SPELLINGS = {"--a", "--al", "--all", "--no-ignore-removal"}
+
+# `git commit` flags whose value is a separate following token — their value
+# must never be scanned for bulk-looking substrings (e.g. a commit message
+# starting with "-" that happens to contain a lowercase "a"). Confirmed by
+# running each against real git with a space-separated value. -S/-u and their
+# long forms take only an *attached* optional value, so they're excluded.
+COMMIT_VALUE_FLAGS = {
+    "-m", "--message",
+    "-F", "--file",
+    "-C", "--reuse-message",
+    "-c", "--reedit-message",
+    "-t", "--template",
+    "--author", "--date", "--cleanup",
+    "--fixup", "--squash", "--trailer",
+    "--pathspec-from-file",
+}
 
 
 def split_segments(cmd):
@@ -65,24 +95,50 @@ def find_git_subcommand(tokens):
 
 
 def is_bulk_add(args):
+    in_options = True  # flips off at a bare `--`: nothing after it is a flag
     for tok in args:
-        if tok in (".", "./"):
-            return True
-        if tok in ("--all", "--no-ignore-removal"):
-            return True
-        if tok.startswith("-") and not tok.startswith("--") and "A" in tok[1:]:
-            return True
+        if in_options and tok == "--":
+            in_options = False
+            continue
+        if tok in ADD_ALL_PATHSPECS:
+            return True  # a pathspec means the same thing on either side of --
+        if in_options:
+            if tok in ADD_ALL_SPELLINGS:
+                return True
+            if tok.startswith("-") and not tok.startswith("--") and "A" in tok[1:]:
+                return True
     return False
 
 
 def is_bulk_commit(args):
+    skip_value = False  # true while the next token is a value, not a flag
+    in_options = True  # flips off at a bare `--`: nothing after it is a flag
     for tok in args:
+        if skip_value:
+            skip_value = False
+            continue
+        if in_options and tok == "--":
+            in_options = False
+            continue
+        if not in_options:
+            continue  # commit has no "everything" pathspec the way add does
         if tok == "--amend":
             continue
         if tok == "--all":
             return True
-        if tok.startswith("-") and not tok.startswith("--") and "a" in tok[1:]:
-            return True
+        if tok in COMMIT_VALUE_FLAGS:
+            skip_value = True
+            continue
+        if tok.startswith("-") and not tok.startswith("--"):
+            # Short flags cluster (-am is -a -m), but a value-taking flag ends
+            # the cluster and swallows the rest of the token (-mMessage is -m
+            # with the message attached). Stop there so the value isn't read
+            # as more flags.
+            for i, ch in enumerate(tok[1:], start=1):
+                if ch == "a":
+                    return True
+                if "-" + ch in COMMIT_VALUE_FLAGS:
+                    break
     return False
 
 

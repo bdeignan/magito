@@ -12,9 +12,12 @@ The only thing that reads or writes ~/.magito/ledger.db (or $MAGITO_LEDGER_DB,
 if set — an escape hatch for testing without touching the real ledger).
 Nothing else should open that file directly.
 
-When $MAGITO_WORKER is set — worker.py sets it for every delegated shell worker
-(#94) — every subcommand refuses with an exit-0 no-op: a worker inherits the
-driver's session identity and must never touch the driver's ledger.
+When $MAGITO_WORKER is set to anything but an explicit "off" spelling ("0" or
+"false") — worker.py sets it to "1" for every delegated shell worker (#94) —
+every *write* subcommand (in/out/checkpoint/import-handoff) refuses with an
+exit-0 no-op: a worker inherits the driver's session identity and must never
+mutate the driver's ledger. Read-only commands (status/dump) are unaffected —
+a worker reading the ledger can't corrupt anything.
 
 Usage:
     clock in
@@ -31,9 +34,11 @@ nothing here ever runs UPDATE or DELETE. `dump` is the exception to
 get_connection itself: it opens the database read-only and never touches the
 write path, so a snapshot can never mutate the ledger. Stdlib only, by design.
 
-Exit codes: 0 ok; 1 usage or other error; 3 no session id could be resolved;
-4 a DB constraint refused the write (UNIQUE / CHECK / FOREIGN KEY); 5 the
-disambiguation prompt got no usable answer.
+Exit codes: 0 ok; 1 other error; 2 bad arguments (argparse's own usage
+exit); 3 no session id could be resolved; 4 a DB constraint refused the
+write (UNIQUE / CHECK / FOREIGN KEY); 5 the disambiguation prompt got no
+usable answer; 6 the ledger database or its directory could not be read or
+written (corrupt file, permission denied, directory couldn't be created).
 """
 import argparse
 import hashlib
@@ -123,6 +128,27 @@ def die(msg, code=1):
     sys.exit(code)
 
 
+def diagnose_sqlite_error(e: sqlite3.DatabaseError, path: Path) -> None:
+    """Turn a raw sqlite3 exception into the same `clock:`-prefixed, exit-6
+    diagnosis die() gives every other failure — corruption and a permissions
+    problem need different remedies, so this must never blur them into one
+    generic message. Matched by message text: sqlite3's own exception
+    classes don't distinguish "corrupt file" from "can't write it" (both can
+    surface as OperationalError), but the messages themselves are stable
+    across SQLite versions. Never returns — die() exits."""
+    msg = str(e)
+    if "not a database" in msg or "malformed" in msg:
+        die(f"ledger database is corrupt (not a valid SQLite file): {path} — "
+            f"restore it from a backup, or move it aside to start a fresh ledger", code=6)
+    if "readonly database" in msg:
+        die(f"ledger database is not writable (permission denied): {path} — "
+            f"check its file permissions", code=6)
+    if "unable to open database file" in msg:
+        die(f"cannot open ledger database (permission denied): {path} — "
+            f"check permissions on {path.parent}", code=6)
+    die(f"ledger database error at {path}: {e}", code=6)
+
+
 # --- paths ---------------------------------------------------------------
 
 def db_path() -> Path:
@@ -190,12 +216,20 @@ def get_connection(create=True) -> sqlite3.Connection | None:
     path = db_path()
     if not create and not path.exists():
         return None
-    path.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(path, timeout=10)
-    conn.execute("PRAGMA foreign_keys = ON")
-    conn.row_factory = sqlite3.Row
-    conn.executescript(SCHEMA)
-    migrate(conn)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+    except OSError as e:
+        # Report the real errno reason — a full disk, a non-directory in the
+        # path, and a permissions problem each need a different remedy.
+        die(f"cannot create ledger directory {path.parent}: {e.strerror or e}", code=6)
+    try:
+        conn = sqlite3.connect(path, timeout=10)
+        conn.execute("PRAGMA foreign_keys = ON")
+        conn.row_factory = sqlite3.Row
+        conn.executescript(SCHEMA)
+        migrate(conn)
+    except sqlite3.DatabaseError as e:
+        diagnose_sqlite_error(e, path)
     return conn
 
 
@@ -259,6 +293,22 @@ def resolve_new_session_id() -> str:
 
 def current_tool() -> str:
     return os.environ.get("AI_AGENT", "")
+
+
+WRITE_COMMANDS = ("in", "out", "checkpoint", "import-handoff")
+
+
+def worker_write_guard_engaged() -> bool:
+    """MAGITO_WORKER (#94) is a safety mechanism: a delegated worker inherits
+    the driver's environment, and letting it reach the write path can close
+    or checkpoint the driver's own session under the worker's narrow view of
+    the work. It must fail toward safety, so the check is an allowlist, not
+    a truthiness test: only an explicit "off" spelling ("0" or "false",
+    case-insensitive), or the variable being unset/empty, disengages the
+    guard. Every other value — "1", "true", or an unrecognized typo alike —
+    engages it. An ambiguous value must never be read as "safe to write"."""
+    val = os.environ.get("MAGITO_WORKER", "")
+    return val.strip().lower() not in ("", "0", "false")
 
 
 def ps_start_epoch_ms(pid: int):
@@ -506,9 +556,20 @@ def cmd_in(conn):
     ).fetchone()
     print(f"clocked in: {session_id} ({row['alias']})")
 
-    ptr = pointer_path(cwd)
-    ptr.parent.mkdir(parents=True, exist_ok=True)
-    ptr.write_text(session_id)
+    try:
+        ptr = pointer_path(cwd)
+        ptr.parent.mkdir(parents=True, exist_ok=True)
+        ptr.write_text(session_id)
+    except OSError as e:
+        # The clock_in row above is already committed — the session IS
+        # recorded. The pointer only helps a later `out`/`checkpoint` in this
+        # same folder skip the recovery ladder (resolve_session_id's
+        # last-resort tier); losing it must not look like a failed clock-in,
+        # so warn and keep going rather than dying past a durable write.
+        print(f"clock: warning: could not write the session pointer ({e}) — "
+              f"session was still recorded; pass --session-id {session_id} to "
+              f"`clock out`/`checkpoint` if they can't find it on their own",
+              file=sys.stderr)
 
     print_orientation(conn, row["repo"], session_id)
 
@@ -527,6 +588,20 @@ def cmd_out(conn, opts):
     except sqlite3.IntegrityError as e:
         die(f"cannot record clock_out for {session_id}: {e}", code=4)
     print(f"clocked out: {session_id}")
+
+    # Best-effort cleanup, not correctness: resolve_session_id only ever
+    # trusts this folder's pointer for an *unfinished* session (see its
+    # docstring), so a pointer left behind after close is already inert —
+    # removing it just keeps run/ from accumulating stale files, it changes
+    # no behavior. Only remove it if it still names this session: a
+    # concurrent session clocked into the same folder may have already
+    # overwritten it with its own, still-open session id.
+    try:
+        ptr = pointer_path(cwd)
+        if ptr.exists() and ptr.read_text().strip() == session_id:
+            ptr.unlink()
+    except OSError:
+        pass
 
 
 def cmd_checkpoint(conn, opts):
@@ -642,6 +717,11 @@ def cmd_dump(opts):
             for row in conn.execute(f"SELECT * FROM {table} ORDER BY rowid"):
                 record = {"_table": table, **dict(row)}
                 sys.stdout.write(json.dumps(record) + "\n")
+    except sqlite3.DatabaseError as e:
+        # mode=ro defers validation to the first read (connect() itself
+        # succeeds even against a corrupt file), so this is where a bad
+        # file surfaces for dump.
+        diagnose_sqlite_error(e, path)
     finally:
         conn.close()
 
@@ -659,8 +739,8 @@ def build_parser():
     p_out.add_argument("--session-id", default=None, help="Skip the recovery ladder; close this session id.")
 
     p_cp = sub.add_parser("checkpoint", help="Record one session_event row.")
-    p_cp.add_argument("--type", required=True,
-                       help=f"one of {', '.join(EVENT_TYPES)} (enforced by the DB CHECK constraint)")
+    p_cp.add_argument("--type", required=True, choices=EVENT_TYPES,
+                       help=f"one of {', '.join(EVENT_TYPES)}")
     p_cp.add_argument("--ref", default="", help="A PR url, commit hash, or file path.")
     p_cp.add_argument("--summary", default="")
     p_cp.add_argument("--session-id", default=None, help="Skip the recovery ladder; use this session id.")
@@ -677,17 +757,19 @@ def build_parser():
 def main():
     args = build_parser().parse_args()
     # #94: a delegated shell worker (launched via worker.py) inherits the
-    # driver's environment, so any `clock` call it made would act on the
+    # driver's environment, so any `clock` write it made would act on the
     # driver's own session — clocking it out, or adding checkpoints, under the
     # worker's narrow view of the work. worker.py sets MAGITO_WORKER for exactly
-    # this reason. The driver owns all ledger interaction; a worker never does.
-    # Refuse as a silent-success no-op (exit 0) so it never derails the worker's
-    # actual build.
-    if os.environ.get("MAGITO_WORKER"):
+    # this reason. The driver owns all ledger *writes*; a worker never does —
+    # but a worker reading the ledger (status/dump) can't corrupt anything, so
+    # only the write commands are gated here; see worker_write_guard_engaged()
+    # for the on/off rule. Refuse as a silent-success no-op (exit 0) so it
+    # never derails the worker's actual build.
+    if args.command in WRITE_COMMANDS and worker_write_guard_engaged():
         # stdout, no `clock:` prefix — the file's convention for an exit-0
         # informational no-op (that prefix is for die()'s error paths); matches
         # the already-closed-session and no-ledger-yet skips below.
-        print("delegated worker (MAGITO_WORKER set); ledger access skipped — "
+        print("delegated worker (MAGITO_WORKER set); ledger write skipped — "
               "the driver owns the ledger")
         return
     if args.command == "dump":
@@ -723,6 +805,15 @@ def main():
             cmd_status(conn)
         elif args.command == "import-handoff":
             cmd_import_handoff(conn)
+    except sqlite3.DatabaseError as e:
+        # Anything that escapes this far (e.g. a database file that exists
+        # but isn't writable — get_connection's own schema-script no-ops
+        # cleanly against it, so this only surfaces once a command actually
+        # tries to INSERT) gets the same diagnosis as a get_connection-time
+        # failure. sqlite3.IntegrityError (a DatabaseError subclass) never
+        # reaches here: cmd_out/cmd_checkpoint catch and die(code=4) on it
+        # themselves before it could propagate.
+        diagnose_sqlite_error(e, db_path())
     finally:
         if conn is not None:
             conn.close()

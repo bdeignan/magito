@@ -9,7 +9,9 @@ Usage:
 
 Reads install.toml (copy from install.toml.example and edit). For each enabled tool:
   - Symlinks shared/SYSTEM-INSTRUCTIONS.md to the tool's user instruction file path
-  - Symlinks skills/general/* to ~/.agents/skills (cross-tool standard) and to ~/.claude/skills (Claude only)
+  - Symlinks skills/general/* to every enabled tool's skills directory (the cross-tool
+    ~/.agents/skills standard for most tools, ~/.claude/skills for Claude, ~/.gemini/config/skills
+    for Antigravity)
   - For Claude (detected by presence of 'agents' key): also links skills/claude/* and agents/*.md
   - For tools with a 'hooks' key: also links hooks/*.py and merges them into the adjacent settings.json as PreToolUse hooks
   - Symlinks bin/* to ~/.magito/bin/ (the machine-global clock command + its ledger.md, tool-independent)
