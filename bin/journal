@@ -145,6 +145,10 @@ def cmd_import() -> int:
         written += 1
     print(f"imported {written} entr{'y' if written == 1 else 'ies'} into {out_dir}"
           + (f" ({skipped} already present, left alone)" if skipped else ""))
+    if written:
+        print("Imported entries predate the 150-word cap and are typically several times "
+              "over it.\nThey age out of `journal read N` as new sessions land; shorten "
+              "them by hand if you\nwant the saving sooner.")
     return 0
 
 
