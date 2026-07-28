@@ -121,6 +121,15 @@ FROM clock_in ci
 LEFT JOIN clock_out co ON co.session_id = ci.session_id;
 """
 
+# Aliases are drawn at random with no uniqueness check, and that is deliberate
+# (#99). 24 adjectives x 24 surnames is 576 pairs, so a repeat becomes an even
+# bet somewhere around 28 sessions and is a certainty long before the ledger is
+# old. Nothing breaks when it happens: the alias is a human-readable handle for
+# reading `status` and `catch-up` output, while `session_id` is the only key
+# anything resolves by. A collision costs a moment's ambiguity between two rows
+# on screen, which is cheaper than the code to prevent it. Don't add a
+# uniqueness check without a concrete case where the ambiguity actually misled
+# someone.
 ADJECTIVES = [
     "happy", "eager", "brave", "calm", "clever", "cosmic", "daring", "gentle",
     "jolly", "keen", "lively", "merry", "nimble", "patient", "quiet", "quirky",
