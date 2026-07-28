@@ -192,6 +192,12 @@ failing to enforce — a skill can *ask*, a hook can *block*:
   marker `reviewing-changes` writes — `<git-common-dir>/magito/reviewed-<branch>` holding
   the reviewed SHA — so any commit after the review goes stale and re-blocks. The common
   git dir makes a review done inside a linked worktree count at merge time.
+- Both hooks blank heredoc bodies before judging. Writing a file that contains a line like
+  `git add -A` is not mistaken for running it, which matters here, where the product is
+  prose full of example commands. The parsing is a deliberate byte-identical copy in both
+  files. A shared helper module cannot live in `hooks/`: `install.py` registers every
+  `hooks/*.py` as a PreToolUse hook, so the helper would fire on every Bash call. Change
+  one copy, change the other.
 - Cross-tool floor: hooks only exist in Claude Code. The staging rule and the review-gate
   rule are both restated in `shared/SYSTEM-INSTRUCTIONS.md` (every tool's instruction file)
   so Codex/Gemini/omp keep the prose version.
