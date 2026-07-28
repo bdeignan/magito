@@ -11,7 +11,7 @@ Close out the session by writing **one new file** to the project's session journ
 
 Get the path from `~/.magito/bin/journal name "<short-topic-slug>"` — it prints
 `.magito/journal/YYYY-MM-DD-HHMM-<slug>.md`. Then create that file with your own
-file-writing tool. No shell write, no approval, and nothing to clock out.
+file-writing tool. No shell write and no approval.
 
 Pick the slug from what the session was *about* (`journal-replaces-ledger`,
 `fix-heredoc-parsing`), not from a random name. The filename is the first thing the next

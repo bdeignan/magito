@@ -46,7 +46,7 @@ magito/
 ├── install.toml.example    # Template — commit this, not install.toml
 ├── README.md               # Entry point — what this is, quick start, user guide
 ├── PLAYBOOK.md             # Situation → play — behavior promises, not mechanics
-├── bin/                    # Machine-global clock command + its ledger.md doc, symlinked to ~/.magito/bin/
+├── bin/                    # Machine-global commands (journal; clock until #107), symlinked to ~/.magito/bin/
 ├── docs/
 │   ├── adr/                # Architecture decision log
 │   └── agents/             # Project context for agents — see docs/agents/README.md
@@ -154,16 +154,19 @@ committed here:
   as of the `catch-up` / `handoff` refactor (#64): `handoff` now clocks out to the
   ledger and `catch-up` no longer reads these files. Existing files stay on disk until
   a later migration step retires them.
-- `ledger.db` — the **session ledger**: an append-only SQLite database of session
-  clock-ins, clock-outs, and checkpoint events, written and read only through the
-  `clock` script (`~/.magito/bin/clock`); created on the
-  first `clock in`. Alongside it, `run/<hash>.session` holds small pointer files that
-  map a repo (or launch folder) to the session id its last `clock in` used, so a
-  later `clock out` can re-find the same session. Inspect the DB by hand via the
-  `ledger.md` installed alongside `clock`. Epic #62 folded the single-file handoffs above into this.
-- `bin/` — holds the magito-managed `clock` command and its `ledger.md`, symlinked
-  from the repo's `bin/` by `install.py` (issue #84). Not a user file: reinstalling
-  refreshes it the same way it refreshes any other symlink.
+- `ledger.db`, `run/` — the **retired** SQLite session ledger and its pointer files.
+  Nothing reads or writes them any more: `catch-up` and `handoff` moved to the session
+  journal in #106. They are deleted, along with `bin/clock`, in #107. Migrate a machine's
+  history first with `~/.magito/bin/journal import`, which is safe to run twice.
+- `bin/` — holds the magito-managed commands, symlinked from the repo's `bin/` by
+  `install.py` (issue #84). Currently `journal`, plus `clock` and `ledger.md` until #107
+  removes them. Not a user file: reinstalling refreshes it like any other symlink.
+
+The session record itself is **not** machine-local any more. It lives in the repo at
+`.magito/journal/`, one markdown file per session, with `.magito/` kept in
+`.git/info/exclude` (never `.gitignore` — it is personal state and does not belong in a
+shared ignore file). See `bin/journal` and
+`skills/general/catch-up/references/adopting-the-journal.md`.
 
 Conventions: agents never overwrite an existing *user* file here on their own
 initiative — `bench.toml`, `workers.toml`, and the handoffs are the user's.
