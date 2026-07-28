@@ -22,15 +22,16 @@ a worker reading the ledger can't corrupt anything.
 Usage:
     clock in
     clock out "<summary>" [--session-id <id>]
+    clock amend "<corrected summary>" [--session-id <id>] [--reason "..."]
     clock checkpoint --type <checkpoint|output|gotcha|note> [--ref <ref>] [--summary <text>] [--session-id <id>]
     clock status
     clock import-handoff
-    clock dump [--table clock_in|clock_out|session_event]
+    clock dump [--table clock_in|clock_out|session_event|clock_amendment]
 
 Every connection this script opens issues `PRAGMA foreign_keys = ON` through
 one helper (get_connection) so that rule can never be forgotten on some path.
-All three tables (clock_in, clock_out, session_event) are insert-only —
-nothing here ever runs UPDATE or DELETE. `dump` is the exception to
+All four tables (clock_in, clock_out, session_event, clock_amendment) are
+insert-only — nothing here ever runs UPDATE or DELETE. `dump` is the exception to
 get_connection itself: it opens the database read-only and never touches the
 write path, so a snapshot can never mutate the ledger. Stdlib only, by design.
 
@@ -85,6 +86,16 @@ CREATE TABLE IF NOT EXISTS session_event (
     FOREIGN KEY(session_id) REFERENCES clock_in(session_id)
 );
 
+CREATE TABLE IF NOT EXISTS clock_amendment (
+    amendment_id INTEGER PRIMARY KEY,
+    session_id   TEXT NOT NULL,
+    ts           INTEGER NOT NULL,
+    summary      TEXT NOT NULL,
+    reason       TEXT NOT NULL DEFAULT '',
+    FOREIGN KEY(session_id) REFERENCES clock_out(session_id)
+);
+CREATE INDEX IF NOT EXISTS clock_amendment_session ON clock_amendment(session_id);
+
 CREATE VIEW IF NOT EXISTS sessions AS
 SELECT
     ci.session_id     AS session_id,
@@ -97,7 +108,12 @@ SELECT
     ci.launch_pwd     AS launch_pwd,
     co.ended_ts       AS ended_ts,
     co.end_git_hash   AS end_git_hash,
-    co.summary        AS summary,
+    COALESCE(
+        (SELECT a.summary FROM clock_amendment a
+         WHERE a.session_id = ci.session_id
+         ORDER BY a.ts DESC, a.amendment_id DESC LIMIT 1),
+        co.summary
+    ) AS summary,
     CASE WHEN co.session_id IS NULL THEN NULL ELSE co.ended_ts - ci.started_ts END AS duration,
     CASE WHEN co.session_id IS NULL THEN 1 ELSE 0 END AS unfinished,
     (SELECT COUNT(*) FROM session_event se WHERE se.session_id = ci.session_id) AS event_count
@@ -118,9 +134,9 @@ SURNAMES = [
 ]
 
 EVENT_TYPES = ("checkpoint", "output", "gotcha", "note")
-TABLES = ("clock_in", "clock_out", "session_event")
+TABLES = ("clock_in", "clock_out", "session_event", "clock_amendment")
 
-SCHEMA_VERSION = 1  # current ledger schema version; bump on DDL changes
+SCHEMA_VERSION = 2  # current ledger schema version; bump on DDL changes
 
 
 def die(msg, code=1):
@@ -187,13 +203,14 @@ def migrate(conn: sqlite3.Connection) -> None:
     if stored >= SCHEMA_VERSION:
         # Already current; leave every table and view untouched.
         return
-    # v1 needs nothing but a view refresh: re-running SCHEMA rebuilds the
-    # derived `sessions` view from the current DDL, while its CREATE TABLE
-    # IF NOT EXISTS statements no-op on existing data tables. A future
-    # version that changes a *data* table cannot ride this path — it must
-    # add its own explicit, row-preserving step (ALTER/backfill) here,
-    # guarded by `stored < N`, before this view refresh. Bumping
-    # SCHEMA_VERSION alone never migrates table data.
+    # v1 -> v2 is a cheap migration: the new clock_amendment table is
+    # created via CREATE TABLE IF NOT EXISTS, and re-running SCHEMA rebuilds
+    # the derived `sessions` view with the amendment-aware summary logic.
+    # Existing clock_in / clock_out / session_event rows are never touched.
+    # A future version that changes an existing *data* table cannot ride
+    # this path — it must add its own explicit, row-preserving step
+    # (ALTER/backfill) here, guarded by `stored < N`, before this refresh.
+    # Bumping SCHEMA_VERSION alone never migrates table data.
     conn.execute("DROP VIEW IF EXISTS sessions")
     conn.executescript(SCHEMA)  # re-creates the view from current DDL
     # PRAGMA user_version cannot be parameterized; the value is a local
@@ -295,7 +312,7 @@ def current_tool() -> str:
     return os.environ.get("AI_AGENT", "")
 
 
-WRITE_COMMANDS = ("in", "out", "checkpoint", "import-handoff")
+WRITE_COMMANDS = ("in", "out", "amend", "checkpoint", "import-handoff")
 
 
 def worker_write_guard_engaged() -> bool:
@@ -538,6 +555,22 @@ def resolve_or_die(conn, opts, purpose):
 def cmd_in(conn):
     cwd = str(Path.cwd())
     session_id = resolve_new_session_id()
+
+    # A second `clock in` with the same CLAUDE_CODE_SESSION_ID around a
+    # `clock out` would otherwise look identical to a real clock-in. Catch
+    # the already-closed case at the earliest possible point and name both
+    # recovery paths before anything durable is written.
+    closed = conn.execute(
+        "SELECT 1 FROM clock_out WHERE session_id = ?", (session_id,)
+    ).fetchone()
+    if closed:
+        print(f"session {session_id} is already closed")
+        print("  to continue working, start a fresh session:")
+        print("      env -u CLAUDE_CODE_SESSION_ID clock in")
+        print("  to correct the existing close summary:")
+        print("      clock amend \"<corrected summary>\" --session-id " + session_id)
+        return
+
     top = git_toplevel(cwd)
     repo = folder_key(cwd)
     branch = git_branch(cwd) if top else ""
@@ -586,6 +619,17 @@ def cmd_out(conn, opts):
         )
         conn.commit()
     except sqlite3.IntegrityError as e:
+        # Echo the rejected summary to stdout first so the text survives the
+        # failure and can be pasted into `clock amend`.
+        print(opts.summary)
+        # clock_out has an FK to clock_in as well as UNIQUE(session_id), so
+        # not every IntegrityError here means "already closed" — pointing an
+        # unknown session id at `clock amend` would only fail again.
+        already_closed = conn.execute(
+            "SELECT 1 FROM clock_out WHERE session_id = ?", (session_id,)
+        ).fetchone()
+        if already_closed:
+            die(f"session {session_id} already closed — use `clock amend` to correct the summary", code=4)
         die(f"cannot record clock_out for {session_id}: {e}", code=4)
     print(f"clocked out: {session_id}")
 
@@ -604,17 +648,58 @@ def cmd_out(conn, opts):
         pass
 
 
+def cmd_amend(conn, opts):
+    cwd = str(Path.cwd())
+    session_id = opts.session_id or os.environ.get("CLAUDE_CODE_SESSION_ID")
+    if not session_id:
+        repo = folder_key(cwd)
+        row = conn.execute(
+            "SELECT session_id FROM sessions "
+            "WHERE repo = ? AND unfinished = 0 "
+            "ORDER BY ended_ts DESC LIMIT 1",
+            (repo,),
+        ).fetchone()
+        if row:
+            session_id = row["session_id"]
+    if session_id is None:
+        die(f"could not resolve a session id to amend (no env id, no closed session here)", code=3)
+
+    # The FK on clock_amendment would raise IntegrityError here, but an
+    # explicit check gives a clear "not closed" message instead of a raw
+    # SQLite error.
+    closed = conn.execute(
+        "SELECT 1 FROM clock_out WHERE session_id = ?", (session_id,)
+    ).fetchone()
+    if not closed:
+        die(f"nothing to amend — session {session_id} is not closed", code=4)
+
+    try:
+        conn.execute(
+            "INSERT INTO clock_amendment (session_id, ts, summary, reason) VALUES (?, ?, ?, ?)",
+            (session_id, now_ms(), opts.summary, opts.reason),
+        )
+        conn.commit()
+    except sqlite3.IntegrityError as e:
+        die(f"cannot record clock_amendment for {session_id}: {e}", code=4)
+    print(f"session amended: {session_id}")
+
+
 def cmd_checkpoint(conn, opts):
     _, session_id = resolve_or_die(conn, opts, "for this checkpoint")
 
     # A closed session is done accruing history — most commonly a `gitflow`
     # post-merge commit hook firing after `clock out` already ran. Skip
-    # silently-successful (exit 0) rather than let it inflate event_count.
+    # with a message that names the recovery path instead of looking like a
+    # routine no-op.
     closed = conn.execute(
         "SELECT 1 FROM clock_out WHERE session_id = ?", (session_id,)
     ).fetchone()
     if closed:
         print(f"session {session_id} already closed; checkpoint skipped")
+        print("  to correct the existing close summary:")
+        print("      clock amend \"<corrected summary>\" --session-id " + session_id)
+        print("  to start a fresh session instead:")
+        print("      env -u CLAUDE_CODE_SESSION_ID clock in")
         return
 
     try:
@@ -738,6 +823,11 @@ def build_parser():
     p_out.add_argument("summary", help="One-line summary of what happened this session.")
     p_out.add_argument("--session-id", default=None, help="Skip the recovery ladder; close this session id.")
 
+    p_amend = sub.add_parser("amend", help="Amend the summary of a closed session (append-only).")
+    p_amend.add_argument("summary", help="Corrected one-line summary for the session.")
+    p_amend.add_argument("--session-id", default=None, help="Amend this session id (default: env id or most recent closed session here).")
+    p_amend.add_argument("--reason", default="", help="Why this amendment was needed.")
+
     p_cp = sub.add_parser("checkpoint", help="Record one session_event row.")
     p_cp.add_argument("--type", required=True, choices=EVENT_TYPES,
                        help=f"one of {', '.join(EVENT_TYPES)}")
@@ -750,7 +840,7 @@ def build_parser():
     sub.add_parser("import-handoff", help="Import this repo's old single-file handoff as one closed session.")
 
     p_dump = sub.add_parser("dump", help="Dump the ledger to JSONL, one object per line (read-only).")
-    p_dump.add_argument("--table", choices=TABLES, help="Dump only this table (default: all three).")
+    p_dump.add_argument("--table", choices=TABLES, help="Dump only this table (default: all four).")
     return p
 
 
@@ -799,6 +889,8 @@ def main():
             cmd_in(conn)
         elif args.command == "out":
             cmd_out(conn, args)
+        elif args.command == "amend":
+            cmd_amend(conn, args)
         elif args.command == "checkpoint":
             cmd_checkpoint(conn, args)
         elif args.command == "status":

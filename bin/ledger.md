@@ -44,17 +44,26 @@ sqlite3 -header -column ~/.magito/ledger.db \
 
 ## The append-only rule
 
-All three tables (`clock_in`, `clock_out`, `session_event`) are insert-only.
-Nothing in this ledger is ever `UPDATE`d or `DELETE`d — a session's state is
-worked out entirely from which tables its `session_id` shows up in (see
-issue #62/#63). Don't hand-edit a row. If a row turns out to be wrong, the
-fix is a later row (a `note` event, say), not a mutation of history.
+All four tables (`clock_in`, `clock_out`, `session_event`, `clock_amendment`)
+are insert-only. Nothing in this ledger is ever `UPDATE`d or `DELETE`d — a
+session's state is worked out entirely from which tables its `session_id`
+shows up in (see issue #62/#63 and the #94 discussion). Don't hand-edit a
+row. If a row turns out to be wrong, the fix is a later row, not a mutation
+of history.
+
+## Amending a closed session
+
+`clock amend` records a corrected summary in `clock_amendment`. It never
+changes the original `clock_out` row; instead, the `sessions` view prefers
+the latest amendment for a session and falls back to `clock_out.summary` when
+none exists. That makes the correction silent to readers (`status`,
+`catch-up`) while keeping the full audit trail visible in `clock dump`.
 
 ## Getting a snapshot instead
 
 For scripting or archiving, prefer `~/.magito/bin/clock dump` over hand-written SQL. It
 emits one JSON object per line (JSONL, not CSV — a summary can contain
-newlines, which breaks CSV) for every row in all three tables, each tagged
+newlines, which breaks CSV) for every row in all four tables, each tagged
 with `_table`:
 
 ```sh
