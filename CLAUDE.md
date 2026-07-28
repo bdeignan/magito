@@ -204,6 +204,25 @@ failing to enforce — a skill can *ask*, a hook can *block*:
 - Caveat: a project-level `Bash` matcher in `.claude/settings.json` **overrides**
   user-level hooks entirely for that project — ours silently stop firing there.
 
+**Permissions** (`.claude/settings.json`, committed) cut the approval prompts the
+workflow skills would otherwise raise on every read-only `git` and `gh` call:
+
+- **Permission rules merge across scopes; hooks do not.** That asymmetry is the whole
+  design. The project file adds its `allow` list to the user-level one, so it can be
+  permissions-only and never has to restate a user's rules.
+- **Never add a `hooks` key to `.claude/settings.json` here.** It would replace the
+  user-level hooks for this repo — the repo that owns them — and silently disable
+  `staging-guard` and `review-gate`. This is exactly the kind of thing a later session
+  "helpfully" consolidates, so the two keys stay in different files on purpose.
+- Read-only verbs only. Nothing that writes, and no `deny` block: a `deny` here would be
+  a false sense of enforcement, since the hooks are what actually block.
+- **An `allow` rule is not the only gate.** Claude Code's auto-mode classifier can still
+  refuse an action that the allowlist permits — writing the `reviewing-changes` marker
+  under `.git/magito/` was refused through both `Bash` and the file-writing tool while
+  `Edit(//Users/brian/code/**/.git/magito/**)` was allowed in user settings. When that
+  happens the fix is to ask the user to run the command themselves, not to look for
+  another way around it.
+
 **Agents** (Claude Code subagents) frontmatter reference:
 - Required: `name`, `description`
 - Optional: `model` (alias: `haiku`, `sonnet`, `opus`, `fable`, or full ID), `tools`,
