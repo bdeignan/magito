@@ -1,6 +1,6 @@
 ---
 name: catch-up
-description: Load the project's current state at the start of a session — read the durable docs, open issues, git status, and the session ledger, then summarize where things stand and what to do next.
+description: Load the project's current state at the start of a session — read the durable docs, open issues, git status, and the session journal, then summarize where things stand and what to do next.
 disable-model-invocation: true
 ---
 
@@ -14,14 +14,16 @@ there), `skipped: <reason>` (deliberately not checked), or `failed: <reason>` (c
 the attempt errored). No source may be silently omitted from the final report — if you
 didn't check it, its status is `skipped`, not absent from the list.
 
-1. Clock in: run `~/.magito/bin/clock in`. It records this
-   session's `clock_in` row in the ledger and prints an orientation payload — recent
-   session summaries for this repo, any unfinished sessions, and a one-line rollup of
-   recent activity. Show that payload. If the repo has no earlier sessions, the payload
-   says so plainly — that's still `read`, not `missing`. If `clock in` exits non-zero,
-   status is `failed: <clock's error message>` — show the error and move on. A ledger
-   failure never stops the rest of this checklist; every other source below is still
-   readable on its own.
+1. Session journal: run `~/.magito/bin/journal read 2` — the last two sessions for this
+   project. There is nothing to start or record; a session begins by reading. Show what
+   it prints. If the project has no entries yet it says so plainly — that's still
+   `read`, not `missing`. If the command exits non-zero, status is
+   `failed: <the error>` — show it and move on. A journal failure never stops the rest
+   of this checklist; every other source below is still readable on its own.
+
+   Two entries is the default because it is enough to see what landed and what was
+   flagged next. Raise it when the user asks for more history, or when the newest entry
+   points back at older ones — and say which N you used, so the cost is never a surprise.
 2. `CLAUDE.md` / `AGENTS.md` at the repo root. If neither exists, status is `missing`.
 3. `docs/agents/GLOSSARY.md` (in a multi-context repo, routing to per-area glossaries lives in `docs/agents/INDEX.md`). If it doesn't exist, status is
    `missing`.
@@ -36,22 +38,22 @@ didn't check it, its status is `skipped`, not absent from the list.
 7. Open PRs (`gh pr list`).
 
 Then give a tight **where we are / what's next**: the current branch and whether it's
-clean, the issue most likely in progress, what the ledger's recent sessions flagged, and
-the obvious next action. When the ledger's summaries disagree with live git or the
-tracker, **live state wins** — treat a session's named next step as a hint to
-re-validate against the tracker, not as ground truth. Surface the contradiction (a
-summary says X shipped but the branch shows otherwise) rather than smoothing it over.
+clean, the issue most likely in progress, what the recent journal entries flagged, and
+the obvious next action. When a journal entry disagrees with live git or the tracker,
+**live state wins** — treat a session's named next step as a hint to re-validate against
+the tracker, not as ground truth. Surface the contradiction (an entry says X shipped but
+the branch shows otherwise) rather than smoothing it over.
 
 End the summary with one `sources:` line, listing every source's status in the order
-above — ledger, CLAUDE.md, docs/agents/GLOSSARY.md, ADRs, tracker, git, PRs — e.g.:
+above — journal, CLAUDE.md, docs/agents/GLOSSARY.md, ADRs, tracker, git, PRs — e.g.:
 
 ```
-sources: ledger=read, CLAUDE.md=read, docs/agents/GLOSSARY.md=missing, ADRs=missing, tracker=read, git=read, PRs=read
+sources: journal=read, CLAUDE.md=read, docs/agents/GLOSSARY.md=missing, ADRs=missing, tracker=read, git=read, PRs=read
 ```
 
 Then ask what the user wants to pick up — or, if a recent session names a clear next
 step, offer to start there.
 
-Adopting the ledger in a project that has an old magito handoff file or its own notes?
-See [`references/adopting-the-ledger.md`](references/adopting-the-ledger.md) for the
-one-time migration.
+Adopting the journal in a project that has its own notes, or that still has the retired
+SQLite ledger? See [`references/adopting-the-journal.md`](references/adopting-the-journal.md)
+for the one-time import.

@@ -35,9 +35,9 @@
 - Stage only the files you changed. Never `git add -A`, `--all`, `.`, or `git commit -a`.
 - Don't land unreviewed work: no merge to the base branch and no PR without a fresh review. Claude Code blocks this mechanically; other tools have no enforcement, only this rule.
 
-## Session ledger
+## Session journal
 
-- Start of a work session: run `~/.magito/bin/clock in` (or `/catch-up`, which runs it for you). It records the session and shows recent and unfinished sessions for this project.
-- End of a work session: run `~/.magito/bin/clock out "<summary>"` (or `/handoff`, which runs it for you). Write one short paragraph: what you did, what is left, and any gotcha worth keeping.
-- Clock out when the whole session wraps, not after each task. A missed clock-out only loses the summary, never the session record.
-- An agent handed a scoped task by another agent does not touch the ledger. Clocking in and out belongs to the agent that started the session.
+- Start of a work session: run `~/.magito/bin/journal read 2` (or `/catch-up`, which runs it for you). It prints the last two sessions for this project. Nothing needs starting or recording — a session begins by reading.
+- End of a work session: write one new file under `.magito/journal/`, named by `~/.magito/bin/journal name "<topic-slug>"` (or `/handoff`, which does it for you). Cover what landed, what is next, and any gotcha worth keeping, in **150 words or less**.
+- Write the entry when the whole session wraps, not after each task. A missed entry loses only that summary; the journal has no state to corrupt.
+- An agent handed a scoped task by another agent does not write a journal entry. The journal belongs to the agent that started the session.
