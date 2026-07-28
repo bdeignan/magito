@@ -42,6 +42,7 @@ independent of the base branch.
 ```
 magito/
 ├── install.py              # Install symlinks; run after adding new files
+├── .claude/settings.json   # Committed permission allowlist — permissions only, NEVER hooks
 ├── install.toml            # Your local config (gitignored; copy from install.toml.example)
 ├── install.toml.example    # Template — commit this, not install.toml
 ├── README.md               # Entry point — what this is, quick start, user guide
