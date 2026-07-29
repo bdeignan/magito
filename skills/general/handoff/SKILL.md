@@ -27,11 +27,17 @@ session sees.
 **Gotcha:** ...
 ```
 
-**Cap the whole entry at 150 words.** This is a hard number, not a nudge — the old
-ledger's summaries averaged 550 tokens against a spec that already said "one short
-paragraph," so the soft wording did not hold. Three tight sentences beat a transcript.
-If a detail needs more room than that, it belongs in an issue, an ADR, or a commit
-message. Link it instead.
+**Aim for 200 words; 300 is a hard ceiling.** Real numbers, not a nudge — the old
+ledger's summaries averaged 550 tokens against a spec that only said "one short
+paragraph," so soft wording demonstrably did not hold.
+
+**Spend the budget on the gotcha.** Landed and Next are a sentence or two each. The
+gotcha is the part with durable value, and gotchas are specific: "worker reports can't be
+trusted" is nearly worthless next to "the worker claimed a prior DONE report that never
+existed, so judge the diff yourself." Vague is not the same as brief.
+
+Past 300 words you are writing a transcript. If a detail needs that much room it belongs
+in an issue, an ADR, or a commit message — link it instead.
 
 If the session landed nothing worth keeping, say exactly that and stop:
 

@@ -35,7 +35,9 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-ENTRY_RE = re.compile(r"^\d{4}-\d{2}-\d{2}-\d{4}-.+\.md$")
+# Time is HHMMSS on entries written since #117, HHMM on ones migrated before it,
+# so both widths must match or `read` would silently ignore one generation.
+ENTRY_RE = re.compile(r"^\d{4}-\d{2}-\d{2}-\d{4}(\d{2})?-.+\.md$")
 DEFAULT_READ = 2
 
 
@@ -96,7 +98,27 @@ def cmd_read(n: int) -> int:
 
 
 def cmd_name(slug: str) -> int:
-    print(journal_dir() / f"{datetime.now():%Y-%m-%d-%H%M}-{slugify(slug)}.md")
+    """Print a filename for a new entry that is not already taken.
+
+    Seconds narrow the collision window, and the suffix loop closes the rest of
+    the realistic gap: `slugify` folds case and punctuation together, so two
+    sessions describing the same work in the same minute would otherwise be
+    handed the same path.
+
+    A time-of-check/time-of-use race survives this, deliberately. Closing it
+    fully means `journal` creating the file itself with an exclusive open, which
+    would put writing back behind a shell call and lose the permissionless write
+    path that is this tool's main advantage over the ledger it replaced. Do not
+    "fix" that by making this script do the writing.
+    """
+    d = journal_dir()
+    stem = f"{datetime.now():%Y-%m-%d-%H%M%S}-{slugify(slug)}"
+    path = d / f"{stem}.md"
+    n = 2
+    while path.exists():
+        path = d / f"{stem}-{n}.md"
+        n += 1
+    print(path)
     return 0
 
 
