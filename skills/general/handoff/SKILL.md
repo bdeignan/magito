@@ -1,48 +1,60 @@
 ---
 name: handoff
-description: Compact the current session into a short summary and clock it out into the machine-local session ledger, so a fresh agent — or future you — can continue the work.
+description: Close the session by writing one short entry to the project's session journal, so a fresh agent — or future you — can pick the work up.
 disable-model-invocation: true
 argument-hint: "what the next session will focus on"
 ---
 
 # Handoff
 
-Close out the session by running `~/.magito/bin/clock out "<summary>"`.
-It records a `clock_out` row in the machine-local session ledger — there is no file to
-write, and nothing lands in the workspace.
+Close out the session by writing **one new file** to the project's session journal.
 
-Write `<summary>` as **one short paragraph** covering three things:
-1. What you finished this session.
-2. What is still open, or the next step.
-3. Any gotcha or surprise worth keeping.
+Get the path from `~/.magito/bin/journal name "<short-topic-slug>"` — it prints
+`.magito/journal/YYYY-MM-DD-HHMM-<slug>.md`. Then create that file with your own
+file-writing tool. No shell write and no approval.
 
-Keep it tight — a sentence per point, not a transcript. If the session landed nothing
-worth keeping, say so plainly, e.g.:
+Pick the slug from what the session was *about* (`journal-replaces-ledger`,
+`fix-heredoc-parsing`), not from a random name. The filename is the first thing the next
+session sees.
 
+## The entry
+
+```markdown
+# 2026-07-28 · journal replaces the ledger
+
+**Landed:** ...
+**Next:** ...
+**Gotcha:** ...
 ```
-~/.magito/bin/clock out "abandoned, nothing landed"
+
+**Cap the whole entry at 150 words.** This is a hard number, not a nudge — the old
+ledger's summaries averaged 550 tokens against a spec that already said "one short
+paragraph," so the soft wording did not hold. Three tight sentences beat a transcript.
+If a detail needs more room than that, it belongs in an issue, an ADR, or a commit
+message. Link it instead.
+
+If the session landed nothing worth keeping, say exactly that and stop:
+
+```markdown
+**Landed:** nothing — abandoned early.
 ```
 
-If `clock out` exits non-zero, the summary was not recorded — do not discard it. Show
-the full summary text to the user along with the error `clock` printed, and say plainly
-that the clock-out failed. If the error lists more than one open session for this
-folder, rerun with `--session-id <id>` from that list — that case recovers in place. For
-any other failure, no retry fixes it here, and the text you show the user becomes the
-only record of the session.
+## Before you write
 
-- **Reconcile against live state before writing.** A summary written from session
-  memory drifts from reality. Before clocking out, verify what you're about to claim
-  against live sources — `git status`, `git log`, and the tracker
+- **Reconcile against live state.** An entry written from session memory drifts from
+  reality. Check `git status`, `git log`, and the tracker
   (`bash <skills>/implement-issue/scripts/issues.sh list` — `<skills>` is your tool's
   installed skills directory, `~/.claude/skills` for Claude Code or `~/.agents/skills`
-  for most others) — and correct any claim that disagrees (an issue you think is still
-  open may have merged).
+  for most others). Correct anything that disagrees; an issue you think is still open may
+  have merged.
 - **Capture durable decisions first.** If terms or architectural decisions crystallized
-  this session and aren't yet written down, run `domain-modeling` to land them in
-  `docs/agents/GLOSSARY.md` / ADRs **before** clocking out — those belong in the repo, not in the
-  summary.
-- **Don't duplicate artifacts.** PRDs, ADRs, issues, commits, diffs already exist —
-  reference them by path or URL instead of restating them.
+  and aren't written down yet, run `domain-modeling` to land them in
+  `docs/agents/GLOSSARY.md` or an ADR **before** writing the entry. Those belong in the
+  repo, not in a journal entry.
+- **Don't duplicate artifacts.** Issues, PRs, ADRs, and commits already exist. Reference
+  them by number or path.
 - **Redact secrets** — API keys, tokens, PII.
-- If the user named a focus for the next session, work it into the "what's still open"
-  sentence.
+- If the user named a focus for the next session, work it into **Next**.
+
+Writing the file either works or it doesn't. If it fails, show the user the full entry
+text along with the error, so the content isn't lost.

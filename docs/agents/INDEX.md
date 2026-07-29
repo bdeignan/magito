@@ -23,8 +23,9 @@ currently deferred, see the file.)
 |---|---|
 | Why magito is built this way | [OVERVIEW.md](./OVERVIEW.md) |
 | Install, symlink layout, where files map to each tool | `CLAUDE.md` — "Installing" and "Repo Layout" |
-| Machine-local config (`~/.magito/`: ledger, bench, workers, `bin/`) | `CLAUDE.md` — "Machine-Local Config" |
-| The session ledger (clock in/out, checkpoints, schema) | `bin/clock`, `bin/ledger.md` |
+| Machine-local config (`~/.magito/`: bench, workers, `bin/`) | `CLAUDE.md` — "Machine-Local Config" |
+| The session journal (per-entry files, reading and writing) | `bin/journal`, `skills/general/catch-up/references/adopting-the-journal.md` |
+| The retired SQLite ledger (being removed in #107) | `bin/clock`, `bin/ledger.md` |
 | Skill, hook, and agent design conventions | `CLAUDE.md` — "Skill and Agent Design Notes" |
 | Delegating a build (shell workers, worktrees) | `skills/general/implement-issue/references/worker-contract.md` |
 | The magi tribunal | `skills/claude/magi/SKILL.md` |

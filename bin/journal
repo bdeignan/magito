@@ -1,0 +1,184 @@
+#!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# dependencies = []
+# ///
+"""
+journal — read the project's session journal.
+
+Entries live one file per session under `.magito/journal/` inside the repo, named
+`YYYY-MM-DD-HHMM-<slug>.md` so they sort chronologically without any shared
+counter. Nothing coordinates writes: each session creates its own new file, so
+any number of agents can journal at once without contending for a shared
+resource. That is a stronger guarantee than the SQLite ledger this replaces,
+which needed a UNIQUE constraint, a pointer file, and an env-var guard (#94) to
+approximate it.
+
+Writing is deliberately NOT this script's job. An agent creates the entry file
+with its own file-writing tool, which needs no shell approval. This script exists
+so that *reading* the last N entries is one stable, allowlistable command rather
+than an ad-hoc shell pipeline.
+
+Keep `.magito/` in `.git/info/exclude`, never in `.gitignore` — the journal is
+personal state and does not belong in a shared ignore file.
+
+Usage:
+    journal read [N]     # newest N entries, newest first (default 2)
+    journal path         # print the journal directory
+    journal name <slug>  # print the filename a new entry should use
+    journal import       # one-shot: migrate summaries out of the old SQLite ledger
+
+`import` is transitional. It reads the retired ledger read-only and is removed
+along with the ledger itself in #107.
+
+Exit codes: 0 ok; 1 could not read or write the journal; 2 bad arguments.
+"""
+import os
+import re
+import sqlite3
+import subprocess
+import sys
+from datetime import datetime
+from pathlib import Path
+
+ENTRY_RE = re.compile(r"^\d{4}-\d{2}-\d{2}-\d{4}-.+\.md$")
+DEFAULT_READ = 2
+
+
+def die(msg, code=1):
+    print(f"journal: {msg}", file=sys.stderr)
+    raise SystemExit(code)
+
+
+def slugify(text: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-") or "session"
+
+
+def repo_root() -> Path:
+    """The git top level, or the working directory when not in a repo.
+
+    Deliberately no git-hash or branch lookup: that is what made `clock in`
+    crash in a repo with no commits (#103), and nothing here needs it.
+    """
+    try:
+        out = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            capture_output=True, text=True, check=True,
+        )
+        return Path(out.stdout.strip())
+    except (subprocess.CalledProcessError, FileNotFoundError, OSError):
+        return Path.cwd()
+
+
+def journal_dir() -> Path:
+    return repo_root() / ".magito" / "journal"
+
+
+def entries() -> list[Path]:
+    d = journal_dir()
+    if not d.is_dir():
+        return []
+    return sorted((p for p in d.iterdir() if ENTRY_RE.match(p.name)), reverse=True)
+
+
+def cmd_read(n: int) -> int:
+    found = entries()
+    if not found:
+        print(f"No journal entries yet for this project ({journal_dir()}).")
+        return 0
+    shown = found[:n]
+    for i, path in enumerate(shown):
+        if i:
+            print()
+        try:
+            print(path.read_text().rstrip())
+        except OSError as e:
+            die(f"could not read {path}: {e}")
+    held = len(found) - len(shown)
+    if held:
+        print(f"\n({held} older entr{'y' if held == 1 else 'ies'} in "
+              f"{journal_dir()}, not shown — pass a larger N to see more)")
+    return 0
+
+
+def cmd_name(slug: str) -> int:
+    print(journal_dir() / f"{datetime.now():%Y-%m-%d-%H%M}-{slugify(slug)}.md")
+    return 0
+
+
+def cmd_import() -> int:
+    """One-shot migration out of the retired SQLite ledger. Idempotent."""
+    db = Path(os.environ.get("MAGITO_LEDGER_DB",
+                             Path.home() / ".magito" / "ledger.db"))
+    if not db.exists():
+        print(f"No ledger at {db} — nothing to import.")
+        return 0
+    try:
+        conn = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
+        rows = conn.execute("""
+            SELECT i.alias, i.started_ts, o.summary
+            FROM clock_in i JOIN clock_out o ON o.session_id = i.session_id
+            WHERE o.summary IS NOT NULL AND trim(o.summary) != ''
+            ORDER BY i.started_ts
+        """).fetchall()
+    except sqlite3.DatabaseError as e:
+        die(f"could not read the ledger at {db}: {e}")
+
+    out_dir = journal_dir()
+    try:
+        out_dir.mkdir(parents=True, exist_ok=True)
+    except OSError as e:
+        die(f"could not create {out_dir}: {e}")
+
+    written = skipped = 0
+    for alias, ts, summary in rows:
+        when = datetime.fromtimestamp(ts / 1000)
+        path = out_dir / f"{when:%Y-%m-%d-%H%M}-{slugify(alias)}.md"
+        if path.exists():
+            skipped += 1
+            continue
+        path.write_text(
+            f"# {when:%Y-%m-%d} · {alias}\n\n"
+            f"*Migrated from the retired SQLite ledger.*\n\n"
+            f"{summary.strip()}\n"
+        )
+        written += 1
+    print(f"imported {written} entr{'y' if written == 1 else 'ies'} into {out_dir}"
+          + (f" ({skipped} already present, left alone)" if skipped else ""))
+    if written:
+        print("Imported entries predate the 150-word cap and are typically several times "
+              "over it.\nThey age out of `journal read N` as new sessions land; shorten "
+              "them by hand if you\nwant the saving sooner.")
+    return 0
+
+
+def main() -> int:
+    args = sys.argv[1:]
+    if not args:
+        print(__doc__.strip(), file=sys.stderr)
+        return 2
+    cmd, rest = args[0], args[1:]
+
+    if cmd == "read":
+        if rest:
+            try:
+                n = int(rest[0])
+            except ValueError:
+                die(f"read: not a number: {rest[0]}", 2)
+        else:
+            n = DEFAULT_READ
+        return cmd_read(max(1, n))
+    if cmd == "path":
+        print(journal_dir())
+        return 0
+    if cmd == "name":
+        if not rest:
+            die("name: needs a slug", 2)
+        return cmd_name(" ".join(rest))
+    if cmd == "import":
+        return cmd_import()
+    die(f"unknown command: {cmd}", 2)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

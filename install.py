@@ -14,7 +14,7 @@ Reads install.toml (copy from install.toml.example and edit). For each enabled t
     for Antigravity)
   - For Claude (detected by presence of 'agents' key): also links skills/claude/* and agents/*.md
   - For tools with a 'hooks' key: also links hooks/*.py and merges them into the adjacent settings.json as PreToolUse hooks
-  - Symlinks bin/* to ~/.magito/bin/ (the machine-global clock command + its ledger.md, tool-independent)
+  - Symlinks bin/* to ~/.magito/bin/ (machine-global commands like journal, tool-independent)
   - Regenerates skills/INDEX.md from SKILL.md frontmatter (human reference only; agents discover via SKILL.md)
 
 Safety:
@@ -237,7 +237,8 @@ def main() -> None:
                 status = merge_hook_settings(settings_path, hook_dst_paths, args.dry_run)
                 results.append((tool_name, "settings.json (hooks)", str(settings_path), status))
 
-    # Machine-local ledger tooling (clock command + its ledger.md): tool-independent, always installed.
+    # Machine-local session tooling (the journal command, and clock until #107 retires it):
+    # tool-independent, always installed.
     bin_src_dir = repo_root / "bin"
     if bin_src_dir.exists():
         bin_dst_dir = Path.home() / ".magito" / "bin"
