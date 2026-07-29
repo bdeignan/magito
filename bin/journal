@@ -30,6 +30,7 @@ Usage:
 Exit codes: 0 ok; 1 could not read or write the journal; 2 bad arguments.
 """
 import re
+import secrets
 import subprocess
 import sys
 from datetime import datetime
@@ -98,27 +99,26 @@ def cmd_read(n: int) -> int:
 
 
 def cmd_name(slug: str) -> int:
-    """Print a filename for a new entry that is not already taken.
+    """Print a filename for a new entry.
 
-    Seconds narrow the collision window, and the suffix loop closes the rest of
-    the realistic gap: `slugify` folds case and punctuation together, so two
-    sessions describing the same work in the same minute would otherwise be
-    handed the same path.
+    The trailing random hex is what makes the name unique. `slugify` folds case
+    and punctuation together, so two sessions describing the same work in the
+    same second would otherwise be handed the same path — 6 hex characters make
+    that about 3 in a million for ten simultaneous writers, and nothing in the
+    system writes at that rate.
 
-    A time-of-check/time-of-use race survives this, deliberately. Closing it
-    fully means `journal` creating the file itself with an exclusive open, which
-    would put writing back behind a shell call and lose the permissionless write
-    path that is this tool's main advantage over the ledger it replaced. Do not
-    "fix" that by making this script do the writing.
+    Uniqueness by randomness rather than by checking the directory is a
+    deliberate choice, and the reason is not margin. Checking whether a name is
+    free leaves a window between the check and the write for someone else to
+    take it. Randomness has no window, needs no exclusive-create, and keeps this
+    a pure function — so it still works when the journal directory does not
+    exist yet. Do not "improve" this by adding a collision check.
+
+    Seconds stay in the timestamp so entries written in the same minute still
+    sort chronologically; the hash alone would order them at random.
     """
-    d = journal_dir()
     stem = f"{datetime.now():%Y-%m-%d-%H%M%S}-{slugify(slug)}"
-    path = d / f"{stem}.md"
-    n = 2
-    while path.exists():
-        path = d / f"{stem}-{n}.md"
-        n += 1
-    print(path)
+    print(journal_dir() / f"{stem}-{secrets.token_hex(3)}.md")
     return 0
 
 
