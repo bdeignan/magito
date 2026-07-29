@@ -31,4 +31,5 @@ take on the governed multi-agent idea — not a framework built for anyone else 
 - **A large fixed documentation tree** (ARCHITECTURE / MAP / PATTERNS / …) — most of it
   fails the two-gate filter this very folder enforces; kept deliberately small instead.
 - **Per-repo single-file handoffs** — they overwrote each other under concurrent sessions;
-  replaced by the append-only session ledger.
+  replaced first by an append-only SQLite session ledger, then by the per-entry session
+  journal, which removes the shared file (and later the shared database) entirely.

@@ -30,7 +30,7 @@ independent of the base branch.
 ### Toolchain
 
 - Stdlib-only Python 3.11+ everywhere in this repo, with no runtime dependencies by
-  design. That covers `install.py`, `hooks/*.py`, `bin/clock`, and any skill's
+  design. That covers `install.py`, `hooks/*.py`, `bin/journal`, and any skill's
   `scripts/*.py`.
 - No test suite; verify with `python install.py --dry-run` and by driving hooks with
   synthetic stdin payloads.
@@ -47,7 +47,7 @@ magito/
 ├── install.toml.example    # Template — commit this, not install.toml
 ├── README.md               # Entry point — what this is, quick start, user guide
 ├── PLAYBOOK.md             # Situation → play — behavior promises, not mechanics
-├── bin/                    # Machine-global commands (journal; clock until #107), symlinked to ~/.magito/bin/
+├── bin/                    # Machine-global commands (journal), symlinked to ~/.magito/bin/
 ├── docs/
 │   ├── adr/                # Architecture decision log
 │   └── agents/             # Project context for agents — see docs/agents/README.md
@@ -151,17 +151,12 @@ committed here:
   named headless CLI commands (`cmd` templates with `{cwd}`, `{brief}`, and optional
   `{model}` placeholders). Self-bootstraps the first time a worker is named
   ("via omp"). Contract: `skills/general/implement-issue/references/worker-contract.md`.
-- `handoffs/<repo-slug>.md` — legacy session handoffs. Superseded by `ledger.db` below
-  as of the `catch-up` / `handoff` refactor (#64): `handoff` now clocks out to the
-  ledger and `catch-up` no longer reads these files. Existing files stay on disk until
-  a later migration step retires them.
-- `ledger.db`, `run/` — the **retired** SQLite session ledger and its pointer files.
-  Nothing reads or writes them any more: `catch-up` and `handoff` moved to the session
-  journal in #106. They are deleted, along with `bin/clock`, in #107. Migrate a machine's
-  history first with `~/.magito/bin/journal import`, which is safe to run twice.
+- `handoffs/<repo-slug>.md` — legacy session handoffs, superseded first by the SQLite
+  session ledger (#64) and now by the in-repo session journal (`.magito/journal/`,
+  see below). Existing files stay on disk until a later migration step retires them.
 - `bin/` — holds the magito-managed commands, symlinked from the repo's `bin/` by
-  `install.py` (issue #84). Currently `journal`, plus `clock` and `ledger.md` until #107
-  removes them. Not a user file: reinstalling refreshes it like any other symlink.
+  `install.py` (issue #84). Currently just `journal`. Not a user file: reinstalling
+  refreshes it like any other symlink.
 
 The session record itself is **not** machine-local any more. It lives in the repo at
 `.magito/journal/`, one markdown file per session, with `.magito/` kept in
@@ -171,12 +166,11 @@ shared ignore file). See `bin/journal` and
 
 Conventions: agents never overwrite an existing *user* file here on their own
 initiative — `bench.toml`, `workers.toml`, and the handoffs are the user's.
-`ledger.db`, `run/`, and `bin/` are magito-managed, not user files: `clock` owns
-`ledger.db` and `run/` outright, creating them and appending rows as its job, and
-`install.py` owns `bin/` outright, creating and refreshing its symlinks on every
-run. Commands in both rosters run in non-interactive shells,
-so any env they need (API keys, cloud project ids) must come from `~/.zshenv` or the
-tool's own auth store, never `.zshrc` alone — see the worker contract's gotchas.
+`bin/` is magito-managed, not a user file: `install.py` owns it outright, creating
+and refreshing its symlinks on every run. Commands in both rosters run in
+non-interactive shells, so any env they need (API keys, cloud project ids) must
+come from `~/.zshenv` or the tool's own auth store, never `.zshrc` alone — see the
+worker contract's gotchas.
 
 ## Skill and Agent Design Notes
 

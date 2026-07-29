@@ -1,7 +1,7 @@
 # Adopting the session journal in an existing project
 
-For a project that already has its own notes or handoff habit — including magito's own
-retired SQLite ledger. It covers what changes, what doesn't, and the one-time import.
+For a project that already has its own notes or handoff habit. It covers what changes
+and what doesn't.
 
 ## What the journal is, and isn't
 
@@ -19,19 +19,6 @@ not a substitute for project documentation.
 None beyond the exclude line. After `python install.py` puts `~/.magito/bin/journal` on
 a machine, `/catch-up` reads the journal at the start of a session and `/handoff` writes
 one entry at the end. The directory is created on first write.
-
-## The one-time step: importing the old ledger
-
-On a machine that still has `~/.magito/ledger.db`, run this once per project:
-
-```bash
-~/.magito/bin/journal import
-```
-
-It reads the ledger read-only, writes one entry file per closed session using that
-session's real timestamp, and skips any entry that already exists — so running it twice
-is safe. Sessions that never got a summary are skipped rather than imported blank.
-Nothing in the ledger is modified or deleted.
 
 ## Checking it worked
 
