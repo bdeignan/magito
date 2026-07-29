@@ -92,15 +92,10 @@ def strip_bypass(argv):
 
 
 def worker_env():
-    """The environment a delegated worker runs in. Two changes from the driver's
-    own env, both about the session ledger (#94): mark the process as a worker so
-    `clock` refuses any ledger access from inside it, and drop
-    CLAUDE_CODE_SESSION_ID so the worker can't inherit — and then clock out — the
-    driver's session identity. The marker is load-bearing; the scrub is defense in
-    depth (without the marker, `clock` would still resolve the driver as the sole
-    open session for the repo and close it anyway)."""
+    """The environment a delegated worker runs in. Drops CLAUDE_CODE_SESSION_ID so
+    a worker can't inherit the driver's Claude Code session identity — retained as
+    hygiene for subprocess workers, even though nothing currently reads it."""
     env = dict(os.environ)
-    env["MAGITO_WORKER"] = "1"
     env.pop("CLAUDE_CODE_SESSION_ID", None)
     return env
 

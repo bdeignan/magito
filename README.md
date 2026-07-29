@@ -45,9 +45,9 @@ The governance layer goes further than shared instructions: the primary orchestr
 can delegate implementation work to *other* CLIs as headless workers — a cheap model
 builds in an isolated worktree, the orchestrator reviews and lands it. Worker
 commands are machine-local (`~/.magito/workers.toml`), so each machine hires from
-whatever CLIs it actually has. It also keeps a session ledger — clock in/out records
-of what happened and what's unfinished — so a fresh session can pick up where the
-last one left off.
+whatever CLIs it actually has. It also keeps a session journal — one file per
+session recording what happened and what's unfinished — so a fresh session can
+pick up where the last one left off.
 
 Learning to drive it? Start with the **[Playbook](PLAYBOOK.md)** — situation → play
 → where you stay in the loop, plus the behavior promises magito keeps while the
@@ -102,7 +102,7 @@ python install.py        # only strictly needed if NEW skills/agents/tools/bin f
 | What changed in the pull                                  | Reinstall needed? |
 |-----------------------------------------------------------|-------------------|
 | Edited `SYSTEM-INSTRUCTIONS.md` or an existing `SKILL.md`  | **No** — symlink already points there, change is live |
-| Added a brand-new skill, agent, hook, tool stanza, or `bin/` file (e.g. `clock`) | **Yes** — needs a new symlink |
+| Added a brand-new skill, agent, hook, tool stanza, or `bin/` file (e.g. `journal`) | **Yes** — needs a new symlink |
 | Not sure                                                  | Just run it — it's idempotent and harmless |
 
 When in doubt, run `python install.py`. It never does damage on a re-run.

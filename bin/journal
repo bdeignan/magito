@@ -26,16 +26,10 @@ Usage:
     journal read [N]     # newest N entries, newest first (default 2)
     journal path         # print the journal directory
     journal name <slug>  # print the filename a new entry should use
-    journal import       # one-shot: migrate summaries out of the old SQLite ledger
-
-`import` is transitional. It reads the retired ledger read-only and is removed
-along with the ledger itself in #107.
 
 Exit codes: 0 ok; 1 could not read or write the journal; 2 bad arguments.
 """
-import os
 import re
-import sqlite3
 import subprocess
 import sys
 from datetime import datetime
@@ -106,52 +100,6 @@ def cmd_name(slug: str) -> int:
     return 0
 
 
-def cmd_import() -> int:
-    """One-shot migration out of the retired SQLite ledger. Idempotent."""
-    db = Path(os.environ.get("MAGITO_LEDGER_DB",
-                             Path.home() / ".magito" / "ledger.db"))
-    if not db.exists():
-        print(f"No ledger at {db} — nothing to import.")
-        return 0
-    try:
-        conn = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
-        rows = conn.execute("""
-            SELECT i.alias, i.started_ts, o.summary
-            FROM clock_in i JOIN clock_out o ON o.session_id = i.session_id
-            WHERE o.summary IS NOT NULL AND trim(o.summary) != ''
-            ORDER BY i.started_ts
-        """).fetchall()
-    except sqlite3.DatabaseError as e:
-        die(f"could not read the ledger at {db}: {e}")
-
-    out_dir = journal_dir()
-    try:
-        out_dir.mkdir(parents=True, exist_ok=True)
-    except OSError as e:
-        die(f"could not create {out_dir}: {e}")
-
-    written = skipped = 0
-    for alias, ts, summary in rows:
-        when = datetime.fromtimestamp(ts / 1000)
-        path = out_dir / f"{when:%Y-%m-%d-%H%M}-{slugify(alias)}.md"
-        if path.exists():
-            skipped += 1
-            continue
-        path.write_text(
-            f"# {when:%Y-%m-%d} · {alias}\n\n"
-            f"*Migrated from the retired SQLite ledger.*\n\n"
-            f"{summary.strip()}\n"
-        )
-        written += 1
-    print(f"imported {written} entr{'y' if written == 1 else 'ies'} into {out_dir}"
-          + (f" ({skipped} already present, left alone)" if skipped else ""))
-    if written:
-        print("Imported entries predate the 150-word cap and are typically several times "
-              "over it.\nThey age out of `journal read N` as new sessions land; shorten "
-              "them by hand if you\nwant the saving sooner.")
-    return 0
-
-
 def main() -> int:
     args = sys.argv[1:]
     if not args:
@@ -175,8 +123,6 @@ def main() -> int:
         if not rest:
             die("name: needs a slug", 2)
         return cmd_name(" ".join(rest))
-    if cmd == "import":
-        return cmd_import()
     die(f"unknown command: {cmd}", 2)
 
 

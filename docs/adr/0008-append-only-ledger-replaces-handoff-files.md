@@ -1,5 +1,10 @@
 # Replace per-repo handoff files with an append-only session ledger
 
+**Status:** superseded by ADR-0010. `~/.magito/ledger.db` and `~/.magito/run/` are
+retired; `catch-up` and `handoff` read and write the per-entry session journal
+(`.magito/journal/`) instead. This record stays for the handoff-file problem it solved
+and the trade-off it made; the ledger it describes no longer exists.
+
 Session handoffs used to live at `~/.magito/handoffs/<repo-slug>.md`, one markdown file
 per repo, machine-local, with each write overwriting the last. Two sessions working the
 same repo at once clobbered each other's file, and there was no way to query past

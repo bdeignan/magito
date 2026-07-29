@@ -237,8 +237,8 @@ def main() -> None:
                 status = merge_hook_settings(settings_path, hook_dst_paths, args.dry_run)
                 results.append((tool_name, "settings.json (hooks)", str(settings_path), status))
 
-    # Machine-local session tooling (the journal command, and clock until #107 retires it):
-    # tool-independent, always installed.
+    # Machine-local session tooling (the journal command): tool-independent, always
+    # installed.
     bin_src_dir = repo_root / "bin"
     if bin_src_dir.exists():
         bin_dst_dir = Path.home() / ".magito" / "bin"

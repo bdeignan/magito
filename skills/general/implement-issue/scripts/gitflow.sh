@@ -4,24 +4,6 @@
 # Staging is always explicit — this script never runs `git add -A`/`git add .`.
 set -euo pipefail
 
-# Best-effort ledger checkpoint (issue #65). Never aborts the git verb: any
-# failure (nothing clocked in, clock/python missing) is swallowed so the git
-# work still succeeds. Calls the machine-global `~/.magito/bin/clock`
-# (issue #84) rather than a sibling script — the ledger is global regardless
-# of which repo the git work happened in, so there is nothing to resolve
-# relative to this script's own dir. type=$1, ref=$2 (optional), summary=$3
-# (optional).
-checkpoint() {
-  local ctype="$1" ref="${2:-}" summary="${3:-}"
-  local -a args=(checkpoint --type "$ctype")
-  if [ -n "$ref" ]; then args+=(--ref "$ref"); fi
-  if [ -n "$summary" ]; then args+=(--summary "$summary"); fi
-  # stdin closed (</dev/null): if clock reaches its ambiguous-session prompt it
-  # gets EOF and dies rather than blocking a git verb on a keystroke — a silent
-  # hang would be worse than the abort this best-effort wrapper prevents.
-  python3 "$HOME/.magito/bin/clock" "${args[@]}" </dev/null >/dev/null 2>&1 || true
-}
-
 cmd="${1:-}"; shift || true
 
 current_branch() { git rev-parse --abbrev-ref HEAD; }
@@ -85,7 +67,6 @@ case "$cmd" in
     [ "$#" -gt 0 ] || { echo "commit needs explicit files — never git add -A" >&2; exit 1; }
     git add -- "$@"
     git commit -m "$msg"
-    checkpoint checkpoint "$(git rev-parse HEAD)" "$msg"
     ;;
   push)
     guard_not_base
@@ -93,11 +74,6 @@ case "$cmd" in
     ;;
   pr)
     # pr <issue> "<title>" ["<body>"]   body is optional; when given it precedes the Closes line
-    # Button-merge note: when a human merges via the GitHub button instead of
-    # this script's `merge` verb, this pr checkpoint is the only ledger record
-    # of the work landing — the agent can optionally add a manual merge
-    # checkpoint by hand (see SKILL.md step 8), but nothing is lost if it's
-    # skipped since the PR is already recorded here as a type=output event.
     guard_not_base
     issue="${1:?issue required}"; title="${2:?title required}"; body="${3:-}"
     # Build the PR body once (a given body precedes the Closes line).
@@ -116,7 +92,6 @@ case "$cmd" in
       pr_url="$(gh pr create --title "$title" --body "$pr_body")"
     fi
     echo "$pr_url"
-    checkpoint output "$pr_url" "opened PR"
     ;;
   merge)
     # merge   --no-ff merge of the current feature branch into the base branch.
@@ -127,7 +102,6 @@ case "$cmd" in
     base="$(default_branch)"; branch="$(current_branch)"
     git checkout "$base"
     git merge --no-ff --no-edit "$branch"
-    checkpoint checkpoint "" "merged $branch"
     ;;
   *)
     echo "usage: gitflow.sh {branch <issue> <slug> [kind]|commit <msg> <file>...|push|pr <issue> <title> [body]|merge}" >&2

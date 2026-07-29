@@ -54,6 +54,5 @@ sources: journal=read, CLAUDE.md=read, docs/agents/GLOSSARY.md=missing, ADRs=mis
 Then ask what the user wants to pick up — or, if a recent session names a clear next
 step, offer to start there.
 
-Adopting the journal in a project that has its own notes, or that still has the retired
-SQLite ledger? See [`references/adopting-the-journal.md`](references/adopting-the-journal.md)
-for the one-time import.
+Adopting the journal in a project that already has its own notes or handoff habit? See
+[`references/adopting-the-journal.md`](references/adopting-the-journal.md).

@@ -1,5 +1,10 @@
 # Install the session-ledger command to `~/.magito/bin/`, not nested in a skill
 
+**Status:** historical/superseded by ADR-0010. `clock` and `bin/ledger.md` are deleted
+(#107); the ledger they served is gone. The `~/.magito/bin/` install lane this ADR
+justified survives and now carries `journal` instead — that structural argument still
+holds even though the specific command named below no longer exists.
+
 `clock` has three unrelated consumers — `catch-up`, `handoff`, and `gitflow.sh` — and
 none of them owns it. It used to live in `implement-issue/scripts/`, so the other two
 reached it sideways via `../implement-issue/scripts/clock`. That is the cross-skill-reference
