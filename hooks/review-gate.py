@@ -281,14 +281,12 @@ def current_branch(cwd):
 
 
 def main_worktree(cwd):
-    """Return the absolute path of the main (first-listed) worktree.
+    """Return the absolute path of the main worktree (see the module docstring
+    for why the marker lives there rather than at cwd).
 
-    `git worktree list --porcelain` always lists the main worktree first, as a
-    line `worktree <path>`. The marker lives there rather than at whatever cwd
-    or `--git-common-dir` resolves to, so a review or skip recorded inside a
-    linked worktree still counts when landing from the main tree — resolving
-    against cwd instead would silently give every worktree its own `.magito/`.
-    Paths may contain spaces, so the line is split on the first space only.
+    `git worktree list --porcelain` always lists it first, as a line
+    `worktree <path>`. Paths may contain spaces, so the line is split on the
+    first space only.
     """
     out = git(["worktree", "list", "--porcelain"], cwd)
     first_line = out.split("\n", 1)[0]
@@ -301,30 +299,25 @@ def marker_path(branch, cwd):
     return Path(main_worktree(cwd)) / ".magito" / f"review-{slug}"
 
 
-def read_marker(path):
-    """Return (sha, decision) recorded at path, or (None, None) if missing/unreadable/empty.
+def recorded_sha(path):
+    """Return the sha recorded at path, or None if it is missing, unreadable, or empty.
 
-    A file holding only a sha — the format before decisions existed — is read
-    as decision 'reviewed', so a branch already in flight when this lands
-    isn't stranded.
+    The marker holds `<sha> <decision>`, but only the sha is read: the gate must
+    never judge the decision text, or a deliberate skip stops landing as easily
+    as a completed review. Splitting on the first whitespace also accepts a bare
+    sha with no decision word, which a hand-written marker may be.
     """
     try:
         text = path.read_text().strip()
     except OSError:
-        return None, None
-    if not text:
-        return None, None
-    parts = text.split(None, 1)
-    sha = parts[0]
-    decision = parts[1].strip() if len(parts) > 1 else "reviewed"
-    return sha, decision
+        return None
+    return text.split(None, 1)[0] if text else None
 
 
 def gate(branch, sha, cwd):
     """Return True if denied (deny output already printed)."""
     path = marker_path(branch, cwd)
-    recorded_sha, _decision = read_marker(path)
-    if recorded_sha == sha:
+    if recorded_sha(path) == sha:
         return False
     reason = (
         f"magito review gate: no fresh review decision for branch '{branch}' "

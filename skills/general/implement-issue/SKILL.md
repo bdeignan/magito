@@ -27,7 +27,7 @@ Take one issue from spec to open PR in a single sequential pass. You own the git
 
 6. **Self-review — offer it, don't assume it.** The review costs real money, so ask before running it, then record the answer either way.
 
-   Say which way you're leaning and why, then ask. **Recommend the review** when the diff touches hooks, the review or merge gate, security, or a data boundary, or when it runs past roughly 100 changed lines. **Default to skipping** on a small or docs-only diff. The user can ask for a review you didn't recommend, or decline one you did.
+   Say which way you're leaning and why, then ask. **Recommend the review** when the diff touches hooks, the review or merge gate, security, or a data boundary, or when it runs past roughly 100 changed lines. **Default to skipping** on a small or docs-only diff. The user can ask for a review you didn't recommend, or decline one you did. (`reviewing-changes` has its own ~30-line threshold, which decides something else: whether a review that is already happening fans out to two sub-agents or stays a single inline pass.)
 
    - **Reviewed** — run the `reviewing-changes` skill against the branch point. Fix what it surfaces, including any doc-staleness finding it flags, discretionary like any other finding. A doc fix lands in this same PR as a follow-up commit. That new commit stales the decision and forces a re-review, which is this same loop, not new machinery. The skill records `reviewed` itself as its last step.
    - **Skipped** — record the skip and the user's stated reason:
@@ -36,7 +36,7 @@ Take one issue from spec to open PR in a single sequential pass. You own the git
      d="$(git worktree list --porcelain | head -1 | cut -d' ' -f2-)/.magito" && mkdir -p "$d" && printf '%s skipped: %s\n' "$(git rev-parse HEAD)" "<reason>" >| "$d/review-$(git rev-parse --abbrev-ref HEAD | tr '/' '-')"
      ```
 
-   The merge/PR gate wants a fresh decision, not a completed review, so either answer lands. Never record `reviewed` when no review ran — the marker is an attestation, and one false entry makes the whole record worthless. Where hooks are disabled, this prompt is the only surface and it is skippable. That is the real situation, so describe it that way rather than implying a gate that isn't running.
+   The merge/PR gate wants a fresh decision, not a completed review, so either answer lands. Never record `reviewed` when no review ran — the marker is an attestation, and one false entry makes the whole record worthless. Where hooks are disabled, this question is the only thing standing between the work and the base branch, and the user can wave it through. That is the real situation, so describe it that way rather than implying a gate that isn't running.
 
 7. **Run the full suite once**, and report the result honestly. A failing suite blocks the PR.
 

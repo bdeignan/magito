@@ -161,7 +161,8 @@ committed here:
 The session record itself is **not** machine-local any more. It lives in the repo at
 `.magito/journal/`, one markdown file per session, with `.magito/` kept in
 `.git/info/exclude` (never `.gitignore` — it is personal state and does not belong in a
-shared ignore file). See `bin/journal` and
+shared ignore file). The review-decision marker (`.magito/review-<branch>`) lives beside
+it, which is why that exclude line is load-bearing. See `bin/journal` and
 `skills/general/catch-up/references/adopting-the-journal.md`.
 
 Conventions: agents never overwrite an existing *user* file here on their own

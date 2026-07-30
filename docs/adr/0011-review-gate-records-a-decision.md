@@ -18,9 +18,10 @@ things keep the record honest instead, and none of them is enforcement. `reviewi
 is the only writer of `reviewed`, and it writes it as its own last step. The skip path in
 `implement-issue` writes only `skipped: <reason>`, with the reason coming from the user's
 answer. The deny message points at the skill and at the skip path rather than pasting a
-ready-made command for writing `reviewed`, which would be handing over the launder. An
-agent determined to lie can still lie. The design removes the incentive by making the
-honest skip as cheap as the dishonest one.
+ready-made command for writing `reviewed`, which would be handing over the very thing the
+rule forbids. An agent determined to lie can still lie. The design removes the reason to,
+by making the honest skip as cheap as the dishonest one. Treat the acceptance criterion
+"nothing lets an agent record `reviewed` when no review ran" as mitigated, not met.
 
 The marker also moved, from `<git-common-dir>/magito/reviewed-<branch>` to
 `<main-worktree-root>/.magito/review-<branch>`. Claude Code's auto-mode classifier refuses
@@ -39,6 +40,7 @@ explicitly, from the first entry of `git worktree list --porcelain`. Anyone rewr
 to a cwd-relative path will not see the breakage until a fan-out fails to land.
 
 There is no migration. A marker goes stale on the next commit regardless, so old files
-under `.git/magito/` are simply no longer read. A file holding a bare sha and no decision
-is still accepted, and means `reviewed`, so a branch in flight when this landed is not
-stranded.
+under `.git/magito/` are simply no longer read. A branch that was in flight when this
+landed re-records its decision, which costs one command. The reader still accepts a file
+holding a bare sha and no decision word, but that is tolerance for a hand-written marker,
+not a migration path — nothing writing to the new location omits the decision.

@@ -33,7 +33,7 @@
 - Add only what the task needs. Ask before expanding scope.
 - Write tests that exercise real behavior and the edge cases that actually break — not heavy mocking that passes while the real path fails.
 - Stage only the files you changed. Never `git add -A`, `--all`, `.`, or `git commit -a`.
-- Don't land unreviewed work: no merge to the base branch and no PR without a fresh review. Claude Code blocks this mechanically; other tools have no enforcement, only this rule.
+- Don't land work with no review decision on record: no merge to the base branch and no PR until you have either run the review or recorded a deliberate skip and its reason. Claude Code blocks this mechanically; other tools have no enforcement, only this rule.
 
 ## Session journal
 
