@@ -1,6 +1,7 @@
 ---
 name: finding-lacunae
 description: Research and diagnose missing essential elements in a topic or artifact. Use when an idea, specification, design, or implementation may have an evidence-backed gap that its surrounding field, constraints, or alternatives reveal; do not use to invent a novel product or solution.
+disable-model-invocation: true
 ---
 
 # Finding Lacunae
@@ -64,3 +65,6 @@ its internal assumptions and failure modes. Use this skill to research the
 surrounding field and identify missing keystones. Use both only when the task
 needs both an external gap diagnosis and an internal critique; keep their
 findings separate.
+
+Both skills are user-invoked, so an agent that wants the other one recommends
+it and lets the user run it, rather than invoking it mid-session.
