@@ -41,10 +41,10 @@ Present under `## Standards` and `## Spec`, verbatim or lightly cleaned. Do **no
 
 **Invariant:** An axis with provenance `(none)` must **never** be reported as passed or omitted. If an axis returns no result, explicitly say so: "Standards (none): No output — this axis could not be evaluated." This prevents silent gaps from appearing as if they passed review.
 
-Then record that the review happened, so tooling (e.g. a merge/PR gate) can verify it — the marker pins the review to this branch at this exact commit; any later commit makes it stale and the gate will ask for a re-review.
+Then record the decision, so tooling (e.g. a merge/PR gate) can verify it — the marker holds `<sha> <decision>`; this skill always records `reviewed` (a deliberate skip is recorded separately, by implement-issue). It pins that decision to this branch at this exact commit; any later commit makes it stale and the gate will ask for a fresh decision.
 
 ```bash
-d="$(git rev-parse --git-common-dir)/magito" && mkdir -p "$d" && git rev-parse HEAD >| "$d/reviewed-$(git rev-parse --abbrev-ref HEAD | tr '/' '-')"
+d="$(git worktree list --porcelain | head -1 | cut -d' ' -f2-)/.magito" && mkdir -p "$d" && printf '%s reviewed\n' "$(git rev-parse HEAD)" >| "$d/review-$(git rev-parse --abbrev-ref HEAD | tr '/' '-')"
 ```
 
-(`>|` forces the overwrite even under zsh's `noclobber`, so a re-review can refresh an existing marker.)
+(`>|` forces the overwrite even under zsh's `noclobber`, so a re-review can refresh an existing marker. `git worktree list | head -1` resolves the main worktree, so a review run inside a linked worktree still counts at merge time.)
