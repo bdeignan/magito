@@ -51,7 +51,8 @@ Show a draft, let the user edit, then write:
 
 - An `## Agent workflow` block in whichever of `CLAUDE.md` / `AGENTS.md` already exists — edit that one; never create the other alongside it; if neither exists, ask which to create. The block records the issue-tracker choice and the toolchain conventions in a few lines.
 - If the user chose local issues, create `.scratch/` with a short `README.md` describing the convention.
-- Run `git config magito.reviewGate true` — opts the repo into the merge/PR review gate; where the tool supports hooks, landing work on the base branch is blocked unless a fresh `reviewing-changes` marker exists.
+- Run `git config magito.reviewGate true` — opts the repo into the merge/PR review gate; where the tool supports hooks, landing work on the base branch is blocked unless a fresh review decision is recorded (a completed review, or a deliberate skip with a reason).
+- Ensure `.magito/` is present in `.git/info/exclude` — append it if absent (never `.gitignore`, which is shared and this is personal state): `e="$(git rev-parse --git-common-dir)/info/exclude" && { grep -qxF '.magito/' "$e" 2>/dev/null || echo '.magito/' >> "$e"; }` (via `--git-common-dir`, since inside a linked worktree `.git` is a file, not a directory). Both the session journal and the review-decision marker write there.
 - If this repo merges into a trunk other than its GitHub default branch (e.g. a `develop`-based migration workflow), also run `git config magito.baseBranch <branch>` — do NOT set this by default.
 - If the user accepted Section C, scaffold the four `docs/agents/` files and add the `@docs/agents/INDEX.md` import (or the `AGENTS.md` pointer).
 

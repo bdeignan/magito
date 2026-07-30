@@ -2,7 +2,7 @@
 """PreToolUse hook (Bash matcher): gate landing unreviewed work.
 
 Blocks `gitflow.sh merge`/`gitflow.sh pr`, `gh pr create`, and
-`git merge <ref>` onto the base branch unless a matching reviewing-changes
+`git merge <ref>` onto the base branch unless a matching review-decision
 marker exists for the sha being landed. Repos opt in via
 `git config magito.reviewGate true` (gitflow.sh is always gated). A leading
 `cd <dir> &&` in the command shifts where later segments are judged from
@@ -16,6 +16,18 @@ re-adding an exemption here. Heredoc bodies are blanked before judging, so
 writing a file that merely contains a line like `gh pr create` is not
 mistaken for running it. Fails open (allows silently) on any parsing, git,
 or filesystem error.
+
+The marker lives at `<main-worktree-root>/.magito/review-<branch-slug>` and
+holds one line, `<sha> <decision>` (e.g. `1b34fba reviewed` or `1b34fba
+skipped: docs-only`); a bare sha with no decision text (the pre-decision
+format) reads as `reviewed`. The gate only compares the sha to HEAD — the
+decision text is recorded for a human to read later, never interpreted, so a
+deliberate skip lands exactly as easily as a completed review. The main
+worktree is resolved explicitly (`git worktree list --porcelain` always
+lists it first), not derived from cwd or `--git-common-dir`, so a review or
+skip recorded inside a linked worktree still counts when landing from the
+main tree, and every worktree shares one `.magito/` instead of getting its
+own.
 """
 import json
 import os
@@ -268,27 +280,51 @@ def current_branch(cwd):
     return git(["rev-parse", "--abbrev-ref", "HEAD"], cwd)
 
 
+def main_worktree(cwd):
+    """Return the absolute path of the main worktree (see the module docstring
+    for why the marker lives there rather than at cwd).
+
+    `git worktree list --porcelain` always lists it first, as a line
+    `worktree <path>`. Paths may contain spaces, so the line is split on the
+    first space only.
+    """
+    out = git(["worktree", "list", "--porcelain"], cwd)
+    first_line = out.split("\n", 1)[0]
+    _, path = first_line.split(" ", 1)
+    return path
+
+
 def marker_path(branch, cwd):
-    # --git-common-dir so a marker written inside a linked worktree is seen
-    # when merging from the main checkout (and vice versa)
     slug = branch.replace("/", "-")
-    git_dir = git(["rev-parse", "--git-common-dir"], cwd)
-    return (Path(cwd) / git_dir / "magito" / f"reviewed-{slug}").resolve()
+    return Path(main_worktree(cwd)) / ".magito" / f"review-{slug}"
+
+
+def recorded_sha(path):
+    """Return the sha recorded at path, or None if it is missing, unreadable, or empty.
+
+    The marker holds `<sha> <decision>`, but only the sha is read: the gate must
+    never judge the decision text, or a deliberate skip stops landing as easily
+    as a completed review. Splitting on the first whitespace also accepts a bare
+    sha with no decision word, which a hand-written marker may be.
+    """
+    try:
+        text = path.read_text().strip()
+    except OSError:
+        return None
+    return text.split(None, 1)[0] if text else None
 
 
 def gate(branch, sha, cwd):
     """Return True if denied (deny output already printed)."""
     path = marker_path(branch, cwd)
-    try:
-        reviewed_sha = path.read_text().strip()
-    except OSError:
-        reviewed_sha = None
-    if reviewed_sha == sha:
+    if recorded_sha(path) == sha:
         return False
     reason = (
-        f"magito review gate: no fresh reviewing-changes review for branch '{branch}' "
+        f"magito review gate: no fresh review decision for branch '{branch}' "
         f"(marker {path} is missing or stale — a new commit invalidates it). "
-        "Run the reviewing-changes skill against the branch point, then retry."
+        "Either run the reviewing-changes skill, which records the review, or record a "
+        "deliberate skip and its reason — implement-issue step 6 records either answer. "
+        "Do not record 'reviewed' unless a review actually ran."
     )
     print(json.dumps({
         "hookSpecificOutput": {
