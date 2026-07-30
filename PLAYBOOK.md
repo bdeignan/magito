@@ -50,13 +50,14 @@ zero discretion); keep judgement work in your own huddle.
 
 | Situation | Play | Where you're in the loop |
 |---|---|---|
-| Anything about to land | `reviewing-changes` (agents run it; the gate enforces it) | read the two-axis report; you merge |
+| Anything about to land | `reviewing-changes` (agents offer it; the gate wants your answer on record) | pick review or skip; read the report; you merge |
 | Behavior needs proving, not asserting | `verifying` | — |
 | A skill or doc got bloated | `/decruft` | approve the cuts |
 
 **The defensive line plays every snap without being called:** `staging-guard`
-blocks bulk staging, `review-gate` blocks unreviewed merges and PRs. If a landing
-is blocked, that's the system working — review, then retry.
+blocks bulk staging, `review-gate` blocks a merge or PR with no review decision on
+record. If a landing is blocked, that's the system working — review or record a
+deliberate skip, then retry.
 
 ## Special teams
 
