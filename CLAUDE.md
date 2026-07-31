@@ -18,7 +18,9 @@ INDEX + OVERVIEW + GLOSSARY auto-load every session via this import).
 
 **GitHub** — issues and PRs via `gh` against `bdeignan/magito`; reference issues as `#N`.
 The repo is opted into the merge/PR review gate (`git config magito.reviewGate true`):
-landing work requires a fresh recorded review decision.
+landing work requires a fresh recorded review decision. ADR 0013 narrows that to the
+unsupervised fan-out, but the gate has not been changed yet — expect it to block, and
+expect the marker write to be refused by the auto-mode classifier when it does.
 By default `gitflow.sh pr` targets the repo's GitHub default branch (main); `gitflow.sh
 merge` never consults GitHub — it detects the base locally instead (`origin/HEAD`, then
 `init.defaultBranch`, then local `main`/`master`). Set `git config magito.baseBranch
@@ -182,8 +184,17 @@ worker contract's gotchas.
 - Each skill is a directory with a `SKILL.md` file; subdirs (`references/`, `scripts/`) are supported
 - `skills/INDEX.md` is auto-generated and human-facing only; agents discover skills via SKILL.md frontmatter, not via the index
 
-**Hooks** (Claude Code only) are the deterministic backstop for rules that prose keeps
-failing to enforce — a skill can *ask*, a hook can *block*:
+**Enforcement runs in three tiers** (ADR 0012). Prose in a skill asks. Deterministic code in
+a script the agent already calls — `gitflow.sh` — enforces, and works in every tool on every
+machine. Hooks catch only what a script cannot see (raw `git add -A`, raw `git merge`, raw
+`gh pr create`), exist in Claude Code alone, and are therefore optional insurance rather than
+the floor. Put a new rule in the lowest tier that can hold it.
+
+A second rule decides whether a rule needs teeth at all: **gates belong where supervision is
+absent** (ADR 0013). magito assumes an active human, so blocking that person to collect an
+attestation nobody reads is ceremony. The unsupervised `dispatch` fan-out is the exception.
+
+**Hooks** (Claude Code only), as they stand today:
 - `staging-guard.py` — denies `git add -A`/`--all`/`.` and `git commit -a` in every repo.
 - `review-gate.py` — denies landing unreviewed work: `gitflow.sh merge|pr` always;
   raw `git merge` (on the base branch) and `gh pr create` only in repos opted in via
@@ -192,15 +203,20 @@ failing to enforce — a skill can *ask*, a hook can *block*:
   either a completed review or a deliberate skip with a reason — so any commit after the
   decision goes stale and re-blocks. The main worktree is resolved explicitly (not derived
   from cwd), so a decision recorded inside a linked worktree still counts at merge time.
+  **ADR 0013 narrows this to the fan-out path**, but the code has not changed yet: the gate
+  still blocks the ordinary path, and the classifier still refuses the marker write it asks
+  for. The mechanism for telling a fan-out from a human is an open question, deliberately
+  not guessed at — see the issue tracker before touching this file.
 - Both hooks blank heredoc bodies before judging. Writing a file that contains a line like
   `git add -A` is not mistaken for running it, which matters here, where the product is
   prose full of example commands. The parsing is a deliberate byte-identical copy in both
   files. A shared helper module cannot live in `hooks/`: `install.py` registers every
   `hooks/*.py` as a PreToolUse hook, so the helper would fire on every Bash call. Change
   one copy, change the other.
-- Cross-tool floor: hooks only exist in Claude Code. The staging rule and the review-gate
-  rule are both restated in `shared/SYSTEM-INSTRUCTIONS.md` (every tool's instruction file)
-  so Codex/Gemini/omp keep the prose version.
+- Cross-tool floor: hooks only exist in Claude Code, and under ADR 0012 that is why they are
+  not the floor. The staging rule and the review rule are both restated in
+  `shared/SYSTEM-INSTRUCTIONS.md` (every tool's instruction file) so Codex/Gemini/omp keep
+  the prose version, and `gitflow.sh` carries the checks that can live in a script.
 - Caveat: a project-level `Bash` matcher in `.claude/settings.json` **overrides**
   user-level hooks entirely for that project — ours silently stop firing there.
 
