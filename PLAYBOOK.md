@@ -10,13 +10,13 @@ this file needs a PR.
 What magito guarantees you, no matter how the internals change:
 
 1. **You own every merge.** Agents branch, commit, and open PRs; the merge is
-   always yours. The review gate blocks unreviewed landings mechanically, not by
-   politeness.
-2. **Nothing lands unreviewed.** Every PR or merge needs a fresh review — the full
-   two-axis pass (Standards + Spec), or a lightweight single-pass review for small,
-   low-risk diffs. Any commit after the review goes stale and re-blocks. (The
-   mechanical block on raw `git merge`/`gh pr create` arms in repos opted in via
-   `/setup-project`; the skills demand the review everywhere regardless.)
+   always yours.
+2. **Nothing lands unreviewed by accident.** Every PR or merge reaches a deliberate
+   choice first — the full two-axis pass (Standards + Spec), a lightweight single
+   pass for small, low-risk diffs, or a knowing skip. When you are driving, skipping
+   is a legitimate answer and the system asks rather than blocks. Work landed by an
+   unsupervised fan-out is the exception: there every worktree gets a real review,
+   because a worker's own claim to have reviewed cannot be trusted (ADR 0013).
 3. **Delegation is explicit.** No work goes to an external model unless you name a
    worker ("via omp"). Default paths never spend your prepaid credits.
 4. **One approval per worker launch** (in default permission mode). A dead or
@@ -54,10 +54,14 @@ zero discretion); keep judgement work in your own huddle.
 | Behavior needs proving, not asserting | `verifying` | — |
 | A skill or doc got bloated | `/decruft` | approve the cuts |
 
-**The defensive line plays every snap without being called:** `staging-guard`
-blocks bulk staging, `review-gate` blocks a merge or PR with no review decision on
-record. If a landing is blocked, that's the system working — review or record a
-deliberate skip, then retry.
+**The defensive line plays every snap without being called:** `gitflow.sh` refuses
+to stage in bulk or commit on the base branch, and `staging-guard` catches the same
+thing on raw `git` where hooks are allowed. These are checks in the path, so they
+hold in every tool — see ADR 0012.
+
+`review-gate` still blocks a merge or PR with no decision on record. ADR 0013
+narrows that to the unsupervised fan-out, but the code has not caught up, so for now
+expect it to block the ordinary path too. If it does, record the decision and retry.
 
 ## Special teams
 

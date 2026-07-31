@@ -8,7 +8,7 @@
 
 ## Purpose
 magito is one person's version-controlled configuration layer for agentic CLIs. It keeps
-skills, subagents, shared instructions, and guardrail hooks in one repo and installs them
+skills, subagents, shared instructions, and guardrails in one repo and installs them
 into whatever coding tools that person uses (Claude Code, Codex, Gemini, and others), so the
 same governed behavior follows them across tools and machines. It is a miniature, portable
 take on the governed multi-agent idea — not a framework built for anyone else to adopt.
@@ -19,11 +19,17 @@ take on the governed multi-agent idea — not a framework built for anyone else 
   copy step in between.
 - **Stdlib-only Python.** The installer and hooks must run on a bare Python with no
   dependency step — they are plumbing, not an application.
-- **Skills are the product; hooks are the backstop.** Behavior lives in prose skills an agent
-  reads. Where prose keeps failing to hold a rule (bulk-staging, landing unreviewed work), a
-  hook blocks it — a skill can ask, a hook can enforce.
-- **A tool-neutral floor.** The same core rules are inlined in a shared instruction file so
-  tools without hooks still get the prose version.
+- **Skills ask; scripts enforce; hooks are optional.** Behavior lives in prose skills an
+  agent reads. Where prose keeps failing to hold a rule, the check moves into a script the
+  agent already calls, which works in every tool on every machine. Hooks catch only what a
+  script cannot see, and exist in one tool, so they are insurance rather than the floor. The
+  core rules are also restated in a shared instruction file every tool reads.
+- **Gates only where supervision is absent.** magito assumes a human in the loop and active.
+  A gate that blocks that person to collect an attestation nobody reads is ceremony; the
+  unsupervised fan-out is the one place it still earns its cost.
+- **It has to degrade cleanly when switched off.** Removing magito should leave a
+  well-documented repo, not a broken one — which makes the claim testable when a new model
+  lands.
 
 ## Rejected alternatives
 - **Copy files into each tool's config** — edits wouldn't be live and the copies would drift
