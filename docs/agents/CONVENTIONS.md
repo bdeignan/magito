@@ -16,6 +16,13 @@ Where one skill needs another, ask: **does the user have a decision to make here
 | No, and it's small | **Inline** | Not a seam at all. State the two or three rules directly, or share a file under `references/`. |
 | No, and it's non-negotiable | **Invoke** | Skill A calls skill B. |
 
+**Ask, then invoke** is the fourth shape, and it is the right one when the decision is real
+but the next move belongs to the same skill. `implement-issue` names its recommendation,
+asks, and then runs `reviewing-changes` or records the skip. That is not a recommend — the
+user never leaves the skill — and it is not a bare invoke, because the choice was surfaced.
+Reach for it when handing the user back to the prompt would only make them type their way
+back in.
+
 **Invoke is the narrow case and has to earn itself.** `dispatch` invokes `reviewing-changes`
 on every worktree and calls it non-negotiable — there is no decision to make, and turning it
 into a recommendation would make it skippable, which is the whole reason it is not one.

@@ -1,7 +1,14 @@
 # Gates belong where supervision is absent
 
-Status: supersedes the enforcement half of ADR 0010 and ADR 0011. Both remain accurate
-records of what was believed when they were written; neither should be edited.
+Status: supersedes ADR 0011's premise that every landing needs a recorded decision, and
+makes ADR 0009 moot outside the fan-out path. Both remain accurate records of what was
+believed when they were written; neither should be edited.
+
+ADR 0009 refused to exempt a base-branch sync from the gate, on the reasoning that a real
+sync and a laundered push are indistinguishable to a local hook. That reasoning still holds
+wherever the gate applies. It simply stops arising in the ordinary path, because there is no
+longer a gate there to seek an exemption from. Anyone re-reading 0009 and finding it
+demanding a marker for `git merge origin/main` should read this ADR first.
 
 The review gate refuses to land work until a marker records a decision for the current sha.
 ADR 0011 already conceded that the gate verifies nothing: a local hook cannot tell whether a
