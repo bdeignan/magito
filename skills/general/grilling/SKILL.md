@@ -1,6 +1,7 @@
 ---
 name: grilling
-description: Interview the user relentlessly about a plan or design. Use when the user wants to stress-test a plan before building, or uses any 'grill' trigger phrases.
+description: Interview the user relentlessly about a plan or design, one question at a time, to reach a shared understanding before building. Reach for it when a plan needs stress-testing and the open questions are worth walking through in order.
+disable-model-invocation: true
 ---
 
 Interview me relentlessly about every aspect of this plan until we reach a shared understanding. Walk down each branch of the design tree, resolving dependencies between decisions one-by-one. For each question, provide your recommended answer.
