@@ -17,17 +17,15 @@ INDEX + OVERVIEW + GLOSSARY auto-load every session via this import).
 ### Issue tracker
 
 **GitHub** — issues and PRs via `gh` against `bdeignan/magito`; reference issues as `#N`.
-The repo is opted into the merge/PR review gate (`git config magito.reviewGate true`):
-landing work requires a fresh recorded review decision. ADR 0013 narrows that to the
-unsupervised fan-out, but the gate has not been changed yet — expect it to block, and
-expect the marker write to be refused by the auto-mode classifier when it does.
-By default `gitflow.sh pr` targets the repo's GitHub default branch (main); `gitflow.sh
+The repo is opted into the merge/PR review gate (`git config magito.reviewGate true`),
+which since ADR 0014 applies only to branches created by the `dispatch` fan-out —
+ordinary work lands with no gate and no marker. By default `gitflow.sh pr` targets the
+repo's GitHub default branch (main); `gitflow.sh
 merge` never consults GitHub — it detects the base locally instead (`origin/HEAD`, then
 `init.defaultBranch`, then local `main`/`master`). Set `git config magito.baseBranch
 develop` to retarget both — and the raw-`git merge` gate's notion of the base — to
 `develop` (e.g. for a migration workflow); `git config --unset magito.baseBranch` at
-cutover. The gate always requires a fresh recorded review decision to land,
-independent of the base branch.
+cutover.
 
 ### Toolchain
 
@@ -196,17 +194,19 @@ attestation nobody reads is ceremony. The unsupervised `dispatch` fan-out is the
 
 **Hooks** (Claude Code only), as they stand today:
 - `staging-guard.py` — denies `git add -A`/`--all`/`.` and `git commit -a` in every repo.
-- `review-gate.py` — denies landing unreviewed work: `gitflow.sh merge|pr` always;
-  raw `git merge` (on the base branch) and `gh pr create` only in repos opted in via
-  `git config magito.reviewGate true` (set by `setup-project`). The gate checks the
+- `review-gate.py` — denies landing unreviewed **fan-out** work: `gitflow.sh merge|pr`
+  always; raw `git merge` (on the base branch) and `gh pr create` only in repos opted in
+  via `git config magito.reviewGate true` (set by `setup-project`). The gate checks the
   marker at `<main-worktree-root>/.magito/review-<branch>`, holding `<sha> <decision>` —
   either a completed review or a deliberate skip with a reason — so any commit after the
   decision goes stale and re-blocks. The main worktree is resolved explicitly (not derived
   from cwd), so a decision recorded inside a linked worktree still counts at merge time.
-  **ADR 0013 narrows this to the fan-out path**, but the code has not changed yet: the gate
-  still blocks the ordinary path, and the classifier still refuses the marker write it asks
-  for. The mechanism for telling a fan-out from a human is an open question, deliberately
-  not guessed at — see the issue tracker before touching this file.
+  **A missing marker allows** (ADR 0014). Only `gitflow.sh worktree add` writes a marker,
+  when it creates a branch for an unsupervised executor, so a branch without one is work
+  someone did by hand and meets no gate. Do not "fix" the missing case into a denial: that
+  restores the blanket gate ADR 0013 removed and blocks every merge in the repo. The real
+  floor is the same check in `gitflow.sh pr|merge`, which runs where hooks are banned;
+  this hook is the insurance copy for the raw commands a script cannot see.
 - Both hooks blank heredoc bodies before judging. Writing a file that contains a line like
   `git add -A` is not mistaken for running it, which matters here, where the product is
   prose full of example commands. The parsing is a deliberate byte-identical copy in both
