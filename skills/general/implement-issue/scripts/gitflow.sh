@@ -60,7 +60,9 @@ guard_not_base() {
 # so the line splits on the first space only. In a bare repo the first entry is
 # the bare git dir itself — nothing runs a worktree fan-out from a bare repo, so
 # that case is noted, not handled.
-main_worktree() { git worktree list --porcelain | head -1 | cut -d' ' -f2-; }
+# awk rather than `head -1`: head exits after one line, which can SIGPIPE git and,
+# under `set -o pipefail`, abort the script. awk drains the stream.
+main_worktree() { git worktree list --porcelain | awk 'NR==1{sub(/^worktree /,""); print}'; }
 
 marker_path() { local slug="${1//\//-}"; echo "$(main_worktree)/.magito/review-${slug}"; }
 
