@@ -41,13 +41,14 @@ Present under `## Standards` and `## Spec`, verbatim or lightly cleaned. Do **no
 
 **Invariant:** An axis with provenance `(none)` must **never** be reported as passed or omitted. If an axis returns no result, explicitly say so: "Standards (none): No output — this axis could not be evaluated." This prevents silent gaps from appearing as if they passed review.
 
-Then record the decision — **but only if this branch already has a marker.** Check first:
+Then record the decision — **but only if this branch already has a marker.** Check first, using the three separate reads below and then your file-*reading* tool on the resulting path. Do not compose them into one shell command: this repo has already found that the classifier refuses a compound command that builds this path, including a read-only one (see `CLAUDE.md`).
 
 ```bash
-ls "$(git worktree list --porcelain | head -1 | cut -d' ' -f2-)/.magito/review-<branch-slug>"
+git rev-parse --abbrev-ref HEAD           # the branch; replace every / with - for the slug
+git worktree list --porcelain | head -1   # prints `worktree <path>`
 ```
 
-**No such file: you are done. Do not create one.** Most reviews end here. A marker exists only on a branch created for an unsupervised executor, where `gitflow.sh worktree add` wrote it; ordinary work is not gated and needs no record (ADR 0013). Creating one here would be worse than pointless: it would newly gate a branch that was never meant to be gated, and the very next commit would block the merge.
+Read `<path>/.magito/review-<branch-slug>`. **No such file: you are done. Do not create one.** Most reviews end here. A marker exists only on a branch created for an unsupervised executor, where `gitflow.sh worktree add` wrote it; ordinary work is not gated and needs no record (ADR 0013). Creating one here would be worse than pointless: it would newly gate a branch that was never meant to be gated, and the very next commit would block the merge.
 
 If the file does exist, overwrite it with `<sha> reviewed`. The marker holds `<sha> <decision>`; this skill only ever records `reviewed` (a deliberate skip is recorded separately, by implement-issue). It pins that decision to this branch at this exact commit; any later commit makes it stale and the gate will ask for a fresh decision.
 

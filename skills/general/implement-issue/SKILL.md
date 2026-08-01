@@ -33,8 +33,9 @@ Take one issue from spec to open PR in a single sequential pass. You own the git
    - **Skipped** — say so and move on. On an ordinary branch there is nothing to record:
      the gate applies only to branches created for an unsupervised executor (ADR 0013), and
      writing a marker here would newly gate a branch that was never gated, blocking the next
-     merge. Record the skip **only if this branch already has a marker** — check with
-     `ls "$(git worktree list --porcelain | head -1 | cut -d' ' -f2-)/.magito/review-<branch-slug>"`.
+     merge. Record the skip **only if this branch already has a marker** — read
+     `<main-worktree>/.magito/review-<branch-slug>` with your file-reading tool, never a
+     compound shell command that builds the path, which the classifier refuses even read-only.
      If it exists, overwrite it with your file-writing tool: one line, `<sha> skipped: <reason>`.
      Read the sha, the branch, and the main worktree path with separate commands
      (`git rev-parse HEAD`, `git rev-parse --abbrev-ref HEAD`, `git worktree list --porcelain
