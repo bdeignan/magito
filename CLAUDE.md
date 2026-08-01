@@ -197,9 +197,11 @@ attestation nobody reads is ceremony. The unsupervised `dispatch` fan-out is the
 - `review-gate.py` — denies landing unreviewed **fan-out** work: `gitflow.sh merge|pr`
   always; raw `git merge` (on the base branch) and `gh pr create` only in repos opted in
   via `git config magito.reviewGate true` (set by `setup-project`). The gate checks the
-  marker at `<main-worktree-root>/.magito/review-<branch>`, holding `<sha> <decision>` —
-  either a completed review or a deliberate skip with a reason — so any commit after the
-  decision goes stale and re-blocks. The main worktree is resolved explicitly (not derived
+  marker at `<main-worktree-root>/.magito/review-<branch>`. It holds `<sha> <decision>` once
+  a decision exists — either a completed review or a deliberate skip with a reason — so any
+  commit after it goes stale and re-blocks. Before then it holds the single word `pending`,
+  written by `gitflow.sh worktree add`, which matches no sha and so blocks until reviewed.
+  The main worktree is resolved explicitly (not derived
   from cwd), so a decision recorded inside a linked worktree still counts at merge time.
   **A missing marker allows** (ADR 0014). Only `gitflow.sh worktree add` writes a marker,
   when it creates a branch for an unsupervised executor, so a branch without one is work
