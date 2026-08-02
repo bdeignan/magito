@@ -1,18 +1,32 @@
 #!/usr/bin/env python3
-"""PreToolUse hook (Bash matcher): gate landing unreviewed work.
+"""PreToolUse hook (Bash matcher): gate landing unreviewed FAN-OUT work.
+
+This hook is optional insurance, not the floor (ADR 0012). The same check lives
+in `gitflow.sh`, which every workflow skill already calls and which works in
+every tool on every machine — including the work machine, where Claude Code
+hooks are prohibited and this file never runs. What is left for the hook is what
+a script cannot see: raw `git merge` and raw `gh pr create`.
+
+It gates only branches created for an unsupervised executor — those, and only
+those, carry a review-decision marker, written by `gitflow.sh worktree add`
+(ADR 0014). A branch with no marker is work someone did by hand, which ADR 0013
+decided needs no gate: the human who typed the command and watched the diff has
+not forgotten to review, they decided.
 
 Blocks `gitflow.sh merge`/`gitflow.sh pr`, `gh pr create`, and
-`git merge <ref>` onto the base branch unless a matching review-decision
-marker exists for the sha being landed. Repos opt in via
+`git merge <ref>` onto the base branch when the branch being landed HAS a
+marker and that marker is stale. Repos opt in via
 `git config magito.reviewGate true` (gitflow.sh is always gated). A leading
 `cd <dir> &&` in the command shifts where later segments are judged from
 (e.g. into a linked worktree). `git merge` already did this for `git -C
 <path>`; this extends the same idea to a plain `cd`. Merging the base
-branch's own remote-tracking ref (`git merge origin/main` while on main) is
-gated like any other merge: nothing local tells a real sync apart from work
-someone pushed straight to origin. Use `git pull` to sync, which this hook
-does not gate — see docs/adr/0009-no-base-branch-sync-exemption.md before
-re-adding an exemption here. Heredoc bodies are blanked before judging, so
+branch's own remote-tracking ref (`git merge origin/main` while on main) now
+passes, because `origin/main` has no marker — not because it earned an
+exemption. ADR 0009 refused to special-case a base-branch sync, on the
+reasoning that nothing local tells a real sync apart from work someone pushed
+straight to origin. That reasoning still holds wherever the gate applies; it
+simply stops arising here (ADR 0013). Do not add an exemption branch for it.
+Heredoc bodies are blanked before judging, so
 writing a file that merely contains a line like `gh pr create` is not
 mistaken for running it. Fails open (allows silently) on any parsing, git,
 or filesystem error.
@@ -315,15 +329,24 @@ def recorded_sha(path):
 
 
 def gate(branch, sha, cwd):
-    """Return True if denied (deny output already printed)."""
+    """Return True if denied (deny output already printed).
+
+    A MISSING marker allows. That is the whole of ADR 0014: the marker's
+    presence is what makes a branch gated, and only `gitflow.sh worktree add`
+    writes one, when it creates a branch for an unsupervised executor. Work done
+    by hand never gets a marker and so never meets a gate. Do not "fix" this
+    into denying on a missing marker — that restores the blanket gate ADR 0013
+    removed, and blocks every ordinary merge in the repo.
+    """
     path = marker_path(branch, cwd)
-    if recorded_sha(path) == sha:
+    recorded = recorded_sha(path)
+    if recorded is None or recorded == sha:
         return False
     reason = (
-        f"magito review gate: no fresh review decision for branch '{branch}' "
-        f"(marker {path} is missing or stale — a new commit invalidates it). "
-        "Either run the reviewing-changes skill, which records the review, or record a "
-        "deliberate skip and its reason — implement-issue step 6 records either answer. "
+        f"magito review gate: branch '{branch}' was created for an unsupervised "
+        f"executor, and has no review decision at the current commit (marker {path} "
+        "is stale — a new commit invalidates it). Run the reviewing-changes skill "
+        "against this worktree, which records the decision. "
         "Do not record 'reviewed' unless a review actually ran."
     )
     print(json.dumps({

@@ -59,9 +59,9 @@ to stage in bulk or commit on the base branch, and `staging-guard` catches the s
 thing on raw `git` where hooks are allowed. These are checks in the path, so they
 hold in every tool — see ADR 0012.
 
-`review-gate` still blocks a merge or PR with no decision on record. ADR 0013
-narrows that to the unsupervised fan-out, but the code has not caught up, so for now
-expect it to block the ordinary path too. If it does, record the decision and retry.
+`review-gate` blocks a merge or PR only on a branch the `dispatch` fan-out created —
+those branches carry a review-decision marker, and nothing else does. Work you did by
+hand meets no gate (ADR 0013, ADR 0014).
 
 ## Special teams
 
