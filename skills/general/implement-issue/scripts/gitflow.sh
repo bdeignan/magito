@@ -93,8 +93,18 @@ require_review_decision() {
 case "$cmd" in
   branch)
     # branch <issue> <slug> [kind]   kind defaults to feat
+    # Naming follows magito.branchPattern, a template with {kind}, {issue}, and
+    # {slug} placeholders (git config magito.branchPattern <template>). Default,
+    # when unset, is {kind}/{issue}-{slug} — today's exact behaviour. A pattern
+    # may legitimately omit a placeholder (e.g. BD-{issue}-{slug}); substitution
+    # below just no-ops for whichever ones aren't present.
     issue="${1:?issue required}"; slug="${2:?slug required}"; kind="${3:-feat}"
-    git checkout -b "${kind}/${issue}-${slug}"
+    pattern="$(git config --get magito.branchPattern 2>/dev/null || true)"
+    [ -n "$pattern" ] || pattern='{kind}/{issue}-{slug}'
+    name="${pattern//\{kind\}/$kind}"
+    name="${name//\{issue\}/$issue}"
+    name="${name//\{slug\}/$slug}"
+    git checkout -b "$name"
     ;;
   commit)
     # commit "<message>" <file>...   stages only the listed files
@@ -187,15 +197,48 @@ case "$cmd" in
     echo "$pr_url"
     ;;
   merge)
-    # merge   --no-ff merge of the current feature branch into the base branch.
-    # Run from the feature branch. No conflict auto-resolution — a conflict
-    # fails the script and leaves it for a human.
+    # merge   merges the current feature branch into the base branch, per
+    # magito.mergeStrategy (git config magito.mergeStrategy <no-ff|squash|ff-only>).
+    # Default, when unset, is no-ff — today's exact behaviour. Run from the
+    # feature branch. No conflict auto-resolution — a conflict fails the
+    # script and leaves it for a human.
+    #   no-ff   — merge commit, always (unchanged from before this was configurable)
+    #   squash  — `git merge --squash` leaves the changes staged but does NOT
+    #             commit, so this path makes the commit itself
+    #   ff-only — fails loudly when a fast-forward isn't possible; that failure
+    #             is correct behaviour, not a bug to route around
     guard_not_base
     require_review_decision "$(current_branch)"
     [ -z "$(git status --porcelain)" ] || { echo "working tree dirty — commit or stash before merging" >&2; exit 1; }
+    strategy="$(git config --get magito.mergeStrategy 2>/dev/null || true)"
+    [ -n "$strategy" ] || strategy="no-ff"
+    case "$strategy" in
+      no-ff|squash|ff-only) ;;
+      *)
+        echo "magito.mergeStrategy '$strategy' is invalid — use one of: no-ff, squash, ff-only" >&2
+        exit 1
+        ;;
+    esac
     base="$(default_branch)"; branch="$(current_branch)"
     git checkout "$base"
-    git merge --no-ff --no-edit "$branch"
+    case "$strategy" in
+      no-ff)
+        git merge --no-ff --no-edit "$branch"
+        ;;
+      squash)
+        # `--squash` stages every changed file itself. That is git's own merge
+        # mechanism, not a relaxation of this script's explicit-staging rule —
+        # the files were already reviewed as commits on the feature branch.
+        git merge --squash "$branch"
+        # A generated subject, so the base branch gets a non-conventional commit
+        # here. Squashing collapses the branch's conventional commits into one;
+        # if that matters, merge through the forge UI instead.
+        git commit -m "Squash merge branch '$branch'"
+        ;;
+      ff-only)
+        git merge --ff-only "$branch"
+        ;;
+    esac
     ;;
   *)
     echo "usage: gitflow.sh {branch <issue> <slug> [kind]|commit <msg> <file>...|push|pr <issue> <title> [body]|merge|worktree add <branch> [path]|worktree remove <path> [--force]}" >&2
