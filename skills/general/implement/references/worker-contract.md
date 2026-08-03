@@ -1,9 +1,10 @@
 # Worker contract
 
 The delegable build-slice of an issue: what a driver hands to an executor — a Claude
-subagent or a headless shell CLI — and what comes back. `implement-issue` (step 4)
-and `dispatch` (step 3) both delegate against this contract. The worker implements
-and stages; the driver owns branch, commit, review, merge, and PR.
+subagent or a headless shell CLI — and what comes back. The `implement` single-issue path
+(SKILL.md step 4) and the parallel fan-out (`references/parallel.md` step 3) both delegate
+against this contract. The worker implements and stages; the driver owns branch, commit,
+review, merge, and PR.
 
 ## The brief
 
@@ -14,8 +15,8 @@ standing docs are the only thing that may be named by exact repo-relative path.
 
 Every brief carries:
 
-1. **The assigned directory** — a worktree path (dispatch) or the repo tree on its
-   feature branch (implement-issue). The worker never touches files outside it.
+1. **The assigned directory** — a worktree path (the parallel fan-out) or the repo tree on its
+   feature branch (implement). The worker never touches files outside it.
 2. **The full issue spec, pasted in** — body, acceptance criteria, any repo
    conventions the work needs. Never a bare issue number or URL.
 3. **The verification floor, in full** (workers can't load `verifying`):
@@ -70,8 +71,8 @@ config; bills the Claude subscription.
 through the launcher script, never a hand-built command line:
 
 ```bash
-python3 <skills>/implement-issue/scripts/worker.py probe <worker>
-python3 <skills>/implement-issue/scripts/worker.py run <worker> <dir> <brief-file> [timeout]
+python3 <skills>/implement/scripts/worker.py probe <worker>
+python3 <skills>/implement/scripts/worker.py run <worker> <dir> <brief-file> [timeout]
 ```
 
 (`<skills>` is your tool's installed skills directory — `~/.claude/skills` for Claude
@@ -124,7 +125,7 @@ them is correct behavior, not an error.
 
 ## Probe and fallback
 
-Before dispatching to a named worker, probe it once: `python3 <skills>/implement-issue/scripts/worker.py probe <worker>`
+Before dispatching to a named worker, probe it once: `python3 <skills>/implement/scripts/worker.py probe <worker>`
 sends "Reply with exactly: VERDICT-OK" and checks the token comes back. The
 launcher strips approval-bypass flags from the probe itself — a ping needs no
 permissions, and permission tooling rightly balks at bypass flags on a command that
@@ -154,7 +155,7 @@ doesn't need them.
 - **Timeouts are the driver's job**: most CLIs enforce no print-mode timeout of their
   own. Pair the worker-side cap (omp `--max-time`) with a driver-side timeout on the
   shell call.
-- **Claude Code permission modes**: run dispatch sessions in default (prompting)
+- **Claude Code permission modes**: run fan-out sessions in default (prompting)
   mode — the first `python3 .../scripts/worker.py` launch prompts once, and "don't ask again this
   session" covers the rest of the batch. Auto mode may deny the launch outright; if
   you're then offered a fallback to `haiku-executor`, present it as a billing

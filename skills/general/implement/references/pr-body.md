@@ -15,9 +15,9 @@ When headings help, use this light skeleton and skip any section that does not a
 
 Example:
 
-> **Why:** Issue #91 asked for one shared PR-body reference because the same guidance lived in two skills and the squash-merge framing was repo-dependent.
+> **Why:** Issue #91 asked for one shared PR-body reference because the same guidance lived in two places and the squash-merge framing was repo-dependent.
 >
-> **What:** Moved the guidance into `skills/general/implement-issue/references/pr-body.md` and pointed `implement-issue` and `dispatch` at it.
+> **What:** Moved the guidance into `skills/general/implement/references/pr-body.md` and pointed both the single-issue path and the parallel fan-out at it.
 >
 > **How it was verified:** `grep` found no repo-dependent merge framing in `skills/`; `python install.py --dry-run` completed cleanly.
 

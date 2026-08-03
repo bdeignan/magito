@@ -49,7 +49,7 @@ If the session landed nothing worth keeping, say exactly that and stop:
 
 - **Reconcile against live state.** An entry written from session memory drifts from
   reality. Check `git status`, `git log`, and the tracker
-  (`bash <skills>/implement-issue/scripts/issues.sh list` — `<skills>` is your tool's
+  (`bash <skills>/implement/scripts/issues.sh list` — `<skills>` is your tool's
   installed skills directory, `~/.claude/skills` for Claude Code or `~/.agents/skills`
   for most others). Correct anything that disagrees; an issue you think is still open may
   have merged.

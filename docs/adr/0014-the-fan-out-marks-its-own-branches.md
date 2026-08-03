@@ -86,3 +86,10 @@ One old question closes quietly. ADR 0009 refused to exempt a base-branch sync f
 `git merge origin/main` now passes, because `origin/main` has no marker — not because it won
 an exemption. The reasoning in 0009 still holds wherever the gate applies; it just stops
 arising. Anyone re-reading it should not add the special case it argued against.
+
+---
+
+_2026-08-03 (#109): the `dispatch` skill was absorbed into `/implement`'s parallel path —
+`/implement <a> <b>` now fans out where `/dispatch a b` did. The fan-out mechanism this ADR
+describes is unchanged; only the caller's name is. Every "`dispatch`" in this record is that
+same path under its former name._

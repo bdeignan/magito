@@ -29,7 +29,7 @@ currently deferred, see the file.)
 | Skill, hook, and agent design conventions | `CLAUDE.md` — "Skill and Agent Design Notes" |
 | Why hooks are optional and what enforces rules instead | `docs/adr/0012`, `docs/adr/0013` |
 | Why the review gate fires on a fan-out but not on your own work | `docs/adr/0014` |
-| Delegating a build (shell workers, worktrees) | `skills/general/implement-issue/references/worker-contract.md` |
+| Delegating a build (shell workers, worktrees) | `skills/general/implement/references/worker-contract.md` |
 | The magi tribunal | `skills/claude/magi/SKILL.md` |
 | Why a past decision was made | `docs/adr/` |
 
