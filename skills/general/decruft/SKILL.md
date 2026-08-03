@@ -21,7 +21,8 @@ Be ambitious. Do not stop at "this could be a bit cleaner" — look for restruct
 
 ## What to hunt
 
-The cruft AI agents characteristically leave:
+The cruft AI agents characteristically leave. Concrete before/after examples:
+`references/examples.md`.
 
 **Exception cruft**
 - `try/except` that logs and continues, re-raises with nothing added, or swallows errors a caller should see
