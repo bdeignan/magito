@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deterministic git spine for /implement-issue. Judgement (slug, message, title,
+# Deterministic git spine for /implement. Judgement (slug, message, title,
 # which files) comes from the agent; this script just runs the rigid steps safely.
 # Staging is always explicit — this script never runs `git add -A`/`git add .`.
 set -euo pipefail

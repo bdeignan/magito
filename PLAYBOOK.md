@@ -28,7 +28,7 @@ What magito guarantees you, no matter how the internals change:
    `install.py`) is refreshed automatically and isn't a user file.
 6. **Staging is always explicit.** No agent bulk-stages — a hook blocks
    `git add -A` everywhere, in every repo.
-7. **Costs are stated before they're incurred.** Dispatch declares its executor
+7. **Costs are stated before they're incurred.** A fan-out declares its executor
    count and workers up front; magi's deliberate mode asks before convening.
 
 ## Offense — making things
@@ -36,13 +36,13 @@ What magito guarantees you, no matter how the internals change:
 | Situation | Play | Where you're in the loop |
 |---|---|---|
 | Vague idea, not issue-shaped yet | `/grilling`, then `/to-issues` | answer the interview; approve the breakdown |
-| One well-specified issue | `/implement-issue N` | approve the plan; say "ship it" before the PR |
-| One issue, big but zero-discretion | `/implement-issue N via omp` | same, plus one worker-launch approval |
-| Several independent issues | `/dispatch A B via omp` | one approval per worker; merge each PR |
+| One well-specified issue | `/implement N` | approve the plan; say "ship it" before the PR |
+| One issue, big but zero-discretion | `/implement N via omp` | same, plus one worker-launch approval |
+| Several independent issues | `/implement A B via omp` | one approval per worker; merge each PR |
 | New repo or project kickoff | `/setup-project` | pick the template choices |
 
-**Play-calling discipline:** dispatch is the expensive play — don't call it when a
-single `/implement-issue` gains the same yards. Route to cheap workers only what's
+**Play-calling discipline:** the parallel fan-out is the expensive play — don't call it when a
+single `/implement` gains the same yards. Route to cheap workers only what's
 written to the less-capable-implementer standard (complete spec, exact commands,
 zero discretion); keep judgement work in your own huddle.
 
@@ -59,7 +59,7 @@ to stage in bulk or commit on the base branch, and `staging-guard` catches the s
 thing on raw `git` where hooks are allowed. These are checks in the path, so they
 hold in every tool — see ADR 0012.
 
-`review-gate` blocks a merge or PR only on a branch the `dispatch` fan-out created —
+`review-gate` blocks a merge or PR only on a branch the `/implement` fan-out created —
 those branches carry a review-decision marker, and nothing else does. Work you did by
 hand meets no gate (ADR 0013, ADR 0014).
 
