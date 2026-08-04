@@ -34,6 +34,10 @@ skill of its own.
    - **Disjoint issues** — independent file sets. These can run **in parallel**, one worktree
      each.
 
+   State the partition to the user before launching anything: which issues run sequentially in
+   the main tree, which fan out to their own worktrees, and why. That narration is the
+   checkpoint where a wrong file-touch estimate gets caught before any executor starts.
+
 3. **Fan out the disjoint issues.** Create each worktree with `bash
    <skills>/implement/scripts/gitflow.sh worktree add <branch>`. It prints the path it
    created. Use the script, not raw `git worktree add`. It picks the layout: a sibling of the

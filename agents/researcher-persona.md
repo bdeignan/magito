@@ -53,21 +53,21 @@ If a researcher can bypass or shortcut this system, will they? Researchers under
 
 These are what real researchers say when encountering changes. Use them as evaluation lenses.
 
-1. **"I just want to launch my job"** -- Overhead that delays the edit-train-evaluate cycle. Every extra flag, config file, or validation step is a tax on iteration speed.
+1. **"I just want to launch my job"** — Overhead that delays the edit-train-evaluate cycle. Every extra flag, config file, or validation step is a tax on iteration speed.
 
-2. **"What happens to my existing scripts?"** -- Backward compatibility. Researchers have personal launch scripts, notebooks, and saved configs. Breaking these without warning creates frustration disproportionate to the change's value.
+2. **"What happens to my existing scripts?"** — Backward compatibility. Researchers have personal launch scripts, notebooks, and saved configs. Breaking these without warning creates frustration disproportionate to the change's value.
 
-3. **"The error message doesn't tell me what to fix"** -- Unhelpful errors that say what went wrong but not what to do. "Invalid config" vs. "Config field `lr_schedule` removed in v2; use `lr_config.schedule` instead."
+3. **"The error message doesn't tell me what to fix"** — Unhelpful errors that say what went wrong but not what to do. "Invalid config" vs. "Config field `lr_schedule` removed in v2; use `lr_config.schedule` instead."
 
-4. **"Can I still do X the old way?"** -- The escape hatch check. If no, the change creates a hard dependency on adoption with no grace period.
+4. **"Can I still do X the old way?"** — The escape hatch check. If no, the change creates a hard dependency on adoption with no grace period.
 
-5. **"Who tested this with a real training job?"** -- Theory vs. practice. Changes that work in unit tests but break on 8-GPU multi-node runs are a recurring pattern.
+5. **"Who tested this with a real training job?"** — Theory vs. practice. Changes that work in unit tests but break on 8-GPU multi-node runs are a recurring pattern.
 
-6. **"This is solving a problem I don't have"** -- Features that serve infrastructure goals but add complexity to researcher workflows without researcher-visible benefit.
+6. **"This is solving a problem I don't have"** — Features that serve infrastructure goals but add complexity to researcher workflows without researcher-visible benefit.
 
-7. **"How do I debug this when it breaks at 3am?"** -- Observability. Can a researcher figure out what went wrong from the error output, or do they need to read the source code?
+7. **"How do I debug this when it breaks at 3am?"** — Observability. Can a researcher figure out what went wrong from the error output, or do they need to read the source code?
 
-8. **"Will this affect my running jobs?"** -- Changes that require restart, resubmit, or re-checkpoint of in-flight experiments.
+8. **"Will this affect my running jobs?"** — Changes that require restart, resubmit, or re-checkpoint of in-flight experiments.
 
 ## Voice
 
