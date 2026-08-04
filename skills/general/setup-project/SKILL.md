@@ -20,9 +20,11 @@ Offer three choices:
 
 - **GitHub** — the `gh` CLI against the repo's Issues. Propose this if a remote points at GitHub.
 - **Local markdown** — tickets as files under `.scratch/<feature>/` (good for solo or remote-less repos).
-- **Something else** — Jira, Linear, Beads, a wiki, a spreadsheet. Ask the user to describe the workflow in a paragraph; you record it as prose under the same operation headings. No new code, no new script branch.
+- **Something else** — Jira, Linear, Beads, a wiki, a spreadsheet. Ask the user to describe the workflow in a paragraph; you record it as prose under the same operation headings, and nothing else has to change to support it.
 
 Write `docs/agents/issue-tracker.md` from the matching template in [references/](./references/) — `issue-tracker-github.md.template`, `issue-tracker-local.md.template`, or `issue-tracker-other.md.template` for the third case. Create `docs/agents/` if it doesn't exist; this file is written whether or not the user accepts Section C, because every workflow skill depends on it. If the repo already has one, diff and propose — never overwrite.
+
+[`issue-tracker-other-example.md`](./references/issue-tracker-other-example.md) is a worked example of the third case — one paragraph about a fictional Jira setup, and the file it produces. Read it before filling the skeleton freehand.
 
 The **other** template doubles as the canonical list of the named operations. Fill every heading from the user's description and delete none of them: an operation their tracker can't do says **not supported here** and names what a skill should do instead, which is what stops a skill guessing. Adding or renaming a heading there means changing the GitHub and local templates to match.
 

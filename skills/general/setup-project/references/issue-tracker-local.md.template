@@ -85,8 +85,12 @@ Cross-feature blockers are written as `<other-feature>/NN`.
 
 ## Pull requests
 
-There is no PR in local mode. `implement` stops at its own checkpoint instead, shows the diff
-and the review summary, and waits for explicit approval before
-`bash <skills>/implement/scripts/gitflow.sh merge` — that checkpoint *is* the human's gate.
+Tracking tickets in files says nothing about how work lands. A repo can keep its tickets here
+and still open a pull request on a remote — `implement` decides that from the remote, not from
+this file, and PR creation stays on `gitflow.sh pr` either way (`docs/adr/0015`).
+
+Where there genuinely is no remote, `implement` stops at its own checkpoint instead: it shows
+the diff and the review summary and waits for explicit approval before
+`bash <skills>/implement/scripts/gitflow.sh merge`. That checkpoint *is* the human's gate.
 (`<skills>` is your tool's installed skills directory — `~/.claude/skills` for Claude Code,
 `~/.agents/skills` for most others.)

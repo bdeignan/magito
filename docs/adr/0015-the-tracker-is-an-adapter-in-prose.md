@@ -1,8 +1,9 @@
 # The issue tracker is an adapter written in prose
 
-Status: settles how skills reach a tracker. Narrows ADR 0012's "scripts are the enforcement
-floor" — `issues.sh` stays the deterministic path for GitHub, but it is no longer what a
-skill calls.
+Status: settles how skills reach a tracker. Leaves ADR 0012's enforcement tiers intact —
+tracker access was never a gated rule — but relies on them to explain the one carve-out
+below. `issues.sh` stays the deterministic path for GitHub; it is simply no longer the thing
+skills know about.
 
 Skills used to name their backend. `catch-up` ran `issues.sh list`; `implement` branched in
 prose between "GitHub mode" and "local mode"; `to-issues` did both. That has two costs, and
@@ -15,15 +16,16 @@ before any skill could touch it, so it stayed unsupported indefinitely — not b
 hard, but because the price of the first step was a script change.
 
 So the tracker becomes an adapter, and the adapter is prose. Skills name an **operation** —
-list open tickets, fetch a ticket, publish a ticket, close a ticket, link a sub-ticket,
-record a blocking edge. A single per-repo file, `docs/agents/issue-tracker.md`, says how each
-operation is performed here. `/setup-project` writes that file from one of three templates:
+list open tickets, fetch a ticket, publish a ticket, and the rest. A single per-repo file,
+`docs/agents/issue-tracker.md`, says how each operation is performed here. The operation names
+themselves have one home — `setup-project/references/issue-tracker-other.md.template`, whose
+headings every tracker doc must carry — so this record deliberately does not list them. `/setup-project` writes that file from one of three templates:
 GitHub, local markdown, or a skeleton the user fills from a paragraph describing whatever
 they actually use.
 
-The third template is the whole point. An unknown backend costs nothing — no new code, no new
-script branch, no new case in a `case` statement. A user who describes their Jira workflow in
-a paragraph gets a config doc a skill can follow that afternoon.
+The third template is the whole point. An unknown backend costs no code at all: the user
+describes it and the description *is* the adapter. Someone who writes a paragraph about their
+Jira workflow gets a config doc a skill can follow that afternoon.
 
 `issues.sh` is untouched. It is still the deterministic wrapper for GitHub, and the GitHub
 template points at it — the script did not stop being the right way to talk to `gh`, it
@@ -32,12 +34,20 @@ plain `gh` command beside the wrapper, so the file still reads correctly on a ma
 magito installed. That matters because `docs/agents/` is meant to degrade into a
 well-documented folder, not a broken one.
 
-**Pull request creation is carved out, and the carve-out is load-bearing.** It stays on
-`gitflow.sh pr`, which `review-gate.py` recognizes by pattern-matching that literal command
-string. Route PR creation through the adapter and every fan-out branch would open a pull
-request without meeting the gate — a silent hole, discovered late if ever. The carve-out is
-written into the GitHub template with that reason attached, because "why is `gh pr create`
-missing from this file?" is exactly the tidy-up a later session performs helpfully.
+**Pull request creation is carved out, and this is its canonical reason.** It stays on
+`gitflow.sh pr`, and the adapter never mentions a PR command.
+
+The reason is ADR 0012's tiers, not the hook. `gitflow.sh pr` calls `require_review_decision`
+before it does anything — a tier-2 check, in a script, running in every tool on every machine
+with nothing to opt into. `review-gate.py` does also recognize a raw `gh pr create`, so the
+hole is not total; but that is tier-3 insurance, present only in Claude Code and only where
+`magito.reviewGate` is set. An adapter that told an agent to run `gh pr create` would trade
+the check that always runs for the one that usually doesn't, and would do it silently, in a
+config file nobody re-reads.
+
+The carve-out is therefore written into every tracker template, pointing here, because "why
+is `gh pr create` missing from this file?" is exactly the tidy-up a later session performs
+helpfully.
 
 Fixing this exposed a second thing the old binary got wrong. `implement`'s final step branched
 on the tracker to decide whether to open a PR — but that is a question about the repo's host,

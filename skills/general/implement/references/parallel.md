@@ -23,8 +23,9 @@ skill of its own.
 
 ## Process
 
-1. **Collect the issues.** From the numbers given, or by pulling a ready-for-agent label from
-   the tracker. Read each spec.
+1. **Collect the issues.** From the identifiers given, or with the **list open tickets**
+   operation from `docs/agents/issue-tracker.md`, keeping whatever that file says marks a
+   ticket ready for an agent. Read each spec with **fetch a ticket**.
 
 2. **Build the file-touch graph.** Explore to estimate which files each issue touches. This
    partitions the set:

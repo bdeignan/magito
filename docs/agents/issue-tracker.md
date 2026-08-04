@@ -83,8 +83,8 @@ Read the relationship back with `gh issue view <n> --json parent,subIssues,subIs
 
 ## Blocking edges
 
-GitHub has native issue dependencies, and `gh` exposes them as flags — no GraphQL, no
-convention buried in a body:
+GitHub has native issue dependencies, and `gh` exposes them as ordinary flags. Nothing here
+needs GraphQL or a convention buried in a ticket body:
 
 ```
 gh issue edit <n> --add-blocked-by <blocker>     --remove-blocked-by <blocker>
@@ -97,10 +97,10 @@ when every entry in `blockedBy` is closed.
 ## Pull requests
 
 **PR creation does not route through this file.** It stays on
-`bash <skills>/implement/scripts/gitflow.sh pr <issue> <title>`, which is the single path
-`review-gate.py` recognizes — the hook pattern-matches that literal command string, so a PR
-opened through any other wrapper would pass the gate without ever meeting it. Whoever later
-notices that `gh pr create` is missing from this file and decides to "unify" it will silently
-disable the review gate on fan-out branches. Leave it where it is.
+`bash <skills>/implement/scripts/gitflow.sh pr <issue> <title>`, which checks for a review
+decision before it opens anything. Whoever later notices that `gh pr create` is missing here
+and decides to "unify" it weakens the review gate on fan-out branches. Leave it where it is;
+[`docs/adr/0015`](../adr/0015-the-tracker-is-an-adapter-in-prose.md) is the canonical reason
+and the place to argue with it.
 
 Reading PRs is unrestricted: `gh pr list`, `gh pr view <n>`, `gh pr diff <n>`.
