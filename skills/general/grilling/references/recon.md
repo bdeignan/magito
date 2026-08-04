@@ -44,7 +44,9 @@ not from a file: recon writes no state to read back.
 
 5. **Promote anything durable — a numbered step, not a virtue.** Reading code with fresh eyes
    is the best moment to feed `docs/agents/`. For each candidate, apply **both** gates right
-   here at the point of decision:
+   here at the point of decision. These are the canonical two gates defined in
+   `docs/agents/README.md`, restated here so you apply them where the decision happens — if
+   that definition changes, change this copy too:
    - **Gate A — non-rederivable:** could a codebase-investigator agent reconstruct this
      cheaply from the code? If yes, it does not belong in the docs. This excludes structure —
      module maps, call graphs, feature-to-file.

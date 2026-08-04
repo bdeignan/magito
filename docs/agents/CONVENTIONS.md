@@ -46,6 +46,26 @@ memorability bug. You remember what you type. A system that chains itself invisi
 nothing about its own shape, and a system you cannot hold in your head is one you stop
 reaching for.
 
+**Reuse a rule by pointing, not restating.** The seams above route *behavior* — one skill's
+procedure triggering another's. Reusing a **rule** — a definition, a policy, a gate — is a
+different problem. A rule has exactly one canonical home, and everything else points to it. A
+paraphrase in a second place is not reuse, it is a fork: the copies drift, the wordings
+diverge, and a reader finds two statements of one rule with no way to tell which is current.
+That is the rot the two-gate filter exists to prevent, turned on magito's own docs.
+
+The test is what you are reusing. **Behavior** — a procedure a skill runs — takes a seam
+above. **A rule** — a definition or policy that must stay identical everywhere it appears —
+gets named and linked: `docs/agents/README.md` owns the two gates,
+`implement/references/worker-contract.md` owns the brief protocol, and a skill that needs one
+points rather than recopies.
+
+The one exception, and its cost: when an agent must apply a rule *at the point of decision*
+mid-flow — `grilling/references/recon.md` states both gates inline because promotion is judged
+right there — a restatement is allowed, but as a synced copy, not a fork. Name the canonical
+source and flag it "change one, change the other," the way `hooks/staging-guard.py` and
+`hooks/review-gate.py` already do. The unflagged paraphrase is the failure; the flagged,
+sourced copy is the accepted cost.
+
 ## Skill invocation
 
 A skill is either **user-invoked** (`disable-model-invocation: true`) or **model-invocable**.
