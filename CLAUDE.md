@@ -46,7 +46,6 @@ magito/
 ├── install.toml            # Your local config (gitignored; copy from install.toml.example)
 ├── install.toml.example    # Template — commit this, not install.toml
 ├── README.md               # Entry point — what this is, quick start, user guide
-├── PLAYBOOK.md             # Situation → play — behavior promises, not mechanics
 ├── bin/                    # Machine-global commands (journal), symlinked to ~/.magito/bin/
 ├── docs/
 │   ├── adr/                # Architecture decision log
@@ -82,6 +81,9 @@ a reinstall.
 1. Create `skills/general/<name>/SKILL.md` (cross-tool) or `skills/claude/<name>/SKILL.md` (Claude-only)
 2. Add `name:` and `description:` frontmatter fields
 3. Run `python install.py` to symlink and regenerate INDEX.md
+4. If the skill is user-facing, update `skills/general/ask-magito/SKILL.md` so the router
+   places it. A new skill the router never mentions, or a renamed one it still points at, is
+   a router that lies — the same reason a stale `docs/agents/` entry is worse than none.
 
 ## Adding a New Agent
 

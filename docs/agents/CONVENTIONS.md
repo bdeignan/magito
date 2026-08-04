@@ -81,7 +81,7 @@ a step.
 
 `/wayfinder` sits between orient and decide when the work is too big for one session, and
 hands back to `/grilling` per ticket. The rest of the user-invoked skills are off-spine:
-reached deliberately when a situation calls for them. `PLAYBOOK.md` covers situation → play;
+reached deliberately when a situation calls for them. `/ask-magito` covers situation → play;
 the spine is what happens when no special situation applies.
 
 **Model-invocable — parts of a step, never stations on the line.** `reviewing-changes` and
