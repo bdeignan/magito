@@ -1,0 +1,105 @@
+<!-- issue-tracker-github.md.template — copied to docs/agents/issue-tracker.md by
+     /setup-project when the repo tracks work as GitHub issues. Answers the operation
+     headings defined in issue-tracker-other.md.template; if a heading changes there,
+     change it here too. -->
+
+# Issue tracker: GitHub
+
+Work for this repo is tracked as GitHub issues, reached through the `gh` CLI. `issues.sh` is
+magito's deterministic wrapper around the verbs agents otherwise retype freehand — it fails
+loudly on a missing argument or missing auth instead of opening an editor or retrying. Each
+operation below gives the wrapper first and the plain `gh` command after it, so this file
+still reads correctly on a machine without magito installed.
+
+Skills never name a backend. They name one of the operations below and read this file to find
+out how to perform it here.
+
+`<skills>` below is your tool's installed skills directory — `~/.claude/skills` for Claude
+Code, `~/.agents/skills` for most others.
+
+## Ticket identifiers
+
+`#<number>`, unique within the repo. `gh` infers the repo from the clone's `git remote`, so
+no `--repo` flag is needed inside a working copy. GitHub shares one number space between
+issues and pull requests, so a bare `#42` may be either — try `gh issue view 42` and fall
+back to `gh pr view 42`.
+
+## List open tickets
+
+```
+bash <skills>/implement/scripts/issues.sh list          # gh issue list
+```
+
+Extra flags pass straight through to `gh issue list`, e.g. `list --label bug --state all`.
+
+## Fetch a ticket
+
+```
+bash <skills>/implement/scripts/issues.sh view <number>     # gh issue view <number>
+```
+
+The wrapper takes the number and nothing else. For the conversation and the relationship
+fields, call `gh` directly:
+
+```
+gh issue view <number> --comments
+gh issue view <number> --json number,title,body,labels,parent,subIssues,blockedBy,blocking
+```
+
+## Publish a ticket
+
+```
+bash <skills>/implement/scripts/issues.sh create "<title>" "<body>"
+# gh issue create --title "<title>" --body "<body>"
+```
+
+Both arguments are mandatory. Use a heredoc or a `$(cat file)` for a multi-line body.
+
+## Comment on a ticket
+
+```
+bash <skills>/implement/scripts/issues.sh comment <number> "<body>"
+# gh issue comment <number> --body "<body>"
+```
+
+## Close a ticket
+
+```
+bash <skills>/implement/scripts/issues.sh close <number>    # gh issue close <number>
+```
+
+Merging a PR whose body says `Closes #<n>` closes the issue on its own — don't close it a
+second time by hand.
+
+## Link a sub-ticket
+
+```
+bash <skills>/implement/scripts/issues.sh sub-add <parent> <child>
+# gh issue edit <parent> --add-sub-issue <child>
+```
+
+Read the relationship back with `gh issue view <n> --json parent,subIssues,subIssuesCompleted`.
+
+## Blocking edges
+
+GitHub has native issue dependencies, and `gh` exposes them as flags — no GraphQL, no
+convention buried in a body:
+
+```
+gh issue edit <n> --add-blocked-by <blocker>     --remove-blocked-by <blocker>
+gh issue edit <n> --add-blocking <blocked>       --remove-blocking <blocked>
+```
+
+Read them back with `gh issue view <n> --json blockedBy,blocking`. A ticket is ready to start
+when every entry in `blockedBy` is closed.
+
+## Pull requests
+
+**PR creation does not route through this file.** It stays on
+`bash <skills>/implement/scripts/gitflow.sh pr <issue> <title>`, which is the single path
+`review-gate.py` recognizes — the hook pattern-matches that literal command string, so a PR
+opened through any other wrapper would pass the gate without ever meeting it. Whoever later
+notices that `gh pr create` is missing from this file and decides to "unify" it will silently
+disable the review gate on fan-out branches. Leave it where it is.
+
+Reading PRs is unrestricted: `gh pr list`, `gh pr view <n>`, `gh pr diff <n>`.

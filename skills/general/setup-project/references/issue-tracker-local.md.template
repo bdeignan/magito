@@ -1,0 +1,92 @@
+<!-- issue-tracker-local.md.template — copied to docs/agents/issue-tracker.md by
+     /setup-project when the repo tracks work as markdown files under .scratch/. Answers the
+     operation headings defined in issue-tracker-other.md.template; if a heading changes
+     there, change it here too. -->
+
+# Issue tracker: local markdown
+
+Work for this repo is tracked as markdown files under `.scratch/`, one directory per feature.
+There is no service and no CLI — every operation below is a file read or a file write, which
+is the point: it works in a repo with no remote, and the tickets travel with the branch.
+
+Skills never name a backend. They name one of the operations below and read this file to find
+out how to perform it here.
+
+## Layout
+
+```
+.scratch/
+  <feature-slug>/
+    SPEC.md          # optional parent spec; only when a breakdown produced 4+ slices
+    01-<slug>.md     # one ticket per file, numbered from 01
+    02-<slug>.md
+```
+
+Every ticket file opens with a short header block, then the body:
+
+```markdown
+# <title>
+
+Status: open
+Blocked by: 01, 03
+
+<body — context, acceptance criteria>
+
+## Comments
+```
+
+`Status:` is one of `open`, `in-progress`, `done`. `Blocked by:` is omitted when there is
+nothing blocking. Keep both lines directly under the title so a skill can read a ticket's
+state without parsing the whole file.
+
+## Ticket identifiers
+
+The path, or `<feature-slug>/NN` in prose. Numbers restart at `01` in each feature directory,
+so a bare `03` means nothing on its own — always carry the feature slug with it. Reference
+the path in commit messages so `reviewing-changes` can find the spec behind a diff.
+
+## List open tickets
+
+Read every `.scratch/*/[0-9][0-9]-*.md` and keep the ones whose `Status:` is not `done`.
+Report them as `<feature-slug>/NN — <title>`, grouped by feature.
+
+## Fetch a ticket
+
+Read the file. The user normally passes the path or the feature and number directly; if only
+a number is given and more than one feature directory exists, ask which feature rather than
+guessing.
+
+## Publish a ticket
+
+Write a new file at `.scratch/<feature-slug>/<NN>-<slug>.md`, creating the directory if it
+does not exist. `NN` is the next unused number in that directory, zero-padded to two digits.
+Start it with the header block above, `Status: open`.
+
+## Comment on a ticket
+
+Append to the `## Comments` section at the bottom of the file, newest last, each entry
+prefixed with the date.
+
+## Close a ticket
+
+Set `Status: done` in the file. Leave the file in place — the history is the record, and
+deleting it strands every ticket that lists it under `Blocked by:`.
+
+## Link a sub-ticket
+
+Put the parent spec at `.scratch/<feature-slug>/SPEC.md` and list the ticket files under it,
+in dependency order. The directory is the link; there is nothing else to record.
+
+## Blocking edges
+
+The `Blocked by:` line in the child ticket, holding the blockers' numbers within the same
+feature directory. A ticket is ready to start when every number it lists has `Status: done`.
+Cross-feature blockers are written as `<other-feature>/NN`.
+
+## Pull requests
+
+There is no PR in local mode. `implement` stops at its own checkpoint instead, shows the diff
+and the review summary, and waits for explicit approval before
+`bash <skills>/implement/scripts/gitflow.sh merge` — that checkpoint *is* the human's gate.
+(`<skills>` is your tool's installed skills directory — `~/.claude/skills` for Claude Code,
+`~/.agents/skills` for most others.)

@@ -48,11 +48,9 @@ If the session landed nothing worth keeping, say exactly that and stop:
 ## Before you write
 
 - **Reconcile against live state.** An entry written from session memory drifts from
-  reality. Check `git status`, `git log`, and the tracker
-  (`bash <skills>/implement/scripts/issues.sh list` — `<skills>` is your tool's
-  installed skills directory, `~/.claude/skills` for Claude Code or `~/.agents/skills`
-  for most others). Correct anything that disagrees; an issue you think is still open may
-  have merged.
+  reality. Check `git status`, `git log`, and the tracker — the **list open tickets**
+  operation, performed the way `docs/agents/issue-tracker.md` defines it for this repo.
+  Correct anything that disagrees; a ticket you think is still open may have merged.
 - **Capture durable decisions first.** If terms or architectural decisions crystallized
   and aren't written down yet, run `domain-modeling` to land them in
   `docs/agents/GLOSSARY.md` or an ADR **before** writing the entry. Those belong in the

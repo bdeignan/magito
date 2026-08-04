@@ -1,0 +1,87 @@
+<!-- issue-tracker-other.md.template — the skeleton for a tracker that is neither GitHub nor
+     local markdown: Jira, Linear, Beads, a wiki, a spreadsheet, a person you message.
+     Copied to docs/agents/issue-tracker.md by /setup-project and filled in from the user's
+     own description of the workflow.
+
+     This file is also the canonical list of the named operations. Every skill calls an
+     operation by the headings below, so every tracker doc must carry all of them, spelled
+     identically — the GitHub and local templates do. A backend may add sections of its own
+     (the local one adds `## Layout`); it may never drop or rename one of these. Add or
+     rename a heading here and both of those templates must follow.
+
+     Fill each section from what the user tells you. Delete none of them — an operation
+     nobody can perform here says so in plain words, which is what tells a skill to stop
+     instead of guessing. -->
+
+# Issue tracker: {{tracker name}}
+
+{{One paragraph, in the user's own words: where work is tracked, who writes tickets, what
+the states are, and anything an agent would get wrong by assuming GitHub.}}
+
+Skills never name a backend. They name one of the operations below and read this file to
+find out how to perform it here. Where an operation has no command, describe the manual
+steps; where it has no equivalent at all, write **not supported here** and say what the
+skill should do instead.
+
+## Ticket identifiers
+
+{{How a ticket is named and referenced — `PROJ-123`, a URL, a file path. This is the form
+that appears in commit messages and in `Closes …` lines, so `reviewing-changes` uses it to
+find the spec behind a diff.}}
+
+## List open tickets
+
+_Every ticket still open, newest or highest-priority first. Used by `catch-up` to orient and
+by `handoff` to reconcile a session against reality._
+
+{{command or steps}}
+
+## Fetch a ticket
+
+_One ticket in full: body, acceptance criteria, comments, and its blockers. Used by
+`implement` before it writes a line, and by `reviewing-changes` to find the spec._
+
+{{command or steps}}
+
+## Publish a ticket
+
+_Create a new ticket from a title and a body. Used by `to-issues`._
+
+{{command or steps}}
+
+## Comment on a ticket
+
+_Append a note to an existing ticket._
+
+{{command or steps}}
+
+## Close a ticket
+
+_Mark a ticket done._
+
+{{command or steps}}
+
+## Link a sub-ticket
+
+_Attach a child ticket to a parent, so a spec and its slices hang together. Used by
+`to-issues` when a breakdown produces a parent spec._
+
+{{command or steps, or **not supported here** — in which case say how a parent is referenced
+instead, e.g. a line at the top of each child body}}
+
+## Blocking edges
+
+_Record that one ticket blocks another, and read back whether a ticket's blockers are still
+open. `implement` refuses to start a ticket with an open blocker, so the read side matters
+more than the write side._
+
+{{command or steps, or **not supported here** — in which case say where a blocker is written
+down and how a skill should read it}}
+
+## Pull requests
+
+_How work reaches review, if this tracker is involved at all._
+
+{{Most trackers are not the review surface — the repo host is. If that is the case here, say
+so and stop: PR creation stays on `gitflow.sh pr` and never routes through this file. See the
+carve-out note in the GitHub template for why.}}

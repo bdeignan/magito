@@ -22,6 +22,7 @@ currently deferred, see the file.)
 | Working on / question | Read |
 |---|---|
 | Why magito is built this way | [OVERVIEW.md](./OVERVIEW.md) |
+| Where work is tracked, and how to perform a tracker operation | [issue-tracker.md](./issue-tracker.md) |
 | Install, symlink layout, where files map to each tool | `CLAUDE.md` — "Installing" and "Repo Layout" |
 | Machine-local config (`~/.magito/`: bench, workers, `bin/`) | `CLAUDE.md` — "Machine-Local Config" |
 | The session journal (per-entry files, reading and writing) | `bin/journal`, `skills/general/catch-up/references/adopting-the-journal.md` |
@@ -29,6 +30,7 @@ currently deferred, see the file.)
 | Skill, hook, and agent design conventions | `CLAUDE.md` — "Skill and Agent Design Notes" |
 | Why hooks are optional and what enforces rules instead | `docs/adr/0012`, `docs/adr/0013` |
 | Why the review gate fires on a fan-out but not on your own work | `docs/adr/0014` |
+| Why skills name tracker operations instead of `gh` | `docs/adr/0015` |
 | Delegating a build (shell workers, worktrees) | `skills/general/implement/references/worker-contract.md` |
 | The magi tribunal | `skills/claude/magi/SKILL.md` |
 | Why a past decision was made | `docs/adr/` |

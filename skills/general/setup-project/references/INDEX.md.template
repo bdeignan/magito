@@ -24,6 +24,7 @@ would stop them loading.)
 |---|---|
 | Project intent, why it's built this way | [OVERVIEW.md](./OVERVIEW.md) |
 | What a domain term means | [GLOSSARY.md](./GLOSSARY.md) |
+| Where work is tracked, and how to perform a tracker operation | [issue-tracker.md](./issue-tracker.md) |
 | _(add rows as `CONVENTIONS.md`, `GOTCHAS.md`, `flows/<area>.md` grow)_ | |
 
 ## Multi-context repos

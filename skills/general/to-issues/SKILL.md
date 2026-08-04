@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # To Issues
 
-Break a plan into independently-grabbable issues, each a **tracer bullet**: a thin vertical slice that cuts end-to-end through every layer it touches, not a horizontal slice of one. The issue tracker (GitHub via [`implement/scripts/issues.sh`](../implement/scripts/issues.sh), or local markdown under `.scratch/`) is declared in the per-repo config — run `/setup-project` if it's missing.
+Break a plan into independently-grabbable issues, each a **tracer bullet**: a thin vertical slice that cuts end-to-end through every layer it touches, not a horizontal slice of one. This skill never names a tracker backend: it names operations, and `docs/agents/issue-tracker.md` says how to perform each one in this repo — run `/setup-project` if that file is missing.
 
 ## Write for a less-capable implementer
 
@@ -29,7 +29,7 @@ Assume the agent that picks up each issue is weaker than the one writing it — 
 
 4. **Quiz the user.** Present the breakdown as a numbered list — for each slice: **Title**, **Blocked by**, and **Covers** (which goals or user stories). Ask: is the granularity right (too coarse / too fine)? Are the dependencies correct? Should any be merged or split? Iterate until approved.
 
-5. **Publish.** In dependency order (blockers first, so you can cite real identifiers), create each issue via the configured tracker — `bash <skills>/implement/scripts/issues.sh create "<title>" "<body>"` in GitHub mode (`<skills>` is your tool's installed skills directory — `~/.claude/skills` for Claude Code, `~/.agents/skills` for most others), or a new file under `.scratch/` in local mode — using the template below. Mark them ready for an agent unless told otherwise. **Parent spec (optional).** If the breakdown produced 4+ slices, or the user asks for an epic, offer to publish the spec as a parent issue first, using the template below. Create the parent, then each slice, then link every slice as a native GitHub sub-issue of the parent: `bash <skills>/implement/scripts/issues.sh sub-add <parent-number> <child-number>`. In local mode, write the spec to `.scratch/<feature>/SPEC.md` and list the ticket files under it. The chain stays optional — small work skips the spec entirely, and nothing downstream requires one to exist.
+5. **Publish.** In dependency order (blockers first, so you can cite real identifiers), create each issue with the **publish a ticket** operation from `docs/agents/issue-tracker.md`, using the template below. Record the dependencies you just relied on with that file's **blocking edges** operation, so a later `implement` run can see them. Mark the issues ready for an agent unless told otherwise. **Parent spec (optional).** If the breakdown produced 4+ slices, or the user asks for an epic, offer to publish the spec as a parent ticket first, using the template below. Create the parent, then each slice, then attach every slice with the **link a sub-ticket** operation. The chain stays optional — small work skips the spec entirely, and nothing downstream requires one to exist.
 
 <issue-template>
 ## What to build

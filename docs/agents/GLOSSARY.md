@@ -13,10 +13,21 @@
 
 # magito — glossary
 
-magito's project-specific vocabulary. Deferred for now: `CLAUDE.md` carries the domain
-language adequately at this size (see `docs/adr/0001-adopt-adr-log.md`). Add the first term
-here the moment one is genuinely contested.
+magito's project-specific vocabulary. Kept deliberately small: `CLAUDE.md` carries most of
+the domain language adequately at this size (see `docs/adr/0001-adopt-adr-log.md`). A term
+earns a place here only once it is genuinely contested.
 
 ## Language
 
-_No terms yet._
+**ticket** — one unit of tracked work, whatever backend holds it: a GitHub issue, a Jira
+ticket, a markdown file under `.scratch/`. Skills say *ticket* when the backend is unknown or
+irrelevant, which is most of the time. _Avoid_ "issue" as the generic word — it is GitHub's
+name for its own object, and using it generically is how backends got hardcoded into skills
+in the first place. "Issue" stays correct when you mean a GitHub issue specifically, as
+`#144` or in the name of the `to-issues` skill.
+
+**tracker operation** — a named verb a skill calls instead of a backend command: *list open
+tickets*, *fetch a ticket*, *publish a ticket*, *close a ticket*, and the rest.
+[`issue-tracker.md`](./issue-tracker.md) is the one file that says how each is performed in
+this repo; the canonical list of the operations themselves lives in
+`skills/general/setup-project/references/issue-tracker-other.md.template`.
