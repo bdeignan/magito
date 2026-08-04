@@ -49,9 +49,9 @@ whatever CLIs it actually has. It also keeps a session journal — one file per
 session recording what happened and what's unfinished — so a fresh session can
 pick up where the last one left off.
 
-Learning to drive it? Start with the **[Playbook](PLAYBOOK.md)** — situation → play
-→ where you stay in the loop, plus the behavior promises magito keeps while the
-internals evolve.
+Learning to drive it? Run **`/ask-magito`** — it maps every skill to the situation it
+fits, shows where you stay in the loop, and states the behavior promises magito keeps
+while the internals evolve.
 
 ## How it works
 
