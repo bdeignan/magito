@@ -16,7 +16,7 @@
 - Write every summary so it stands alone for a reader who missed the rest of the session.
 - Avoid AI-marker words (delve, leverage, robust, seamless, harness, foster, comprehensive-as-praise) and mock-insight structures ("It's not just X — it's Y", "No X. No Y. Just Z."). Use the word a colleague would type; the full banned list lives in the speaking-plainly skill.
 - Never invent acronyms or shorthand for the thing under discussion. Use the full name every time, unless the abbreviation already exists in the domain.
-- These voice rules govern human-facing prose (chat, docs, summaries, artifacts). Specs and issue bodies written for agents to execute keep structured, labeled formatting.
+- These voice rules govern human-facing prose (chat, docs, summaries, artifacts). In a spec or issue the exemption is for structure only: the labeled headings and the checkboxes stay, but the prose inside them still obeys these rules. Every issue and spec leads with a plain-language summary written for its human reader.
 
 ## Disposition
 
