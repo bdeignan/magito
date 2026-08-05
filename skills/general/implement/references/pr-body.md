@@ -1,6 +1,6 @@
 # Pull-request body
 
-A PR body is for the human reviewer and for anyone who reads it later. Write in Simple English, per the repo's voice standards. Do not write for the commit record.
+A PR body is for the human reviewer and for anyone who reads it later — a reader who did not do the work. Write it for that reader: apply the [readability standard](../../to-issues/references/readability.md) and hold its audience frame while you draft. Do not write for the commit record.
 
 ## Right-sized structure
 

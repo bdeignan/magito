@@ -17,7 +17,13 @@ Assume the agent that picks up each issue is weaker than the one writing it — 
 - Exact commands over descriptions: "run `python install.py`", not "reinstall".
 - Decisions are made here, not downstream. If a choice is still open, resolve it with the user before publishing — an issue containing an open question is not ready.
 - Acceptance criteria must be checkable by a weak agent: observable behavior, file contents, command output — never "code is clean" or "works well".
-- Write the body in Simple English: short sentences, one idea each, the plainest common word that fits. Keep technical identifiers exact — never rename `clock_in` or `PRAGMA foreign_keys` to sound simpler; define them in plain words instead. This lowers the reading level for a weaker implementer without losing precision. It governs word choice and sentence length, not structure — keep the labeled headings and the checkbox acceptance criteria.
+- Keep the whole body in plain words. The [readability standard](./references/readability.md) governs word choice for every section; it keeps the labeled headings and the checkbox acceptance criteria, and keeps identifiers exact.
+
+## Lead with a summary for the human
+
+An issue serves two readers. The body above is for the weaker agent that implements it. The **summary is for the human** — the teammate who opens the issue a week later, or a reviewer who never saw this conversation.
+
+Every issue and every spec opens with a plain-language summary written for a reader who did not do this work: what it delivers, why it matters, and for user-facing changes the before/after. Hold that audience frame while you draft it, and before you publish, run the six-item self-check from the [readability standard](./references/readability.md) over the summary. Keep file paths and symbols out of it — they belong in "What to build" below. This is what stops issues reading as fluent-looking prose a human still has to decode.
 
 ## Process
 
@@ -29,9 +35,13 @@ Assume the agent that picks up each issue is weaker than the one writing it — 
 
 4. **Quiz the user.** Present the breakdown as a numbered list — for each slice: **Title**, **Blocked by**, and **Covers** (which goals or user stories). Ask: is the granularity right (too coarse / too fine)? Are the dependencies correct? Should any be merged or split? Iterate until approved.
 
-5. **Publish.** In dependency order (blockers first, so you can cite real identifiers), create each issue with the **publish a ticket** operation from `docs/agents/issue-tracker.md`, using the template below. Record the dependencies you just relied on with that file's **blocking edges** operation, so a later `implement` run can see them. Mark the issues ready for an agent unless told otherwise. **Parent spec (optional).** If the breakdown produced 4+ slices, or the user asks for an epic, offer to publish the spec as a parent ticket first, using the template below. Create the parent, then each slice, then attach every slice with the **link a sub-ticket** operation. The chain stays optional — small work skips the spec entirely, and nothing downstream requires one to exist.
+5. **Publish.** In dependency order (blockers first, so you can cite real identifiers), create each issue with the **publish a ticket** operation from `docs/agents/issue-tracker.md`, using the template below. Each issue and the parent spec lead with the plain-language Summary; run the readability self-check over that summary before you create the issue. Record the dependencies you just relied on with that file's **blocking edges** operation, so a later `implement` run can see them. Mark the issues ready for an agent unless told otherwise. **Parent spec (optional).** If the breakdown produced 4+ slices, or the user asks for an epic, offer to publish the spec as a parent ticket first, using the template below. Create the parent, then each slice, then attach every slice with the **link a sub-ticket** operation. The chain stays optional — small work skips the spec entirely, and nothing downstream requires one to exist.
 
 <issue-template>
+## Summary
+
+One plain paragraph for someone who did not do this work: what this slice delivers and why it matters. For a user-facing change, name the before and after. No file paths or symbols here — save those for "What to build."
+
 ## What to build
 
 The end-to-end behavior of this slice — not a layer-by-layer plan. Avoid file paths and code snippets; they go stale. (Exception: a small schema, type, or state-machine snippet that pins a decision more precisely than prose can.)
@@ -49,6 +59,10 @@ The blocking issue, or "None — can start immediately."
 </issue-template>
 
 <spec-template>
+## Summary
+
+One or two plain sentences for someone who did not do this work: what this effort delivers and the outcome it produces. A reader who stops here still knows what it is and why it exists.
+
 ## Problem
 
 The problem being solved, from the user's perspective — a paragraph, not user stories.
