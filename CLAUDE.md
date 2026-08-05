@@ -16,7 +16,11 @@ INDEX + OVERVIEW + GLOSSARY auto-load every session via this import).
 
 ### Issue tracker
 
-**GitHub** — issues and PRs via `gh` against `bdeignan/magito`; reference issues as `#N`.
+**GitHub** — issues and PRs against `bdeignan/magito`; reference issues as `#N`. Skills name
+tracker *operations*, never a backend: `docs/agents/issue-tracker.md` is the single place
+that says how each one is performed here, and it is the file to edit if the tracker ever
+changes. Don't restate its commands anywhere else.
+
 The repo is opted into the merge/PR review gate (`git config magito.reviewGate true`),
 which since ADR 0014 applies only to branches created by the `/implement` fan-out —
 ordinary work lands with no gate and no marker. By default `gitflow.sh pr` targets the
