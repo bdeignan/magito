@@ -33,7 +33,7 @@ didn't check it, its status is `skipped`, not absent from the list.
    `docs/agents/issue-tracker.md` defines it for this repo. That file is the whole answer
    to which tracker this repo uses and how to reach it; read it, run what it says, show
    what comes back. If the file doesn't exist, status is
-   `skipped: no tracker configured — run /setup-project`.
+   `skipped: no tracker configured — run /setup-magito`.
 6. Git reality: the current branch, `git status`, and the last few commits.
 7. Open PRs (`gh pr list`).
 

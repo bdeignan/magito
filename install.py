@@ -25,6 +25,7 @@ Safety:
 
 import argparse
 import json
+import os
 import tomllib
 from datetime import datetime
 from pathlib import Path
@@ -113,6 +114,49 @@ def merge_hook_settings(settings_path: Path, commands: list[str], dry_run: bool)
     return f"merged {len(to_add)} hook(s)"
 
 
+def prune_orphans(managed_dirs: set[Path], repo_root: Path, dry_run: bool) -> list[tuple[str, str, str, str]]:
+    """Remove dangling symlinks left behind in managed_dirs by a renamed or
+    deleted skill/agent/hook/bin command.
+
+    Only touches immediate children of managed_dirs that are (a) symlinks
+    (never a regular file or directory) and (b) dangling — their target no
+    longer exists. Among those, only removes the ones whose stored target
+    (read with os.readlink, never resolve()) is under repo_root; a dangling
+    symlink pointing outside the checkout is left alone.
+    """
+    results: list[tuple[str, str, str, str]] = []
+    for d in sorted(managed_dirs):
+        if not d.is_dir():
+            continue
+        for entry in sorted(d.iterdir()):
+            if not entry.is_symlink():
+                continue
+            if entry.exists():
+                continue  # live link, not dangling
+
+            raw_target = os.readlink(entry)
+            target = Path(raw_target)
+            if not target.is_absolute():
+                target = entry.parent / target
+            target = Path(os.path.normpath(target))
+
+            try:
+                owned = target.is_relative_to(repo_root)
+            except ValueError:
+                owned = False
+
+            if not owned:
+                results.append(("—", "orphan (foreign)", str(entry), "SKIPPED (dangling, not repo-owned)"))
+                continue
+
+            if dry_run:
+                results.append(("—", "orphan", str(entry), f"would remove dangling link → {entry}"))
+            else:
+                entry.unlink()
+                results.append(("—", "orphan", str(entry), f"removed dangling link → {entry}"))
+    return results
+
+
 def generate_index(repo_root: Path) -> str:
     general_skills: list[tuple[str, str]] = []
     claude_skills: list[tuple[str, str]] = []
@@ -171,6 +215,7 @@ def main() -> None:
 
     tools = config.get("tools", {})
     results: list[tuple[str, str, str, str]] = []
+    managed_dirs: set[Path] = set()
 
     for tool_name, tool_config in tools.items():
         if not tool_config.get("enabled", False):
@@ -189,6 +234,7 @@ def main() -> None:
         skills_dst_raw = tool_config.get("skills")
         if skills_dst_raw:
             skills_dst = Path(skills_dst_raw).expanduser()
+            managed_dirs.add(skills_dst)
 
             general_dir = repo_root / "skills" / "general"
             if general_dir.exists():
@@ -210,6 +256,7 @@ def main() -> None:
         # Agent files (Claude only)
         if is_claude:
             agents_dst = Path(tool_config["agents"]).expanduser()
+            managed_dirs.add(agents_dst)
             agents_src_dir = repo_root / "agents"
             if agents_src_dir.exists():
                 for agent_file in sorted(agents_src_dir.glob("*.md")):
@@ -221,6 +268,7 @@ def main() -> None:
         hooks_dst_raw = tool_config.get("hooks")
         if hooks_dst_raw:
             hooks_dst = Path(hooks_dst_raw).expanduser()
+            managed_dirs.add(hooks_dst)
             hooks_src_dir = repo_root / "hooks"
             hook_dst_paths: list[str] = []
             if hooks_src_dir.exists():
@@ -242,11 +290,16 @@ def main() -> None:
     bin_src_dir = repo_root / "bin"
     if bin_src_dir.exists():
         bin_dst_dir = Path.home() / ".magito" / "bin"
+        managed_dirs.add(bin_dst_dir)
         for f in sorted(bin_src_dir.iterdir()):
             if f.is_file() and not f.name.startswith("."):
                 dst = bin_dst_dir / f.name
                 status = link(f, dst, args.dry_run, args.force)
                 results.append(("—", f"bin/{f.name}", str(dst), status))
+
+    # Prune orphaned symlinks: dangling links, under a managed dest dir, whose
+    # stored target is inside this repo (i.e. left behind by a rename/delete).
+    results.extend(prune_orphans(managed_dirs, repo_root, args.dry_run))
 
     # Regenerate INDEX.md
     index_path = repo_root / "skills" / "INDEX.md"

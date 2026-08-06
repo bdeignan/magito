@@ -18,8 +18,8 @@ hard, but because the price of the first step was a script change.
 So the tracker becomes an adapter, and the adapter is prose. Skills name an **operation** —
 list open tickets, fetch a ticket, publish a ticket, and the rest. A single per-repo file,
 `docs/agents/issue-tracker.md`, says how each operation is performed here. The operation names
-themselves have one home — `setup-project/references/issue-tracker-other.md.template`, whose
-headings every tracker doc must carry — so this record deliberately does not list them. `/setup-project` writes that file from one of three templates:
+themselves have one home — `setup-magito/references/issue-tracker-other.md.template`, whose
+headings every tracker doc must carry — so this record deliberately does not list them. `/setup-magito` writes that file from one of three templates:
 GitHub, local markdown, or a skeleton the user fills from a paragraph describing whatever
 they actually use.
 

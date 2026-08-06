@@ -1,5 +1,5 @@
 <!-- issue-tracker.md — where work is tracked for this repo and how to reach it. Generated
-     from skills/general/setup-project/references/issue-tracker-github.md.template. Not
+     from skills/general/setup-magito/references/issue-tracker-github.md.template. Not
      auto-loaded; routed from INDEX.md and read by any skill that names a tracker
      operation. -->
 
