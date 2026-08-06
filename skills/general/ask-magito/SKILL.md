@@ -56,9 +56,14 @@ The route most work travels — the spine, `orient → decide → build → reco
    <b>`** — fan out to a worker each, and the fan-out drives `/reviewing-changes` on every
    worktree non-negotiably. A session ends with `/handoff` (see Crossing sessions).
 
-*A multi-session build gets `/wayfinder` between grilling and implement — that skill is
-coming in a later release. For now, keep an effort to one session, or split it by hand with
-`/to-issues`.*
+**When the effort is too big for one session — `/wayfinder`, between grilling and implement.**
+Plain `/grilling` sharpens a plan you can hold in a single sitting. When the work is larger
+than that — the destination is still foggy and settling it will take several sessions —
+`/wayfinder` charts it as a **map** issue with child **decision tickets**, and you resolve one
+per session until the way is clear. It's a container that hands off *to* grilling, not a rival
+to it: reach for wayfinder when a single grilling would overflow the session, and for plain
+grilling otherwise. Wayfinder itself says that if charting surfaces no fog, you don't need a
+map — so the honest default stays one session with `/grilling` and `/to-issues`.
 
 ## Standalone
 
