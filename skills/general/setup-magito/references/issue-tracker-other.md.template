@@ -83,6 +83,28 @@ more than the write side._
 {{command or steps, or **not supported here** — in which case say where a blocker is written
 down and how a skill should read it}}
 
+## Wayfinding operations
+
+_Used only by `wayfinder`, which plans work too big for one session as a **map** ticket with
+child **decision tickets**. Most of it reuses the operations above — attaching a child is
+*Link a sub-ticket*, blocking is *Blocking edges*, resolving is *Comment* then *Close*. This
+section adds only the map-specific pieces below. `wayfinder` checks this section exists before
+it charts, and stops if it is missing — so if this tracker cannot express a parent/child map
+with blocking and per-ticket ownership, write **not supported here** and say that wayfinding
+is unavailable on this tracker, rather than leaving the pieces blank._
+
+- **The map, and how a ticket is marked as one.** {{How the map ticket is distinguished from
+  its children — a label, a type field, a naming convention. And how a child's type
+  (`research` / `prototype` / `grilling` / `task`) is recorded.}}
+- **Create the map.** {{How to create the map ticket and mark it as the map.}}
+- **Read / update the map body.** {{How to read and overwrite the map body — the
+  low-resolution index loaded once per session.}}
+- **Claim a ticket.** {{How a session marks a ticket as taken before working it, so a
+  concurrent session skips it — an assignee, an owner field, a status. Note whether the claim
+  can be read back to detect a lost race; most trackers cannot claim atomically.}}
+- **Query the frontier.** {{How to list the map's open, unblocked, unclaimed child tickets —
+  the edge of the known. Usually a filter over the children by state, blockers, and owner.}}
+
 ## Pull requests
 
 _How work reaches review, if this tracker is involved at all._

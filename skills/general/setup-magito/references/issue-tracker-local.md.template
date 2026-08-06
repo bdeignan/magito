@@ -83,6 +83,29 @@ The `Blocked by:` line in the child ticket, holding the blockers' numbers within
 feature directory. A ticket is ready to start when every number it lists has `Status: done`.
 Cross-feature blockers are written as `<other-feature>/NN`.
 
+## Wayfinding operations
+
+_Used only by `wayfinder`, which plans work too big for one session as a **map** with child
+**decision tickets**. Attaching a child is *Link a sub-ticket*, blocking is *Blocking edges*,
+resolving a ticket is *Comment* then *Close*. This section adds only the map-specific pieces.
+A tracker doc without this section does not support wayfinding; `wayfinder` checks for it and
+stops if it is missing._
+
+- **The map file.** One map per feature directory at `.scratch/<feature-slug>/MAP.md`, with a
+  `Type: wayfinder:map` line in its header block. Its child tickets are the numbered ticket
+  files in the same directory, each carrying a `Type: wayfinder:<type>` header line — one of
+  `research`, `prototype`, `grilling`, `task`.
+- **Create the map.** Write `MAP.md` from wayfinder's map template. Create each child with
+  *Publish a ticket*, adding its `Type:` line.
+- **Read / update the map body.** Read or rewrite `MAP.md` directly. It holds the
+  low-resolution index loaded once per session.
+- **Claim a ticket.** Add a `Claimed by: <name>` line to the ticket's header block before any
+  work, and set `Status: in-progress`. A local checkout rarely has two live sessions, so this
+  is a soft claim; re-read the file after writing and yield if it was already claimed.
+- **Query the frontier.** Read every ticket file in the map's directory; keep the ones whose
+  `Status:` is `open`, whose `Blocked by:` numbers are all `done`, and that carry no
+  `Claimed by:` line.
+
 ## Pull requests
 
 Tracking tickets in files says nothing about how work lands. A repo can keep its tickets here
