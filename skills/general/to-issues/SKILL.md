@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # To Issues
 
-Break a plan into independently-grabbable issues, each a **tracer bullet**: a thin vertical slice that cuts end-to-end through every layer it touches, not a horizontal slice of one. This skill never names a tracker backend: it names operations, and `docs/agents/issue-tracker.md` says how to perform each one in this repo — run `/setup-project` if that file is missing.
+Break a plan into independently-grabbable issues, each a **tracer bullet**: a thin vertical slice that cuts end-to-end through every layer it touches, not a horizontal slice of one. This skill never names a tracker backend: it names operations, and `docs/agents/issue-tracker.md` says how to perform each one in this repo — run `/setup-magito` if that file is missing.
 
 ## Write for a less-capable implementer
 

@@ -105,10 +105,12 @@ Model-invoked references that run *beneath* the other skills. Reach for them whe
 
 ## Precondition
 
-**`/setup-project`** — run before your first flow in a new repo, to configure the issue
-tracker, Python toolchain, and `docs/agents/` layout every other skill assumes. (A single
-idempotent `/setup-magito` covering the whole system — workers, bench, permissions, the
-journal — is coming in a later release.)
+**`/setup-magito`** — run before your first flow in a new repo, and re-run any time to
+change a choice or repair drift. One idempotent pass over the whole system: it inventories
+every config item — issue tracker, review gate, `docs/agents/`, permissions, private-state
+excludes, the journal, delegation and magi rosters, Python toolchain, stale symlinks —
+reports each as configured / missing / stale, then fills only the gaps. Safe to re-run; it
+never overwrites a user's file without asking.
 
 ## Playing the budget
 

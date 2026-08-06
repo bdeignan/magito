@@ -13,7 +13,7 @@ Take an issue from spec to open PR. You own the git lifecycle; the human owns th
 
 ## Process (one issue)
 
-1. **Read the issue.** Perform the **fetch a ticket** operation as `docs/agents/issue-tracker.md` defines it (run `/setup-project` if that file is missing). Read the body, acceptance criteria, and blockers — the same file's **blocking edges** section says how blockers are recorded and read back here. If a blocker is still open, stop and say so.
+1. **Read the issue.** Perform the **fetch a ticket** operation as `docs/agents/issue-tracker.md` defines it (run `/setup-magito` if that file is missing). Read the body, acceptance criteria, and blockers — the same file's **blocking edges** section says how blockers are recorded and read back here. If a blocker is still open, stop and say so.
 
 2. **Plan — conditionally, and announce which path you took.** Skip the plan only if BOTH hold: (a) the change is confined to one file, or is a pure config/text tweak, and (b) it needs no new test seam — verification is just running the existing suite. If so, say it explicitly — "one-liner → skipping the plan step, implementing directly" — then build. An issue with multiple acceptance criteria is never a one-liner; "well-specified" is a reason the plan will be short, not a reason to skip it. Otherwise write a short plan (the seams you'll touch and how you'll test them), then **stop and wait for approval — do not edit any file until the user replies.** Never skip the plan silently, and never dive into a non-trivial issue unplanned. Before planning non-trivial work, run reconnaissance first — the `grilling` skill's [`references/recon.md`](../grilling/references/recon.md) — so the plan builds on what the code already does instead of re-solving it.
 

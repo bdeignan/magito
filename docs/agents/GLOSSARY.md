@@ -30,4 +30,4 @@ in the first place. "Issue" stays correct when you mean a GitHub issue specifica
 tickets*, *fetch a ticket*, *publish a ticket*, *close a ticket*, and the rest.
 [`issue-tracker.md`](./issue-tracker.md) is the one file that says how each is performed in
 this repo; the canonical list of the operations themselves lives in
-`skills/general/setup-project/references/issue-tracker-other.md.template`.
+`skills/general/setup-magito/references/issue-tracker-other.md.template`.

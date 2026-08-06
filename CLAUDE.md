@@ -202,7 +202,7 @@ attestation nobody reads is ceremony. The unsupervised `/implement` fan-out is t
 - `staging-guard.py` — denies `git add -A`/`--all`/`.` and `git commit -a` in every repo.
 - `review-gate.py` — denies landing unreviewed **fan-out** work: `gitflow.sh merge|pr`
   always; raw `git merge` (on the base branch) and `gh pr create` only in repos opted in
-  via `git config magito.reviewGate true` (set by `setup-project`). The gate checks the
+  via `git config magito.reviewGate true` (set by `setup-magito`). The gate checks the
   marker at `<main-worktree-root>/.magito/review-<branch>`. It holds `<sha> <decision>` once
   a decision exists — either a completed review or a deliberate skip with a reason — so any
   commit after it goes stale and re-blocks. Before then it holds the single word `pending`,
