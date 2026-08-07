@@ -8,6 +8,8 @@ Turn something the user cannot answer alone into a **questionnaire** — a Markd
 
 **Grill the send, not the subject.** Interview the user only about the *send*, which they can always answer: who it goes to, and what they need back. The questions in the document then target the gap between what the recipient knows and what the user needs.
 
+**One recipient per run.** A questionnaire goes to one person and does not branch. If three people each hold part of the answer, that is three runs, not one document with three tracks.
+
 1. **Who is it going to?** Ask, in one exchange, the recipient's role, expertise, and relationship to the user. Done when you know who the recipient is and what they know that the user does not.
 2. **What do you need back?** Ask, in one exchange, the specific decisions or facts the user cannot resolve alone. Done when you have a concrete list of what the user must walk away able to do or decide.
 3. **Write the questionnaire.** Draft questions aimed at the gap, following the structure below. Write it to a slugged file under `.scratch/` and report the path. Done when the file exists and every item from step 2 is covered.

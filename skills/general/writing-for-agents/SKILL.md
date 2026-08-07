@@ -26,8 +26,8 @@ A leading word is a compact concept already in the model's pretraining — *tigh
 
 The default move is deletion, not explanation. Read the document sentence by sentence and ask: if I delete this line, does the agent's *behaviour* change? The test is behavioural, not aesthetic. If the answer is no, the line pays context load and buys nothing. When a sentence fails, delete the whole sentence. Do not trim words from it; trimming leaves the no-op alive.
 
-> **Warning:** Agents told to "streamline" optimise for length, because length is the thing they can see. Length is not the goal. Behaviour is the goal.
+> **Warning:** Agents told to "streamline" optimise for length, because length is the thing they can see. The goal is changed behaviour, not fewer words.
 
 ## Skill-specific mechanics
 
-For the rules that govern skills themselves — frontmatter, user-invoked versus model-invocable choice, router skills, and seams between skills — see [`docs/agents/CONVENTIONS.md`](../../../docs/agents/CONVENTIONS.md). Do not restate those rules inside a skill; point at that file and keep this one about writing.
+For the rules that govern skills themselves — frontmatter, user-invoked versus model-invocable choice, router skills, and seams between skills — see `docs/agents/CONVENTIONS.md`. Do not restate those rules inside a skill; point at that file and keep this one about writing.
