@@ -91,8 +91,17 @@ gh issue edit <n> --add-blocked-by <blocker>     --remove-blocked-by <blocker>
 gh issue edit <n> --add-blocking <blocked>       --remove-blocking <blocked>
 ```
 
-Read them back with `gh issue view <n> --json blockedBy,blocking`. A ticket is ready to start
-when every entry in `blockedBy` is closed.
+Read them back with `gh issue view <n> --json blockedBy,blocking`. `blockedBy` and
+`blocking` are connection objects — their entries are in `.nodes`, not at the top level.
+`assignees`, `labels`, and `parent` are plain values.
+
+A ticket is ready to start when it has no open blockers:
+
+```
+gh issue view <n> --json blockedBy --jq '[.blockedBy.nodes[] | select(.state=="OPEN")] | length'
+```
+
+The ticket is ready when the result is `0`.
 
 ## Wayfinding operations
 
@@ -116,10 +125,17 @@ section does not support wayfinding; `wayfinder` checks for it and stops if it i
   it: `gh issue edit <n> --add-assignee @me`. An open, unassigned child is unclaimed. The
   assignee *is* the claim — re-read it immediately (`gh issue view <n> --json assignees`) and
   yield if another session won. This narrows the race window; no `gh` call closes it.
-- **Query the frontier.** The frontier is the map's open, unblocked, unassigned child tickets.
-  List the children with `gh issue view <map> --json subIssues`; for each open child read
-  `gh issue view <n> --json assignees,blockedBy` and keep the ones with no assignee and every
-  `blockedBy` entry closed. There is no single flag — it is a filter over the children.
+- **Query the frontier.** The frontier is the map's open, unblocked, unassigned child
+  tickets. `subIssues` is a connection object — its children are in `.nodes`. `assignees` is
+  a plain array. There is no single flag — filter the children:
+
+  ```
+  gh issue view <map> --json subIssues --jq '.subIssues.nodes[] | select(.state=="OPEN") | .number'
+  gh issue view <n> --json assignees --jq '.assignees | length'
+  gh issue view <n> --json blockedBy --jq '[.blockedBy.nodes[] | select(.state=="OPEN")] | length'
+  ```
+
+  Keep children whose assignee count is `0` and whose open-blocker count is `0`.
 
 ## Pull requests
 
