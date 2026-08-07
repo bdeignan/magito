@@ -83,6 +83,12 @@ more than the write side._
 {{command or steps, or **not supported here** — in which case say where a blocker is written
 down and how a skill should read it}}
 
+State the exact shape the backend returns for every relationship field used here
+(`blockedBy`, `blocking`, `subIssues`, `assignees`, `labels`, `parent`, and any equivalent
+your tracker exposes). State whether each one is a connection object that wraps its entries
+in `.nodes`, a plain array, or a single object. A skill reading this doc must not have to
+infer the shape.
+
 ## Wayfinding operations
 
 _Used only by `wayfinder`, which plans work too big for one session as a **map** ticket with
