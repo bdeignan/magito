@@ -5,7 +5,7 @@ description: On-demand plain-language reset and rewriter. Translates dense text 
 
 # Speaking Plainly
 
-This skill helps you communicate clearly. Use it to reset your writing voice mid-session or rewrite dense text.
+This skill helps you communicate clearly. Use it to reset your writing voice mid-session or rewrite dense text. It rewrites *text*; use `/wait-what` when you need to repair the conversation you are in.
 
 ## Mode 1: Reset Register
 When a user asks to write in a plain register or reset, write to the plain-language floor from here on. Start from your system instructions' baseline voice rules (plain word choice, active voice, one idea per sentence, defining coined terms — magito installs these from `shared/SYSTEM-INSTRUCTIONS.md`). This skill adds:

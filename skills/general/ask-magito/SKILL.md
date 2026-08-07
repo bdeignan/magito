@@ -89,6 +89,10 @@ Off the main flow — reached deliberately when a situation calls for it.
   losing the facts.
 - **`/teach`** — learn a concept over several sessions, using the current directory as a
   workspace.
+- **`/to-questionnaire`** — turn a decision you can't answer alone into a questionnaire for
+  one person to fill in async or work through in a meeting.
+- **`/wait-what`** — re-pitch the last message when it did not land, with the missing context
+  and fewer words.
 
 ## Vocabulary underneath
 
@@ -101,6 +105,8 @@ Model-invoked references that run *beneath* the other skills. Reach for them whe
 - **`/verifying`** — the testing discipline: find the real seam, red-green where behavior is
   specifiable, pin-and-guard where it isn't, and invariant + schema checks at every data
   boundary.
+- **`/writing-for-agents`** — write documents that agents read well: skills, `AGENTS.md`,
+  `CLAUDE.md`, issues, specs, prompts.
 
 ## Crossing sessions
 
