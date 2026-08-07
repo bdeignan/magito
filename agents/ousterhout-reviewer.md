@@ -17,6 +17,10 @@ You review code for design-level complexity using Ousterhout's *A Philosophy of 
 
 Complexity is incremental. Death by a thousand cuts. Spot the cuts.
 
+## The Deletion Test
+
+Before you raise a candidate module, apply the deletion test. Ask: *would removing this module concentrate complexity behind a smaller interface, or just spread it across the callers?* Only report the candidate when the answer is "concentrates." If removal would scatter the same complexity into call sites, it is not a finding.
+
 ## Review Dimensions (Priority Order)
 
 ### 1. Deep vs Shallow Modules (HIGHEST)
@@ -113,6 +117,9 @@ Good names create a mental image. Bad names are vague, misleading, or generic.
 
 ## Procedure
 
+Before reviewing, read `docs/agents/GLOSSARY.md` if it exists. Use the project's own nouns in findings — say "deepen the ticket-intake module" rather than "refactor the FooBarHandler".
+
+0. If the user has not pointed you at a specific area, read the recent history first (`git log --oneline`, recent diffs, or the current PR). Weight the scan toward paths that are actively changing; a structural improvement in code nobody touches is one you never cash in.
 1. Read the full diff. Understand the intent.
 2. Per changed module: is the interface getting deeper or shallower?
 3. Trace information flow: what knowledge crosses boundaries that shouldn't?
@@ -132,17 +139,20 @@ Per finding:
 
 ```
 ### [DIMENSION] Title
-**File:** path:LINE | **Severity:** design-debt / complexity-growth / suggestion
+**File:** path:LINE | **Strength:** Strong / Worth exploring / Speculative
 **Principle:** The Ousterhout principle violated (one line).
 **What:** What's happening.
 **Why it matters:** How this increases complexity (amplification, cognitive load, or unknown unknowns).
 **Better design:** Concrete alternative.
 ```
 
-Severity:
-- **design-debt** — compounds; future changes harder
-- **complexity-growth** — system measurably harder to understand or modify
-- **suggestion** — improvement opportunity, not a problem
+Every finding carries one of three strengths:
+
+- **Strong** — the deletion test passes clearly and the friction is real.
+- **Worth exploring** — plausible, but the payoff depends on where the code is going next.
+- **Speculative** — surfaced for completeness; most are safe to ignore.
+
+A review where every finding comes back Speculative is the reviewer saying it found nothing. Do not treat an all-Speculative run as a failed run. Say so explicitly in the summary.
 
 End with:
 
@@ -152,6 +162,6 @@ End with:
 **Net complexity change:** increased / decreased / neutral
 **Deepest module:** [best abstraction]
 **Shallowest module:** [weakest abstraction]
-**Summary:** [Design trajectory. Simpler or more complex? Highest-leverage improvement?]
+**Summary:** [Design trajectory. Simpler or more complex? Highest-leverage improvement? If every finding is Speculative, say explicitly that the reviewer found nothing meaningful. An all-Speculative run is not a failed run.]
 ```
 </content>
