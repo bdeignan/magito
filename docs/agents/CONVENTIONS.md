@@ -91,3 +91,14 @@ nothing to decide.
 
 That is the real reason those keep model invocation, better than "something calls them": a
 skill with no decision attached is not a step, so there is nothing for the user to enter.
+
+## Reaching for a tool
+
+**Never wrap a read-only operation in a script to make it "one stable command."** A permission
+audit (#150) found no agent CLI charges less for a script than for the command inside it, and
+the ones that inspect commands charge more — while reading a file is free on every tool. So
+phrase an operation as a file read where you can, a plain native command otherwise, and reserve
+wrapper scripts for work that carries real behaviour: a gate, an argument check. `issues.sh`'s
+mutating verbs earn their wrapper; `list`/`view` did not, which is why the tracker doc leads
+with plain `gh` for those. For the `awk`-vs-`head` split between scripts and prose, see the
+comment in `gitflow.sh`'s `main_worktree`.

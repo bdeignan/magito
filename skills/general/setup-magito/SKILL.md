@@ -72,18 +72,20 @@ Missing? Offer to write a minimal permissions-only `allow` list for the read-onl
 
 ### Private-state excludes
 
-Ensure both `.magito/` and `.scratch/` are in `.git/info/exclude` — append each if absent. Never `.gitignore`: that file is shared, and this is personal state. Both the session journal and the review-decision marker write under `.magito/`.
+Ensure both `.magito/` and `.scratch/` are in `.git/info/exclude` — add each if absent. Never `.gitignore`: that file is shared, and this is personal state. Both the session journal and the review-decision marker write under `.magito/`.
+
+Run `git rev-parse --git-common-dir` (`--git-common-dir`, since inside a linked worktree `.git` is a file, not a directory) to get the exclude file's directory, then read `<that>/info/exclude` with your file-reading tool, then add whichever of `.magito/` and `.scratch/` isn't already a line in it, using your file-editing tool. Idempotent by construction — a line already present is left alone.
+
+On a tool with no file-editing tool, fall back to the shell form:
 
 ```
 e="$(git rev-parse --git-common-dir)/info/exclude"
 for p in .magito/ .scratch/; do grep -qxF "$p" "$e" 2>/dev/null || echo "$p" >> "$e"; done
 ```
 
-(`--git-common-dir`, since inside a linked worktree `.git` is a file, not a directory.)
-
 ### Session journal
 
-`.magito/journal/` is where per-session entries land. It self-creates the first time `/handoff` runs `~/.magito/bin/journal name`, so there is nothing to scaffold — it counts as **configured** once `.magito/` is excluded above. If the repo carries pre-magito notes worth keeping, offer to import them (next section).
+`.magito/journal/` is where per-session entries land. It self-creates the first time `/handoff` composes a filename (`.magito/journal/YYYY-MM-DD-HHMMSS-<slug>-<hex>.md`) and writes the entry directly, so there is nothing to scaffold — it counts as **configured** once `.magito/` is excluded above. If the repo carries pre-magito notes worth keeping, offer to import them (next section).
 
 ### Legacy notes
 

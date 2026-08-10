@@ -20,9 +20,15 @@ Originals stay exactly where they are. The import only ever **writes new files**
 
 3. **Summarize to the journal word cap — do not paste.** Each entry obeys the same limit as a normal session entry: aim ~200 words, 300 hard ceiling (the cap lives in the session-journal standard in `CLAUDE.md` — follow it there, don't restate a number here). Imported material is usually several times over it. Compress to the durable point, the way a handoff entry would. **This is exactly what the retired `journal import` got wrong** — it pasted entries several times over the cap, and those bloated entries became the precedent the next session copied. Summarize; the source keeps the detail.
 
-4. **Timestamp from the source, so imported entries sort against real ones.** Take the date from the source — a file's mtime, or a date written in the note. Get a correctly-formatted, unique filename from `~/.magito/bin/journal name "<topic-slug>"`, then **replace the leading date in what it prints with the source date**, keeping the random hex suffix it generated. The filename is `YYYY-MM-DD-HHMMSS-<slug>-<hex>.md`; only the date part changes. This keeps the journal's uniqueness guarantee (the hex) while making the entry sort where it belongs in history, not at today.
+4. **Timestamp from the source, so imported entries sort against real ones.** Take the date from the source — a file's mtime, or a date written in the note. Compose the filename yourself, in the journal's own format (`YYYY-MM-DD-HHMMSS-<slug>-<hex>.md`), using the source date in place of today's, any time-of-day for `HHMMSS`, and six hex digits you pick for `<hex>`. This keeps the journal's uniqueness guarantee (the hex) while making the entry sort where it belongs in history, not at today.
 
-   Example: `journal name "old-auth-decisions"` prints `.../2026-08-05-141230-old-auth-decisions-a1b2c3.md`. If the source note is dated 2025-11-02, write the file as `.../2025-11-02-141230-old-auth-decisions-a1b2c3.md`.
+   Example: a note dated 2025-11-02 about old auth decisions becomes
+   `.../2025-11-02-141230-old-auth-decisions-a1b2c3.md`.
+
+   On a tool with no file-writing tool, fall back to `~/.magito/bin/journal name
+   "<topic-slug>"`, which prints a correctly-formatted, unique filename using today's
+   date, then replace the leading date in what it prints with the source date, keeping
+   the random hex suffix it generated.
 
 5. **Write each entry with your file-writing tool** (not through `journal` — it only reads). Use the normal entry shape: a dated `#` header line and the summary body. Mark it as imported in the body (e.g. a short "imported from `NOTES.md`" note) so a later reader knows its provenance.
 

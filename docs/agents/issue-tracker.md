@@ -8,9 +8,11 @@
 Work for magito is tracked as GitHub issues on `bdeignan/magito`, reached through the `gh`
 CLI. [`issues.sh`](../../skills/general/implement/scripts/issues.sh) is the deterministic
 wrapper around the verbs agents otherwise retype freehand — it fails loudly on a missing
-argument or missing auth instead of opening an editor or retrying. Each operation below gives
-the wrapper first and the plain `gh` command after it, so this file still reads correctly on
-a machine without magito installed.
+argument or missing auth instead of opening an editor or retrying. The two read-only
+operations (list, fetch) lead with the plain `gh` command below, since the wrapper adds
+nothing but a `gh auth status` precheck; the four operations that change a ticket lead with
+the wrapper, since its argument checks stop `gh` from opening an interactive editor. This
+file still reads correctly on a machine without magito installed either way.
 
 Skills never name a backend. They name one of the operations below and read this file to find
 out how to perform it here.
@@ -28,24 +30,37 @@ back to `gh pr view 42`.
 ## List open tickets
 
 ```
-bash <skills>/implement/scripts/issues.sh list          # gh issue list
+gh issue list
 ```
 
-Extra flags pass straight through to `gh issue list`, e.g. `list --label enhancement --state all`.
+Extra flags pass straight through, e.g. `gh issue list --label enhancement --state all`. Or,
+for a call that fails loudly on missing auth instead of a bare `gh` error:
+
+```
+bash <skills>/implement/scripts/issues.sh list
+```
 
 ## Fetch a ticket
 
 ```
-bash <skills>/implement/scripts/issues.sh view <number>     # gh issue view <number>
+gh issue view <number>
 ```
 
-The wrapper takes the number and nothing else. For the conversation and the relationship
-fields, call `gh` directly:
+For the conversation and the relationship fields:
 
 ```
 gh issue view <number> --comments
 gh issue view <number> --json number,title,body,labels,parent,subIssues,blockedBy,blocking
 ```
+
+Or, for a call that fails loudly on missing auth instead of a bare `gh` error:
+
+```
+bash <skills>/implement/scripts/issues.sh view <number>
+```
+
+The wrapper takes the number and nothing else — use plain `gh` above for `--comments` or
+`--json`.
 
 ## Publish a ticket
 
@@ -76,8 +91,13 @@ second time by hand.
 
 ```
 bash <skills>/implement/scripts/issues.sh sub-add <parent> <child>
-# gh issue edit <parent> --add-sub-issue <child>
 ```
+
+No single `gh` flag does this — GitHub's sub-issue link is an API call, not an
+`issue edit` flag. The wrapper runs three calls: `gh repo view --json nameWithOwner` to get
+`owner/repo`, then `gh api repos/<owner>/<repo>/issues/<child> -q .id` to resolve the child's
+internal id, then `gh api -X POST repos/<owner>/<repo>/issues/<parent>/sub_issues -F
+sub_issue_id=<id>`.
 
 Read the relationship back with `gh issue view <n> --json parent,subIssues,subIssuesCompleted`.
 

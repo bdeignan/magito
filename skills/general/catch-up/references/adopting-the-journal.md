@@ -22,6 +22,10 @@ one entry at the end. The directory is created on first write.
 
 ## Checking it worked
 
+Glob `.magito/journal/*.md` and read the two files whose filenames sort last —
+filenames are `YYYY-MM-DD-HHMMSS-slug-hex.md`, so the two most recent entries also sort
+last. On a tool with no glob or file-reading tool, fall back to:
+
 ```bash
 ~/.magito/bin/journal read 2
 ```
