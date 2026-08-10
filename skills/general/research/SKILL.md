@@ -39,17 +39,14 @@ registry.** That is what a reviewer checks instead of reading a diff. Confirm it
 
 ## Evidence
 
-Apply the evidence rule in [`references/evidence-rule.md`](./references/evidence-rule.md): trust
-classes (codebase / web / provided), the corroboration gate on web claims, and explicit no-evidence
-labeling. Two modes:
+Apply the evidence rule in [`references/evidence-rule.md`](./references/evidence-rule.md) — trust
+classes (codebase / web / provided), the corroboration gate on web claims, no-evidence labeling, and
+how the two evidence modes change what may back a recommendation. That file is the rule; this section
+only says how a run reaches it.
 
-- **Strict (default):** every claim carries a source; a web claim bearing on the recommendation must
-  be corroborated or it is marked `[single-source]` and cannot stand alone.
-- **Exploratory (opt-in):** the user says "exploratory" or "evidence optional"; unevidenced reasoning
-  may inform the recommendation, but every such step is labeled `[reasoning]`, never disguised as a
-  source.
-
-In **both** modes the report labels every claim's evidence status, so the trade is always visible.
+The mode is **strict** by default. The user opts into **exploratory** with "exploratory" or "evidence
+optional". Detect it in step 1, pass it to every angle, and label each claim's evidence status in the
+report either way — the rule file says what each mode permits.
 
 ## Process
 

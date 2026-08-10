@@ -24,7 +24,7 @@ The findings in plain prose with minimal technical detail. Every claim cross-ref
 IDs it rests on (`A1`, `A3`). Mark a claim inline when it rests on a single web source
 (`[single-source]`) or, in exploratory mode only, on unevidenced reasoning (`[reasoning]`).
 
-## Options to Consider
+## Options
 
 _Only when the question has discrete alternatives. Omit the whole section for "how does X work"._
 
