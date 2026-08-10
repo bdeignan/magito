@@ -14,12 +14,17 @@ there), `skipped: <reason>` (deliberately not checked), or `failed: <reason>` (c
 the attempt errored). No source may be silently omitted from the final report — if you
 didn't check it, its status is `skipped`, not absent from the list.
 
-1. Session journal: run `~/.magito/bin/journal read 2` — the last two sessions for this
-   project. There is nothing to start or record; a session begins by reading. Show what
-   it prints. If the project has no entries yet it says so plainly — that's still
-   `read`, not `missing`. If the command exits non-zero, status is
-   `failed: <the error>` — show it and move on. A journal failure never stops the rest
-   of this checklist; every other source below is still readable on its own.
+1. Session journal: glob `.magito/journal/*.md` in the repo root and sort the matches by
+   filename, descending — filenames are `YYYY-MM-DD-HHMMSS-slug-hex.md`, so a lexical
+   sort is already chronological. Read the newest two files with your file-reading tool
+   and show what they say. There is nothing to start or record; a session begins by
+   reading. If the directory doesn't exist or has no matching files, status is
+   `missing`. If a read errors, status is `failed: <the error>` — show it and move on.
+   A journal failure never stops the rest of this checklist; every other source below is
+   still readable on its own.
+
+   On a tool with no glob or file-reading tool, fall back to
+   `~/.magito/bin/journal read 2`, which prints the same newest-two-entries view.
 
    Two entries is the default because it is enough to see what landed and what was
    flagged next. Raise it when the user asks for more history, or when the newest entry

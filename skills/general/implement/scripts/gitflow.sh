@@ -60,8 +60,17 @@ guard_not_base() {
 # so the line splits on the first space only. In a bare repo the first entry is
 # the bare git dir itself — nothing runs a worktree fan-out from a bare repo, so
 # that case is noted, not handled.
-# awk rather than `head -1`: head exits after one line, which can SIGPIPE git and,
-# under `set -o pipefail`, abort the script. awk drains the stream.
+# Inside a script: awk 'NR==1{...}' with no exit. In prose the agent runs directly: head -1.
+# Two independent reasons, both pointing the same way:
+#   - Correctness: this script runs under `set -euo pipefail` (line 5), so `| head -1`
+#     exits after one line, can SIGPIPE git, and can abort the script. Prose commands
+#     don't run under pipefail, so `| head -1` there carries no such risk — that's why
+#     the five prose sites (implement/SKILL.md, reviewing-changes/SKILL.md) correctly
+#     use `head -1` and should stay that way.
+#   - Permissions: `head` is on Claude Code's and Codex's read-only safe list; `awk` is
+#     on neither. Using `awk` in prose would turn a free command into an approval prompt.
+# The awk form below has no `exit`, on purpose — an early exit re-introduces the same
+# early-close this comment exists to avoid.
 main_worktree() { git worktree list --porcelain | awk 'NR==1{sub(/^worktree /,""); print}'; }
 
 marker_path() { local slug="${1//\//-}"; echo "$(main_worktree)/.magito/review-${slug}"; }

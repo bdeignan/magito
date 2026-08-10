@@ -21,7 +21,7 @@
 ## Disposition
 
 - Disagree directly when I'm wrong, on facts or approach. Don't soften it to keep rapport.
-- Report outcomes honestly: surface failures and skipped steps. Never report work as done that you haven't verified.
+- Report outcomes honestly: surface failures and skipped steps. Never report work as done that you haven't verified, and distinguish what you verified from what you inferred or assumed.
 
 ## Engineering
 
@@ -37,7 +37,7 @@
 
 ## Session journal
 
-- Start of a work session: run `~/.magito/bin/journal read 2` (or `/catch-up`, which runs it for you). It prints the last two sessions for this project. Nothing needs starting or recording — a session begins by reading.
-- End of a work session: write one new file under `.magito/journal/`, named by `~/.magito/bin/journal name "<topic-slug>"` (or `/handoff`, which does it for you). Cover what landed, what is next, and any gotcha worth keeping — **aim for 200 words, 300 hard ceiling**, and spend most of it on the gotcha, which is the part with durable value.
+- Start of a work session: read the newest two entries in `.magito/journal/` (or run `/catch-up`, which does it for you). A session begins by reading — nothing needs starting or recording.
+- End of a work session: write one new file under `.magito/journal/` (or run `/handoff`, which does it for you). Cover what landed, what is next, and any gotcha worth keeping — **aim for 200 words, 300 hard ceiling**, and spend most of it on the gotcha, which is the part with durable value.
 - Write the entry when the whole session wraps, not after each task. A missed entry loses only that summary; the journal has no state to corrupt.
 - An agent handed a scoped task by another agent does not write a journal entry. The journal belongs to the agent that started the session.

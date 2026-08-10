@@ -9,9 +9,14 @@ argument-hint: "what the next session will focus on"
 
 Close out the session by writing **one new file** to the project's session journal.
 
-Get the path from `~/.magito/bin/journal name "<short-topic-slug>"` — it prints
-`.magito/journal/YYYY-MM-DD-HHMM-<slug>.md`. Then create that file with your own
-file-writing tool. No shell write and no approval.
+Compose the filename yourself: `.magito/journal/YYYY-MM-DD-HHMMSS-<slug>-<hex>.md` in the
+repo root, where the timestamp is the current date and time and `<hex>` is six hex digits
+you pick to keep the name unique. Create that file directly with your file-writing tool.
+No shell call and no approval.
+
+On a tool with no file-writing tool, fall back to `~/.magito/bin/journal name
+"<short-topic-slug>"`, which prints this same filename format, then write there some
+other way.
 
 Pick the slug from what the session was *about* (`journal-replaces-ledger`,
 `fix-heredoc-parsing`), not from a random name. The filename is the first thing the next
