@@ -79,8 +79,13 @@ Off the main flow — reached deliberately when a situation calls for it.
 - **`/challenging-assumptions`** — an adversarial pre-mortem of a plan before you commit:
   hidden assumptions, failure modes, a ship-or-rethink verdict. Reach for it when an approach
   feels too smooth.
+- **`/research`** — answer an open-ended question with an evidence-backed report in a fixed
+  structure: options, prior art, trade-offs, a recommendation, and a source registry every
+  claim traces to. Delegates angles to subagents by default, or to a worker you name. Reach
+  for it to weigh approaches before deciding — not to diagnose a bug or write code.
 - **`/finding-lacunae`** — research for a missing keystone: what's absent that the field,
-  constraints, or alternatives say should be there.
+  constraints, or alternatives say should be there. Where `/research` weighs the options you
+  can see, this hunts the one you can't.
 - **`/magi <question>`** — a three-seat tribunal for an oracle-free call. The poll is cheap
   and ungated; **`/magi deliberate`** is the expensive tier and asks for cost consent first.
 - **`/reviewing-changes`** — the two-axis review (Standards + Spec) on its own, against any
