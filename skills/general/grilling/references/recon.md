@@ -3,7 +3,7 @@
 A survey of the code and its context that runs **before** the first question — or, for a
 build, before the plan. It fixes one failure: an agent asks from ignorance, or builds what
 the codebase already solves, because it never looked. A check that fires at question time
-cannot fix this. By the time there is a question, the looking has already not happened. So
+cannot fix this. By the time there is a question, the looking has already been skipped. So
 recon is unconditional and comes first.
 
 Recon settles what the code can settle. It does not replace the human questions — a
@@ -38,8 +38,7 @@ not from a file: recon writes no state to read back.
    solved. Short is load-bearing — the brief is read in-conversation, and a long one spends
    the tokens the survey was meant to save.
 
-4. **Show the brief to the user before questioning (or planning) starts.** This is the point
-   of recon, not a courtesy. It is the checkpoint where a wrong inference gets caught before
+4. **Show the brief to the user before questioning (or planning) starts.** It is the checkpoint where a wrong inference gets caught before
    it is baked into the plan.
 
 5. **Promote anything durable — a numbered step, not a virtue.** Reading code with fresh eyes
