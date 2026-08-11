@@ -9,7 +9,7 @@ argument-hint: "one issue (number, URL, or path) for the sequential path; severa
 
 Take an issue from spec to open PR. You own the git lifecycle; the human owns the merge. The deterministic git steps run through [`scripts/gitflow.sh`](./scripts/gitflow.sh); everything else is judgement. Tracker reads and writes go through the named operations in `docs/agents/issue-tracker.md`, which says how to perform each one in this repo — this skill never names a backend. Commands below run from your actual working directory, not the skill directory, so they address the scripts as `<skills>/implement/scripts/...` (`<skills>` is your tool's installed skills directory — `~/.claude/skills` for Claude Code, `~/.agents/skills` for most others).
 
-**Route on how many issues you were handed.** One issue takes the sequential path below — the default, and unchanged. Several *independent* issues fan out to a worker each: read [`references/parallel.md`](./references/parallel.md), loaded only when you actually have more than one. Keeping the parallel prose in a reference is deliberate — the single-issue path stays cheap, and fanning out is the expensive exception, not the default.
+**Route on how many issues you were handed.** One issue takes the sequential path below — the default. Several *independent* issues fan out to a worker each: read [`references/parallel.md`](./references/parallel.md), loaded only when you actually have more than one. Keeping the parallel prose in a reference is deliberate — the single-issue path stays cheap, and fanning out is the expensive exception.
 
 ## Process (one issue)
 

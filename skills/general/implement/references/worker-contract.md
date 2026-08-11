@@ -52,8 +52,7 @@ Reachability basis: tracked files exist in every worktree by construction. A fla
 `--no-skills` blocks skill auto-discovery, not plain file reads, so the worker can open
 a named path just fine.
 
-This does not change how work is judged. Review still examines the staged diff
-(`git -C <dir> diff --cached`), not the worker's claims about what it read.
+This does not change how work is judged.
 
 The report is not the result. Judge a worker by `git -C <dir> diff --cached` — review
 examines the staged diff regardless of what the worker claimed.
