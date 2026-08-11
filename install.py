@@ -47,6 +47,28 @@ def parse_frontmatter(skill_path: Path) -> dict:
     return result
 
 
+def validate_invocation_policies(repo_root: Path) -> None:
+    """Keep Claude and Codex user-only skill settings aligned."""
+    mismatches = []
+    for skill_md in sorted((repo_root / "skills" / "general").glob("*/SKILL.md")):
+        claude_user_only = parse_frontmatter(skill_md).get("disable-model-invocation") == "true"
+        codex_config = skill_md.parent / "agents" / "openai.yaml"
+        codex_user_only = codex_config.exists() and any(
+            line.strip() == "allow_implicit_invocation: false"
+            for line in codex_config.read_text().splitlines()
+        )
+        if claude_user_only != codex_user_only:
+            mismatches.append(skill_md.parent.name)
+
+    if mismatches:
+        names = ", ".join(mismatches)
+        raise SystemExit(
+            "Invocation policy mismatch for general skills: "
+            f"{names}. Keep disable-model-invocation and "
+            "policy.allow_implicit_invocation aligned."
+        )
+
+
 def link(src: Path, dst: Path, dry_run: bool, force: bool) -> str:
     if dst.is_symlink():
         if dst.resolve() == src.resolve():
@@ -203,6 +225,7 @@ def main() -> None:
     args = parser.parse_args()
 
     repo_root = Path(__file__).resolve().parent
+    validate_invocation_policies(repo_root)
     toml_path = repo_root / "install.toml"
 
     if not toml_path.exists():
