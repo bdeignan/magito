@@ -4,7 +4,7 @@ Read this only when `/implement` was handed **more than one** issue. For a singl
 dependent work, the sequential path in [SKILL.md](../SKILL.md) is the whole story — this
 reference stays out of context until you actually fan out.
 
-Run several issues at once. This is the expensive exception, not the default — parallel
+Run several issues at once. This is the expensive exception — parallel
 agents burn far more tokens and only pay off when the issues are genuinely independent and
 worth it.
 

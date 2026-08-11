@@ -35,7 +35,7 @@ product pitch. A valid conclusion is that no defensible lacuna was found.
    a constraint the target accepts.
 5. **Name the keeping-empty force.** For each surviving candidate, identify a
    concrete mechanism that explains the absence: incentives, cost structure,
-   regulation, technical limits, organizational incentives, an explicit design
+   regulation, technical limits, an explicit design
    trade-off, or another evidenced constraint. Cite the support. **No specific force = boring gap.** Discard candidates that fail this test; never emit
    them as lacunae.
 6. **Classify the evidence.** Give a calibrated read: likely undiscovered,

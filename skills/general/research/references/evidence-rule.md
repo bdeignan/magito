@@ -4,8 +4,7 @@
      its only consumer. Issue #156 decides where magito's portable object-level rules live and what
      they are named; when it lands, this file becomes a pointer to that home and the skill cites the
      rule by its #156 name. Until then: one file, no vendored copies (magito's reuse-by-pointing rule).
-     Do not paraphrase this rule anywhere else — link to it. Adapted from han's evidence rule, stripped
-     to what /research needs. -->
+     Do not paraphrase this rule anywhere else — link to it. -->
 
 What counts as evidence, how strong it is, and what to do when there is none. `/research` applies this
 at the point it consolidates sources and writes its recommendation.

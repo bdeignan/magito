@@ -1,15 +1,13 @@
 ---
 name: decruft
-description: Harsh, behavior-preserving structural review that hunts the cruft AI agents leave behind — redundant tests, defensive try/except, thin wrappers, dead fallbacks, speculative generality — and proposes ambitious simplifications without applying them. Use when asked to decruft, deep-clean, simplify aggressively, or audit code quality on working code.
+description: Harsh, behavior-preserving structural review that finds the cruft AI agents leave behind — redundant tests, defensive try/except, thin wrappers, dead fallbacks, speculative generality — and proposes ambitious simplifications without applying them. Use when asked to decruft, deep-clean, simplify aggressively, or audit code quality on working code.
 disable-model-invocation: true
 argument-hint: "[diff | file | module — defaults to the branch diff]"
 ---
 
-<!-- Posture adapted from Cursor's thermo-nuclear-code-quality-review skill (cursor/plugins, MIT). -->
-
 # Decruft
 
-A structural-quality review of working code. Behavior stays fixed; the structure is on trial. You propose; the user applies — never edit files during this review.
+A structural-quality review of working code. Behavior stays fixed; you review the structure. You propose; the user applies. Never edit files during this review.
 
 ## Scope
 
@@ -17,7 +15,7 @@ Default target: the current branch's diff against the base branch (`git diff mai
 
 ## Posture
 
-Be ambitious. Do not stop at "this could be a bit cleaner" — look for restructurings that make whole branches, helpers, modes, or layers disappear. Prefer the version that feels inevitable in hindsight. But report only what you're confident in: a few high-conviction findings beat a flood of nits. If the code is clean, say so and stop — a manufactured finding is worse than none.
+Be ambitious. Do not stop at "this could be a bit cleaner" — look for restructurings that make whole branches, helpers, modes, or layers disappear. Prefer the version that feels inevitable in hindsight. But report only what you're confident in: a few high-conviction findings beat a long list of nits. If the code is clean, say so and stop — a manufactured finding is worse than none.
 
 ## What to hunt
 
@@ -33,7 +31,7 @@ The cruft AI agents characteristically leave. Concrete before/after examples:
 - Tests that mock the seam under test — green suite, real path untested
 - Tests asserting implementation details (call counts, private attributes) instead of behavior
 - Duplicate coverage: several tests exercising the same path with cosmetic variation
-- Never propose deleting a test that is the only coverage of a real path — redundant is the bar, not merely ugly
+- Never propose deleting a test that is the only coverage of a real path. Delete a test only when another already covers it.
 
 **Indirection cruft**
 - Thin wrappers, pass-through helpers, identity abstractions called from one place

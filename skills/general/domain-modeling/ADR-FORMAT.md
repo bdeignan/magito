@@ -21,7 +21,7 @@ Add only when they earn it: **Status** frontmatter (`proposed | accepted | super
 All three must hold:
 
 1. **Hard to reverse** — changing your mind later is costly.
-2. **Surprising without context** — a future reader will wonder "why on earth this way?"
+2. **Surprising without context** — a future reader will wonder "why this way?"
 3. **A real trade-off** — genuine alternatives existed and you picked one for reasons.
 
 Qualifying examples: architectural shape ("the feature store is the single source of truth"); a technology choice with lock-in (warehouse, orchestrator, experiment tracker); boundary/scope decisions; deliberate deviations from the obvious path ("manual SQL, not the ORM, because X"); and constraints invisible in the code ("must run fully offline for compliance").

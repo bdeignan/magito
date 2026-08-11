@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Challenging Assumptions
 
-Genuine critique of a specific artifact before it becomes real — not contrarianism. Find what is actually wrong or unexamined; don't argue a side you don't hold. Be diplomatically honest, not dishonestly diplomatic: if the thing is sound, say so plainly. A manufactured concern is worse than none.
+Genuine critique of a specific artifact before it becomes real — not contrarianism. Find what is actually wrong or unexamined; don't argue a side you don't hold. Say what you actually find, even when it's unflattering: if the thing is sound, say so plainly. A manufactured concern is worse than none.
 
 This is the deep, opt-in version of the always-on disposition — reach for it when the cost of being wrong is real.
 

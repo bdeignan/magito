@@ -60,10 +60,9 @@ The route most work travels — the spine, `orient → decide → build → reco
 Plain `/grilling` sharpens a plan you can hold in a single sitting. When the work is larger
 than that — the destination is still foggy and settling it will take several sessions —
 `/wayfinder` charts it as a **map** issue with child **decision tickets**, and you resolve one
-per session until the way is clear. It's a container that hands off *to* grilling, not a rival
-to it: reach for wayfinder when a single grilling would overflow the session, and for plain
-grilling otherwise. Wayfinder itself says that if charting surfaces no fog, you don't need a
-map — so the honest default stays one session with `/grilling` and `/to-issues`.
+per session until the way is clear. It's a container that hands off *to* grilling: reach for
+wayfinder when a single grilling would overflow the session, and for plain grilling otherwise. Wayfinder itself says that if charting surfaces no fog, you don't need a
+map — so the default stays one session with `/grilling` and `/to-issues`.
 
 ## Standalone
 
