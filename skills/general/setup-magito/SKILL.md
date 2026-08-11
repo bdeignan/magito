@@ -8,13 +8,13 @@ disable-model-invocation: true
 
 Bring a repo up to the configuration the MAGITO workflow skills expect — "magito-fy" it. The workflow skills (`catch-up`, `implement`, `to-issues`, `handoff`, `reviewing-changes`, the magi tribunal) assume certain files and settings exist; this skill is the one place that knows the full list and puts it in place.
 
-**Run it to onboard a fresh repo, and re-run it any time to change a choice or repair drift** — it is idempotent, not a one-shot scaffolder. That re-runnability is the point: the model it improves on (Matt Pocock's setup skill) is explicitly *not* re-runnable.
+**Run it to onboard a fresh repo, and re-run it any time to change a choice or repair drift.** It is idempotent.
 
 Most of what it touches is **per-repo** (the tracker doc, review gate, `docs/agents/`, permissions, excludes, journal). Two items are **machine-global** and shared across every repo on this machine: `~/.magito/workers.toml` and `~/.magito/bench.toml`. For those it only checks and offers — it configures the project, not your machine.
 
 **Inventory first, then fill gaps.** Read the starting state of every item, report each as **configured / missing / stale**, then walk only the unsettled ones — one section at a time, leading with the recommended answer. Re-running is safe by design: a second run finds everything configured and changes nothing. Never overwrite a user's answer or a user's file without asking.
 
-Prompt-driven, not a script. Explore, present what you found, confirm, then write.
+Prompt-driven. Explore, present what you found, confirm, then write.
 
 ## 1. Inventory (before asking anything)
 

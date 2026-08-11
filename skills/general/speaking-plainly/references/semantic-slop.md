@@ -44,6 +44,27 @@ A general-sounding line that hands the reader nothing to do: "at its core, X is 
 "it's a balance". Can the reader act differently after reading it? If not, cut it or make it
 concrete.
 
+## Test 6 — Ungrounded reference
+A name the reader cannot reach: it grounds in neither the model's reliable knowledge nor this repo.
+Test: an agent on another machine has only this repo in front of it. Can it reach what this names? If
+not, cut it, or ground it (a link into the repo, or a one-clause explanation).
+
+This is not a ban on names. A **grounded** reference is fine and useful: a repo file, an ADR number, a
+repo entity (`ousterhout-reviewer`), a tool the reader surely knows (`gh`), a named idea the text
+explains and cites (see `freddish.md`), or a required legal attribution (see `teach`'s license line).
+The defect is a name doing rhetorical work the reader can't verify.
+
+Two forms, by what the reference is doing:
+
+- **Name-drop (referential)** — a specific person, project, or product cited for comparison or
+  lineage: "Matt Pocock's setup skill", "han-shaped". Usually real, but inert for a reader who can't
+  reach it. In an operational skill it does no work; cut it. Lineage that matters belongs in an ADR,
+  grounded with a link.
+- **Unexplained authority (justificational)** — a named principle, law, or standard invoked to lend
+  weight: "by Ptolemy's Ideal", "per the standard". Worse than a name-drop: it swaps a citation for a
+  reason, and because the model has no real source, it learns to invent one. Replace it with the
+  actual reason, or cut it.
+
 ## Working the rubric
 
 - **Fix at the natural scope.** A clunky sentence is often a symptom that the paragraph around it
