@@ -17,8 +17,7 @@ didn't check it, its status is `skipped`, not absent from the list.
 1. Session journal: glob `.magito/journal/*.md` in the repo root and sort the matches by
    filename, descending — filenames are `YYYY-MM-DD-HHMMSS-slug-hex.md`, so a lexical
    sort is already chronological. Read the newest two files with your file-reading tool
-   and show what they say. There is nothing to start or record; a session begins by
-   reading. If the directory doesn't exist or has no matching files, status is
+   and show what they say. There is nothing to start or record. If the directory doesn't exist or has no matching files, status is
    `missing`. If a read errors, status is `failed: <the error>` — show it and move on.
    A journal failure never stops the rest of this checklist; every other source below is
    still readable on its own.
