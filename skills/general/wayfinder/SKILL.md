@@ -89,7 +89,7 @@ A session **claims** a ticket before any work, per the Wayfinding-operations *cl
 
 The answer isn't part of the body — it's recorded on resolution. Assets made while resolving a ticket are linked from it, not pasted in.
 
-**The claim race is real and only narrowed, not closed.** Claiming reads the frontier, then marks a ticket taken — two sessions can both see it unclaimed and both take it. Unlike the journal filename race (#119), randomness can't fix this: the ticket's identity is fixed by the tracker, and no tracker offers atomic test-and-set on a claim. So treat it as a known limit: claim, then immediately re-read the owner and **yield if another session won**. That narrows the window; it does not remove it. The honesty matters more than the narrowing — don't write the skill as if the claim were safe.
+**Claiming narrows the race window but does not close it.** Claiming reads the frontier, then marks a ticket taken, so two sessions can both see it unclaimed and both take it. Unlike the journal filename race (#119), randomness can't fix this: the ticket's identity is fixed by the tracker, and no tracker offers atomic test-and-set on a claim. So treat it as a known limit: claim, then immediately re-read the owner and **yield if another session won**. Don't write the skill as if the claim were safe.
 
 ## Ticket types
 
