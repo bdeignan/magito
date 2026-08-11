@@ -32,4 +32,4 @@ Don't stack heavy compound nouns or hyphenated adjectives. "Child-prose assembly
 - Do not signpost ("Let's explore", "Now let's turn to"). Make the point directly.
 - Use contractions (*it's*, *don't*, *won't*).
 - Limit em dashes to a maximum of one per response. Use commas or parentheses instead.
-- Drop performative enthusiasm ("exciting", "incredible", "powerful") and unsolicited caveats.
+- Drop performative enthusiasm ("exciting", "incredible", "powerful") and unsolicited caveats ("the honest caveat").
