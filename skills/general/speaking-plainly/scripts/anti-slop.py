@@ -2,7 +2,8 @@
 """anti-slop.py — lint text against magito's canonical banned-voice list.
 
 Reads `../references/anti-ai-markers.md` as data (never forks it) and flags the banned
-words, phrases, and structures it defines, plus over-length sentences.
+words, phrases, and structures it defines. Sentence length and passive voice are the
+job of the sibling `readability.py`, not this script.
 
 The load-bearing problem: magito's product is prose that *quotes* slop as teaching
 examples, so a naive scan flags the rule file and every example. This masks the same
@@ -11,7 +12,7 @@ spans — and skips the rule file itself by name.
 
 Severity: an unqualified banned word/phrase/structure is an ERROR; a qualified word
 ("navigate (figurative)") is a WARNING, since only a human can tell the figurative use
-from the literal one; a long sentence is a WARNING. Exit 1 on any error, else 0.
+from the literal one. Exit 1 on any error, else 0.
 
 Stdlib only, Python 3.11+. Usage: anti-slop.py [FILE|-]   (default: stdin)
 Verify with synthetic stdin, e.g.:  printf 'We leverage it.' | ./anti-slop.py -
@@ -22,7 +23,6 @@ import os
 
 RULE_FILE = os.path.join(os.path.dirname(__file__), "..", "references", "anti-ai-markers.md")
 RULE_BASENAME = "anti-ai-markers.md"
-LONG_SENTENCE_WORDS = 25
 
 
 def normalize(text):
@@ -69,7 +69,9 @@ def parse_rules(rule_text):
         line = line.strip()
         if not line or line.lower().startswith("never use"):
             continue
-        for raw in line.split(","):
+        # Split on commas outside parentheses, so a comma inside a "(qualifier)" note
+        # doesn't shred the entry.
+        for raw in re.split(r",\s*(?![^()]*\))", line):
             entry = raw.strip()
             if not entry:
                 continue
@@ -123,18 +125,6 @@ def line_of(text, pos):
     return text.count("\n", 0, pos) + 1
 
 
-def long_sentences(masked):
-    """Flag sentences past the word cap. Runs on masked text so quoted examples and
-    code don't inflate a count. Returns (lineno, word_count, sentence)."""
-    findings = []
-    for m in re.finditer(r"[^.!?\n]+(?:[.!?]|\n|$)", masked):
-        sentence = m.group(0).strip()
-        words = [w for w in re.findall(r"[A-Za-z0-9']+", sentence)]
-        if len(words) > LONG_SENTENCE_WORDS:
-            findings.append((line_of(masked, m.start()), len(words), sentence))
-    return findings
-
-
 def lint(text, is_rule_file=False):
     """Return (findings, errors, warnings). A finding is a dict with line, severity,
     kind, label. Detection runs on masked text; display uses the original lines."""
@@ -172,9 +162,6 @@ def lint(text, is_rule_file=False):
     for quoted, pattern in structures:
         for m in pattern.finditer(masked):
             add(line_of(masked, m.start()), "ERROR", "structure", f'"{quoted}"')
-
-    for lineno, count, sentence in long_sentences(masked):
-        add(lineno, "WARNING", "length", f"{count}-word sentence")
 
     findings.sort(key=lambda f: (f["line"], 0 if f["severity"] == "ERROR" else 1))
     errors = sum(1 for f in findings if f["severity"] == "ERROR")

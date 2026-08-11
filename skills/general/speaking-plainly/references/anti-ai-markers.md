@@ -4,7 +4,7 @@ Avoid standard AI writing markers, structures, and phrasing to keep the voice na
 
 ## Banned Words
 Never use these words:
-delve, dive into, navigate (figurative), underscore, bolster, foster, harness, leverage, unpack, shed light on, pave the way, pivotal, groundbreaking, cutting-edge, transformative, game-changing, innovative, robust, comprehensive, seamless, intricate, nuanced (as empty praise), vibrant, multifaceted, holistic, testament, landscape (figurative), realm
+delve, dive into, navigate (figurative), underscore (figurative), bolster, foster, harness (figurative: a literal test/wire harness is fine), leverage (figurative: the noun sense like highest-leverage is fine), unpack (figurative: unpacking an archive or tuple is fine), shed light on, pave the way, pivotal, groundbreaking, cutting-edge, transformative, game-changing, innovative, robust, comprehensive, seamless, intricate, nuanced (as empty praise), vibrant, multifaceted, holistic, testament, landscape (figurative), realm
 
 ## Banned Phrases
 Never use these phrases:

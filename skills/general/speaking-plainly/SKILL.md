@@ -23,8 +23,8 @@ When given text to rewrite plainly:
    - [anti-ai-markers.md](./references/anti-ai-markers.md) (words and structures to avoid)
 3. **Draft the rewrite**: Keep it direct. Put your main point first. Do not summarize or add a conclusion.
 4. **Verify fidelity**: Ensure every extracted acceptance criterion, fact, number, and identifier is present in the rewrite. Do not drop or rename any of these.
-5. **Run the readability checker**:
+5. **Run the checkers** (both, relative to the skill directory):
    - Write the draft to a temporary file.
-   - Run the script: `python3 ./scripts/readability.py <temp_file>` (relative to the skill directory).
-   - If the script flags sentences over 25 words or passive voice stacking, rewrite those sections.
+   - `python3 ./scripts/readability.py <temp_file>` — flags sentences over 25 words and passive stacking. Rewrite those sections.
+   - `python3 ./scripts/anti-slop.py <temp_file>` — flags banned words, phrases, and structures from [anti-ai-markers.md](./references/anti-ai-markers.md). Fix every ERROR; judge each WARNING by hand (a warning marks a word with an innocent sense, like a literal "test harness"). The checker cannot see semantic pseudo-insight built from ordinary words (an "it's real, only narrowed, not closed" cadence), so read the draft once more for that yourself — it is the one thing no script catches.
 6. **Output the final result**: Present the text to the user. Do not include introductory filler or chat preamble.
