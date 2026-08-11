@@ -23,7 +23,7 @@ Ask one question: **is the correct behavior specifiable in advance?**
 
 ## 3. Always: invariants and schema at the data seam
 
-Independent of mode, guard the data boundaries — this is the default layer, not an afterthought:
+Independent of mode, guard the data boundaries — this is the default layer:
 
 - **Schema** — columns, dtypes, nullability at every dataframe / IO boundary.
 - **No silent corruption** — no NaN/inf where forbidden; values in range; categories in the allowed set.
