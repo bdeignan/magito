@@ -68,9 +68,12 @@ sourced copy is the accepted cost.
 
 ## Skill invocation
 
-A skill is either **user-invoked** (`disable-model-invocation: true`) or **model-invocable**.
-The split follows from the seam rule, and the test is whether the skill is a step or part of
-a step.
+A skill is either **user-invoked** or **model-invocable**. `SKILL.md` is the canonical source:
+`disable-model-invocation: true` declares a user-invoked skill. A user-invoked general skill
+also carries `policy.allow_implicit_invocation: false` in `agents/openai.yaml`, because Codex
+does not read the Claude Code frontmatter field. `install.py` checks that the two tool formats
+stay aligned. The split follows from the seam rule, and the test is whether the skill is a
+step or part of a step.
 
 **User-invoked — the workflow you drive.** The default path is four verbs:
 
