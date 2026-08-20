@@ -34,7 +34,7 @@ Read the starting state and classify each item. **Configured** = present and cur
 | Python toolchain | `pyproject.toml`, `tests/`, `src/` layout | repo root |
 | Managed symlinks | dangling magito-owned links in tool dirs | `~/.magito/bin`, tool skills/agents/hooks dirs |
 
-Read, don't assume: `git remote -v` (is this GitHub?), `CLAUDE.md`/`AGENTS.md`, `docs/agents/` and which files it holds, whether `CLAUDE.md` already imports `@docs/agents/INDEX.md`, `docs/adr/`, `pyproject.toml`, `.scratch/`. A tracker doc or a `docs/agents/` file that already exists is a **diff-and-propose**, never an overwrite.
+Read, do not assume: `git remote -v` (is this GitHub?), `CLAUDE.md`/`AGENTS.md`, `docs/agents/` and which files it holds, whether `CLAUDE.md` already imports `@docs/agents/INDEX.md`, `docs/adr/`, `pyproject.toml`, `.scratch/`. A tracker doc or a `docs/agents/` file that already exists is a **diff-and-propose**, never an overwrite.
 
 ## 2. Walk the gaps
 
@@ -50,11 +50,11 @@ Offer three choices:
 - **Local markdown** — tickets as files under `.scratch/<feature>/` (good for solo or remote-less repos).
 - **Something else** — Jira, Linear, Beads, a wiki, a spreadsheet. Ask the user to describe the workflow in a paragraph; you record it as prose under the same operation headings, and nothing else has to change to support it.
 
-Write `docs/agents/issue-tracker.md` from the matching template in [references/](./references/) — `issue-tracker-github.md.template`, `issue-tracker-local.md.template`, or `issue-tracker-other.md.template` for the third case. Create `docs/agents/` if it doesn't exist; this file is written whether or not the user accepts the agent-docs section, because every workflow skill depends on it. If the repo already has one, diff and propose — never overwrite.
+Write `docs/agents/issue-tracker.md` from the matching template in [references/](./references/) — `issue-tracker-github.md.template`, `issue-tracker-local.md.template`, or `issue-tracker-other.md.template` for the third case. Create `docs/agents/` if it does not exist; this file is written whether or not the user accepts the agent-docs section, because every workflow skill depends on it. If the repo already has one, diff and propose — never overwrite.
 
 [`issue-tracker-other-example.md`](./references/issue-tracker-other-example.md) is a worked example of the third case — one paragraph about a fictional Jira setup, and the file it produces. Read it before filling the skeleton freehand.
 
-The **other** template doubles as the canonical list of the named operations. Fill every heading from the user's description and delete none of them: an operation their tracker can't do says **not supported here** and names what a skill should do instead, which is what stops a skill guessing. Adding or renaming a heading there means changing the GitHub and local templates to match.
+The **other** template doubles as the canonical list of the named operations. Fill every heading from the user's description and delete none of them: an operation their tracker cannot do says **not supported here** and names what a skill should do instead, which is what stops a skill guessing. Adding or renaming a heading there means changing the GitHub and local templates to match.
 
 ### Review gate + base branch
 
@@ -74,7 +74,7 @@ Missing? Offer to write a minimal permissions-only `allow` list for the read-onl
 
 Ensure both `.magito/` and `.scratch/` are in `.git/info/exclude` — add each if absent. Never `.gitignore`: that file is shared, and this is personal state. Both the session journal and the review-decision marker write under `.magito/`.
 
-Run `git rev-parse --git-common-dir` (`--git-common-dir`, since inside a linked worktree `.git` is a file, not a directory) to get the exclude file's directory, then read `<that>/info/exclude` with your file-reading tool, then add whichever of `.magito/` and `.scratch/` isn't already a line in it, using your file-editing tool. Idempotent by construction — a line already present is left alone.
+Run `git rev-parse --git-common-dir` (`--git-common-dir`, since inside a linked worktree `.git` is a file, not a directory) to get the exclude file's directory, then read `<that>/info/exclude` with your file-reading tool, then add whichever of `.magito/` and `.scratch/` is not already a line in it, using your file-editing tool. Idempotent by construction — a line already present is left alone.
 
 On a tool with no file-editing tool, fall back to the shell form:
 
@@ -91,7 +91,7 @@ for p in .magito/ .scratch/; do grep -qxF "$p" "$e" 2>/dev/null || echo "$p" >> 
 
 Does this repo carry notes that predate magito? Scan for: an old magito handoff file (`~/.magito/handoffs/<slug>.md`), `NOTES.md`, `TODO.md`, `docs/decisions/`, a `.beads/` database or similar task store — or a system the user names when asked.
 
-If something is found, offer to bring it into the session journal as entries. **The import procedure lives in [`references/importing-legacy-notes.md`](./references/importing-legacy-notes.md) — read it only when the inventory actually finds something.** It is never destructive: originals stay put, the user confirms the mapping before any file is written, entries stay under the journal word cap (the reference points at the live number — don't restate it here), and timestamps come from the source. Found nothing? Skip the section and never open that file.
+If something is found, offer to bring it into the session journal as entries. **The import procedure lives in [`references/importing-legacy-notes.md`](./references/importing-legacy-notes.md) — read it only when the inventory actually finds something.** It is never destructive: originals stay put, the user confirms the mapping before any file is written, entries stay under the journal word cap (the reference points at the live number — do not restate it here), and timestamps come from the source. Found nothing? Skip the section and never open that file.
 
 ### Delegation workers and magi seats
 
@@ -110,11 +110,11 @@ Templates live in [references/](./references/) — copy and adapt, never regener
 
 ### Managed symlinks
 
-`install.py` links this repo's skills, agents, hooks, and `bin/` into each tool's config dirs. A renamed or deleted skill can leave a **dangling** link behind (the old name still points at a file that's gone). Report any you find as **stale**, and offer to run `python install.py` — which prunes magito-owned dangling links as part of a normal run (`--dry-run` shows what it would remove first). Do not delete links here yourself; `install.py` owns its destinations.
+`install.py` links this repo's skills, agents, hooks, and `bin/` into each tool's config dirs. A renamed or deleted skill can leave a **dangling** link behind (the old name still points at a file that is gone). Report any you find as **stale**, and offer to run `python install.py` — which prunes magito-owned dangling links as part of a normal run (`--dry-run` shows what it would remove first). Do not delete links here yourself; `install.py` owns its destinations.
 
 ### Agent docs (`docs/agents/`)
 
-Offer a `docs/agents/` context layer: the version-controlled home for project context an agent can't cheaply rederive from code, governed by a two-gate filter — content earns a place only if it is **non-rederivable** from the code AND **stable** across refactors. Only four files are scaffolded; the rest grow lazily as real content arrives.
+Offer a `docs/agents/` context layer: the version-controlled home for project context an agent cannot cheaply rederive from code, governed by a two-gate filter — content earns a place only if it is **non-rederivable** from the code AND **stable** across refactors. Only four files are scaffolded; the rest grow lazily as real content arrives.
 
 Templates live in [references/](./references/) — copy and adapt, fill `{{project}}`, never regenerate freehand; for a repo that already has `docs/agents/`, diff each template against the existing file and propose the diff — never overwrite (same rule as the Python templates above). Scaffold exactly these four:
 

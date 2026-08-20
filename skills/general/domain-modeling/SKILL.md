@@ -14,7 +14,7 @@ Single context (most repos): one `docs/agents/GLOSSARY.md`, plus a root `docs/ad
 ## During the session
 
 - **Challenge against the glossary.** When a term conflicts with `docs/agents/GLOSSARY.md`, call it out: "your glossary defines *fold* as X, but you seem to mean Y — which is it?"
-- **Sharpen fuzzy language.** An overloaded term gets a precise canonical one: "you're saying *sample* — do you mean a row, a draw, or a participant? Those are different things."
+- **Sharpen fuzzy language.** An overloaded term gets a precise canonical one: "you are saying *sample* — do you mean a row, a draw, or a participant? Those are different things."
 - **Stress-test with scenarios.** Invent edge cases that force precision about the boundaries between concepts.
 - **Cross-reference the code.** When the user states how something works, check the code agrees; surface contradictions.
 - **Update `docs/agents/GLOSSARY.md` inline.** Capture each term the moment it resolves — do not batch. The glossary is *only* a glossary: tight definitions of what terms mean, without implementation detail. It is not a spec or a scratchpad.

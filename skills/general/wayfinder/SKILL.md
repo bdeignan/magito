@@ -85,7 +85,7 @@ Each ticket is a **child** of the map; the tracker's id is its identity. Its bod
 
 Each ticket carries a `wayfinder:<type>` mark — one of `research`, `prototype`, `grilling`, `task` (see [Ticket types](#ticket-types)).
 
-A session **claims** a ticket before any work, per the Wayfinding-operations *claim* step, so concurrent sessions skip it. An open, unclaimed ticket is takeable. Blocking uses the tracker's native dependency relationship (*Blocking edges*), so the frontier renders in the tracker UI and the human sees what's takeable without opening the map. A ticket is **unblocked** when every ticket blocking it is closed; the **frontier** is the open, unblocked, unclaimed children — the edge of the known.
+A session **claims** a ticket before any work, per the Wayfinding-operations *claim* step, so concurrent sessions skip it. An open, unclaimed ticket is takeable. Blocking uses the tracker's native dependency relationship (*Blocking edges*), so the frontier renders in the tracker UI and the human sees what is takeable without opening the map. A ticket is **unblocked** when every ticket blocking it is closed; the **frontier** is the open, unblocked, unclaimed children — the edge of the known.
 
 The answer is not part of the body — it is recorded on resolution. Assets made while resolving a ticket are linked from it, not pasted in.
 
@@ -120,11 +120,11 @@ The map's **Not yet specified** section is where that dim view is written down: 
 - **Ticket when** the question is already sharp — even if it is blocked and you cannot act on it yet.
 - **Not yet specified when** you cannot yet phrase it that sharply. Do not pre-slice the fog into ticket-sized pieces.
 
-**Not yet specified** excludes what's already decided, what's already a live ticket, and what's out of scope.
+**Not yet specified** excludes what is already decided, what is already a live ticket, and what is out of scope.
 
 ## Out of scope
 
-Fog only ever gathers _toward_ the destination. The destination fixes the scope, so work beyond it is **out of scope** — it is not fog, and it does not belong in **Not yet specified**. It gets its own **Out of scope** section on the map: work you've consciously ruled out of _this_ effort.
+Fog only ever gathers _toward_ the destination. The destination fixes the scope, so work beyond it is **out of scope** — it is not fog, and it does not belong in **Not yet specified**. It gets its own **Out of scope** section on the map: work you have consciously ruled out of _this_ effort.
 
 Out-of-scope work never graduates — the frontier stops at the destination — so it returns only if the destination is redrawn, and then as a fresh effort. When a ticket turns out to sit past the destination, **close it** and leave one line in **Out of scope**: the gist plus why, linking the closed ticket. It stays out of **Decisions so far**, which records only the route actually walked.
 
@@ -134,7 +134,7 @@ The map is done "when the way is clear and no tickets remain" — but planning e
 
 - **The destination was wrong.** Resolutions keep pointing somewhere other than where the map points.
 - **Tickets multiply faster than they close.** Watch the open-ticket count across sessions — a count that rises session over session means the fog is growing, not clearing.
-- **The fog never clears.** Several sessions in, the frontier hasn't advanced toward the destination.
+- **The fog never clears.** Several sessions in, the frontier has not advanced toward the destination.
 
 When one of these holds, do not limp on. **Abandon or redraw:**
 

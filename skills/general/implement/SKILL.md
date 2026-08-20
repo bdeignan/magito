@@ -15,21 +15,21 @@ Take an issue from spec to open PR. You own the git lifecycle; the human owns th
 
 1. **Read the issue.** Perform the **fetch a ticket** operation as `docs/agents/issue-tracker.md` defines it (run `/setup-magito` if that file is missing). Read the body, acceptance criteria, and blockers — the same file's **blocking edges** section says how blockers are recorded and read back here. If a blocker is still open, stop and say so.
 
-2. **Plan — conditionally, and announce which path you took.** Skip the plan only if BOTH hold: (a) the change is confined to one file, or is a pure config/text tweak, and (b) it needs no new test seam — verification is just running the existing suite. If so, say it explicitly — "one-liner → skipping the plan step, implementing directly" — then build. An issue with multiple acceptance criteria is never a one-liner; "well-specified" is a reason the plan will be short, not a reason to skip it. Otherwise write a short plan (the seams you'll touch and how you'll test them), then **stop and wait for approval — do not edit any file until the user replies.** Never skip the plan silently, and never start a non-trivial issue unplanned. Before planning non-trivial work, run reconnaissance first — the `grilling` skill's [`references/recon.md`](../grilling/references/recon.md) — so the plan builds on what the code already does instead of re-solving it.
+2. **Plan — conditionally, and announce which path you took.** Skip the plan only if BOTH hold: (a) the change is confined to one file, or is a pure config/text tweak, and (b) it needs no new test seam — verification is just running the existing suite. If so, say it explicitly — "one-liner → skipping the plan step, implementing directly" — then build. An issue with multiple acceptance criteria is never a one-liner; "well-specified" is a reason the plan will be short, not a reason to skip it. Otherwise write a short plan (the seams you will touch and how you will test them), then **stop and wait for approval — do not edit any file until the user replies.** Never skip the plan silently, and never start a non-trivial issue unplanned. Before planning non-trivial work, run reconnaissance first — the `grilling` skill's [`references/recon.md`](../grilling/references/recon.md) — so the plan builds on what the code already does instead of re-solving it.
 
 3. **Branch.** `bash <skills>/implement/scripts/gitflow.sh branch <issue> <slug>` creates a `feat/`/`fix/` branch off the current base. One issue works in the current tree on its own branch — no worktree. (Worktrees are for the parallel path — see [`references/parallel.md`](./references/parallel.md).)
 
 4. **Build.** Implement the slice, holding this floor non-negotiable at every seam — it applies even when the issue's acceptance criteria say nothing about tests; ACs are a floor, not the ceiling:
-   - Red-green where the behavior is specifiable in advance — watch the test fail for the right reason first. Pin-and-guard (characterization / eval-threshold / smoke) where it isn't.
+   - Red-green where the behavior is specifiable in advance — watch the test fail for the right reason first. Pin-and-guard (characterization / eval-threshold / smoke) where it is not.
    - ALWAYS invariant + schema checks at every data boundary the diff crosses: columns/dtypes/nullability, no NaN/inf where forbidden, values in range, row counts, key uniqueness, no train/test leakage.
    - Run typechecks and single test files as you go. Reach the `verifying` skill for the full method behind this floor.
-   - *(Optional)* If the issue is well-specified and large enough to pollute your context, delegate the build to a worker per [references/worker-contract.md](./references/worker-contract.md): a `haiku-executor` sub-agent (Claude Code only), or a shell worker the user names from `~/.magito/workers.toml` (any driver — "via omp"). Probe a named worker first and degrade loudly, per the contract. Workers can't load skills, so the brief carries the floor above (and may name in-worktree standing docs by exact repo-relative path instead of pasting them, where useful) and you enforce it in review of what they stage. Keep judgement-heavy or exploratory work on yourself.
+   - *(Optional)* If the issue is well-specified and large enough to pollute your context, delegate the build to a worker per [references/worker-contract.md](./references/worker-contract.md): a `haiku-executor` sub-agent (Claude Code only), or a shell worker the user names from `~/.magito/workers.toml` (any driver — "via omp"). Probe a named worker first and degrade loudly, per the contract. Workers cannot load skills, so the brief carries the floor above (and may name in-worktree standing docs by exact repo-relative path instead of pasting them, where useful) and you enforce it in review of what they stage. Keep judgement-heavy or exploratory work on yourself.
 
 5. **Commit.** `bash <skills>/implement/scripts/gitflow.sh commit "<conventional message>" <file>...` stages only the files you name, in conventional-commit form. Curate into coherent commits; never `git add -A`.
 
-6. **Self-review — offer it, don't assume it.** The review costs real money, so ask before running it, then record the answer either way.
+6. **Self-review — offer it, do not assume it.** The review costs real money, so ask before running it, then record the answer either way.
 
-   Say which way you're leaning and why, then ask. **Recommend the review** when the diff touches hooks, the review or merge gate, security, or a data boundary, or when it runs past roughly 100 changed lines. **Default to skipping** on a small or docs-only diff. The user can ask for a review you didn't recommend, or decline one you did. (`reviewing-changes` has its own ~30-line threshold, which decides something else: whether a review that is already happening fans out to two sub-agents or stays a single inline pass.)
+   Say which way you are leaning and why, then ask. **Recommend the review** when the diff touches hooks, the review or merge gate, security, or a data boundary, or when it runs past roughly 100 changed lines. **Default to skipping** on a small or docs-only diff. The user can ask for a review you did not recommend, or decline one you did. (`reviewing-changes` has its own ~30-line threshold, which decides something else: whether a review that is already happening fans out to two sub-agents or stays a single inline pass.)
 
    - **Reviewed** — run the `reviewing-changes` skill against the branch point. Fix what it surfaces, including any doc-staleness finding it flags, discretionary like any other finding. A doc fix lands in this same PR as a follow-up commit. That new commit stales the decision and forces a re-review, which is this same loop, not new machinery. The skill records `reviewed` itself as its last step.
    - **Skipped** — say so and move on. On an ordinary branch there is nothing to record:
@@ -43,7 +43,7 @@ Take an issue from spec to open PR. You own the git lifecycle; the human owns th
      (`git rev-parse HEAD`, `git rev-parse --abbrev-ref HEAD`, `git worktree list --porcelain
      | head -1`) — Claude Code's classifier refuses the one-liner below but allows each of
      those and the file write. Resolve against the **main** worktree, never cwd, or a linked
-     worktree gets its own marker that won't count at merge time. Fallback for tools without
+     worktree gets its own marker that will not count at merge time. Fallback for tools without
      a file-writing tool:
 
      ```bash
@@ -53,7 +53,7 @@ Take an issue from spec to open PR. You own the git lifecycle; the human owns th
    Asking is the point, not the record. On ordinary work nothing blocks the merge either way,
    so this question is the only thing standing between the work and the base branch — and the
    user can wave it through. That is the real situation, so describe it that way rather than
-   implying a gate that isn't running. Where a marker does exist, the gate wants a fresh
+   implying a gate that is not running. Where a marker does exist, the gate wants a fresh
    decision rather than a completed review, so either answer lands; never record `reviewed`
    when no review ran, since one false entry makes the whole record worthless.
 
@@ -61,4 +61,4 @@ Take an issue from spec to open PR. You own the git lifecycle; the human owns th
 
 8. **Checkpoint, then land it — branch on whether this repo lands work through a PR.** That is a question about the repo's host, not about the tracker: a repo can keep its tickets in Jira and still land every change through a GitHub PR. Decide with `git remote -v` — a remote means the PR path.
    - **PR path:** show the diff and review summary, wait for explicit "ship it," then `bash <skills>/implement/scripts/gitflow.sh push` and `bash <skills>/implement/scripts/gitflow.sh pr <issue> "<title>" "<body>"` to open a PR that closes the issue. Write the PR body following [references/pr-body.md](./references/pr-body.md). PR creation stays on `gitflow.sh pr` and never routes through the tracker config (`docs/adr/0015`). **Never merge** — the PR merge button is the human's gate.
-   - **No-PR path:** there's no PR to gate, so this checkpoint IS the human's gate. Show the diff and review summary, stop, and wait for explicit approval — only then `bash <skills>/implement/scripts/gitflow.sh merge` (a `--no-ff` merge into the base branch), then perform the **close a ticket** operation. **Never merge without that explicit approval.**
+   - **No-PR path:** there is no PR to gate, so this checkpoint IS the human's gate. Show the diff and review summary, stop, and wait for explicit approval — only then `bash <skills>/implement/scripts/gitflow.sh merge` (a `--no-ff` merge into the base branch), then perform the **close a ticket** operation. **Never merge without that explicit approval.**

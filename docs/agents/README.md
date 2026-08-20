@@ -35,7 +35,7 @@ read `AGENTS.md` never see the bundle at all.
 | `GLOSSARY.md` | Domain vocabulary → non-obvious meaning; opinionated, with `_Avoid_` lists. | Yes, when small | scaffolded (header) |
 | `README.md` | This manifest. | No | scaffolded |
 | `issue-tracker.md` | Where work is tracked, and how to perform each named tracker operation here. | No (on-demand via INDEX) | written by setup |
-| `CONVENTIONS.md` | Agreed patterns the code doesn't announce. | No (on-demand via INDEX) | lazy |
+| `CONVENTIONS.md` | Agreed patterns the code does not announce. | No (on-demand via INDEX) | lazy |
 | `GOTCHAS.md` | Cross-cutting traps only (spanning 2+ areas). | No | lazy |
 | `flows/<area>.md` | Per-area notes, only where how-it-works-here is genuinely non-obvious. | No | lazy |
 

@@ -5,7 +5,7 @@ description: Disciplined testing for Python work — find the real seam, default
 
 # Verifying
 
-Close the loop with a *real* test at a *real* seam. A test earns its place by failing when the behavior breaks — not by turning green. The dominant failure mode is a test that passes but doesn't catch: the seam under test is mocked away, or the assertion is on implementation details. Mock only at process boundaries (network, clock, filesystem); never mock the thing you're verifying.
+Close the loop with a *real* test at a *real* seam. A test earns its place by failing when the behavior breaks — not by turning green. The dominant failure mode is a test that passes but does not catch: the seam under test is mocked away, or the assertion is on implementation details. Mock only at process boundaries (network, clock, filesystem); never mock the thing you are verifying.
 
 ## 1. Find the seam
 
@@ -16,8 +16,8 @@ Test at the highest, fewest seams possible — ideally one pure function over da
 Ask one question: **is the correct behavior specifiable in advance?**
 
 - **Yes → red-green** (most work). Write the test first and watch it go *red* for the right reason. Implement the minimum to make it *green*. Refactor under green. The red step is the proof the test can fail — never skip it.
-- **No → pin-and-guard** (exploratory analysis, modeling, EDA). You can't assert an answer you don't yet know, so guard the behavior instead:
-  - **Characterization** — pin current output (a golden file / saved fixture) so a refactor can't silently drift it.
+- **No → pin-and-guard** (exploratory analysis, modeling, EDA). You cannot assert an answer you do not yet know, so guard the behavior instead:
+  - **Characterization** — pin current output (a golden file / saved fixture) so a refactor cannot silently drift it.
   - **Eval harness** — assert a metric stays within a threshold (`accuracy >= 0.8`, `rmse <= x`), not an exact value.
   - **Smoke** — the pipeline runs end-to-end on a tiny fixture and produces output of the right shape.
 
@@ -30,7 +30,7 @@ Independent of mode, guard the data boundaries — this is the default layer:
 - **Structural truths** — shape, row counts, keys unique, group probabilities sum to 1, monotonic where required.
 - **No leakage** — the train/test split is clean; no target or future information in features.
 
-Plain `pytest` asserts are the zero-dependency floor and always available. Reach for `pandera`/`pydantic` (schema) or `hypothesis` (properties) on heavier cases — but read the project's declared stack first, and don't add a dependency without asking.
+Plain `pytest` asserts are the zero-dependency floor and always available. Reach for `pandera`/`pydantic` (schema) or `hypothesis` (properties) on heavier cases — but read the project's declared stack first, and do not add a dependency without asking.
 
 ## 4. Handle nondeterminism
 

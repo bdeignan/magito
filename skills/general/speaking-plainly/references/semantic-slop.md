@@ -52,12 +52,12 @@ not, cut it, or ground it (a link into the repo, or a one-clause explanation).
 This is not a ban on names. A **grounded** reference is fine and useful: a repo file, an ADR number, a
 repo entity (`ousterhout-reviewer`), a tool the reader surely knows (`gh`), a named idea the text
 explains and cites (see `freddish.md`), or a required legal attribution (see `teach`'s license line).
-The defect is a name doing rhetorical work the reader can't verify.
+The defect is a name doing rhetorical work the reader cannot verify.
 
 Two forms, by what the reference is doing:
 
 - **Name-drop (referential)** — a specific person, project, or product cited for comparison or
-  lineage: "Matt Pocock's setup skill", "han-shaped". Usually real, but inert for a reader who can't
+  lineage: "Matt Pocock's setup skill", "han-shaped". Usually real, but inert for a reader who cannot
   reach it. In an operational skill it does no work; cut it. Lineage that matters belongs in an ADR,
   grounded with a link.
 - **Unexplained authority (justificational)** — a named principle, law, or standard invoked to lend

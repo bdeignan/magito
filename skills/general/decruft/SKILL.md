@@ -15,7 +15,7 @@ Default target: the current branch's diff against the base branch (`git diff mai
 
 ## Posture
 
-Be ambitious. Do not stop at "this could be a bit cleaner" — look for restructurings that make whole branches, helpers, modes, or layers disappear. Prefer the version that feels inevitable in hindsight. But report only what you're confident in: a few high-conviction findings beat a long list of nits. If the code is clean, say so and stop — a manufactured finding is worse than none.
+Be ambitious. Do not stop at "this could be a bit cleaner" — look for restructurings that make whole branches, helpers, modes, or layers disappear. Prefer the version that feels inevitable in hindsight. But report only what you are confident in: a few high-conviction findings beat a long list of nits. If the code is clean, say so and stop — a manufactured finding is worse than none.
 
 ## What to hunt
 

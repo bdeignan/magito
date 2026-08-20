@@ -19,9 +19,9 @@ Every brief carries:
    feature branch (implement). The worker never touches files outside it.
 2. **The full issue spec, pasted in** — body, acceptance criteria, any repo
    conventions the work needs. Never a bare issue number or URL.
-3. **The verification floor, in full** (workers can't load `verifying`):
+3. **The verification floor, in full** (workers cannot load `verifying`):
    - Red-green where the behavior is specifiable (watch the test fail first);
-     characterization / eval-threshold / smoke where it isn't.
+     characterization / eval-threshold / smoke where it is not.
    - Invariant + schema checks at every data boundary touched: columns/dtypes/
      nullability, no NaN/inf where forbidden, values in range, row counts / key
      uniqueness, no train/test leakage.
@@ -30,7 +30,7 @@ Every brief carries:
    `git -C <dir> add <file1> <file2> ...`; never `git add -A` or `git add .`.
 5. **The report protocol**: `DONE` with the list of staged files, `DONE (no-op)` if
    the change is already in place, or `BLOCKED: <reason>` when the spec is ambiguous
-   and the codebase doesn't disambiguate — never guess.
+   and the codebase does not disambiguate — never guess.
 6. **The prohibitions**: no commit, no merge, no push, no worktree create/remove,
    nothing outside the assigned directory.
 
@@ -145,7 +145,7 @@ does not need them.
   `ANTHROPIC_API_KEY` is set in its environment, and the logged-in subscription
   otherwise. Do not leak the key into a worker's env unless API billing is intended.
 - **codex as driver**: its `workspace-write` sandbox blocks child processes' network
-  by default — a spawned worker can't reach its API without
+  by default — a spawned worker cannot reach its API without
   `[sandbox_workspace_write] network_access = true`.
 - **omp workers**: always `--no-session --no-skills --max-time <s>` — omp otherwise
   auto-discovers skills and instruction files, and the brief is the contract, not
@@ -166,7 +166,7 @@ does not need them.
   `.zshrc` (read by interactive shells alone) may never arrive, depending on how the
   driver itself was launched. This hits any env prerequisite: BYOK keys like
   `OPENROUTER_API_KEY`, gemini's cloud-project variables, etc. Diagnose:
-  `zsh -ic 'echo $VAR'` shows it, `zsh -c 'echo $VAR'` doesn't. Fix at the root, per
+  `zsh -ic 'echo $VAR'` shows it, `zsh -c 'echo $VAR'` does not. Fix at the root, per
   machine: export from `~/.zshenv` (read by every zsh) or use the tool's native auth
   store (`omp /login`, codex/claude/gemini logins). Never persist `zsh -ic` wrappers
   into `cmd` templates — that couples the roster to shell-init quirks.

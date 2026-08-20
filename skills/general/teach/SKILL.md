@@ -59,7 +59,7 @@ Each lesson should link via HTML anchors to other lessons and reference document
 
 Each lesson should recommend a primary source for the user to read or watch. This should be the most high-quality, high-trust resource you found on the topic.
 
-Each lesson should contain a reminder to ask followup questions to the agent. The agent is their teacher, and can assist with anything that's unclear.
+Each lesson should contain a reminder to ask followup questions to the agent. The agent is their teacher, and can assist with anything that is unclear.
 
 ## Assets
 
@@ -83,7 +83,7 @@ Missions may change as the user develops more skills and knowledge. This is norm
 
 Each lesson, the user should always feel as if they are being challenged 'just enough'.
 
-The user may specify an exact thing they want to learn. If they don't, figure out their zone of proximal development by:
+The user may specify an exact thing they want to learn. If they do not, figure out their zone of proximal development by:
 
 - Reading their `learning-records`
 - Figuring out the right thing to teach them based on their mission
@@ -91,7 +91,7 @@ The user may specify an exact thing they want to learn. If they don't, figure ou
 
 ## Knowledge
 
-Lessons should be designed around a skill the user is going to learn. The knowledge in the lesson should be only what's required to acquire that skill. You teach the knowledge first, then get the user to practice the skills via an interactive feedback loop.
+Lessons should be designed around a skill the user is going to learn. The knowledge in the lesson should be only what is required to acquire that skill. You teach the knowledge first, then get the user to practice the skills via an interactive feedback loop.
 
 Knowledge should first be gathered from trusted resources. Use `RESOURCES.md` to keep track of them. Lessons should be littered with citations - links to external resources to back up any claim made. This increases the trustworthiness of the lesson.
 
@@ -118,7 +118,7 @@ When the user asks a question that appears to require wisdom, your default postu
 
 A community is a place (online or offline) where the user can test their skills in the real world. This might be a forum, a subreddit, a real-world class (budget permitting) or a local interest group.
 
-You should attempt to find high-reputation communities the user can join. If the user expresses a preference that they don't want to join a community, respect it.
+You should attempt to find high-reputation communities the user can join. If the user expresses a preference that they do not want to join a community, respect it.
 
 ## Reference Documents
 

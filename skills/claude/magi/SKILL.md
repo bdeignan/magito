@@ -47,7 +47,7 @@ The vetted roster of candidate CLIs — verified headless syntax, auth requireme
 Re-probe the bench and repair `bench.toml` — standalone, no tribunal convened, no dossier written.
 
 1. Read `~/.magito/bench.toml` if present; treat an absent file the same as bootstrap's empty state.
-2. Probe every candidate in `references/seat-candidates.md`, installed or not — whether it's currently live, commented out, or absent from the file entirely. A candidate installed since the last bootstrap or config run only gets picked up if you probe it here.
+2. Probe every candidate in `references/seat-candidates.md`, installed or not — whether it is currently live, commented out, or absent from the file entirely. A candidate installed since the last bootstrap or config run only gets picked up if you probe it here.
 3. Diff against the current file: newly live, newly dead, unchanged. Preserve any existing seat's `model` field across the diff when its `cmd` template is unchanged; if a candidate row offers more than one usable model for a seat being newly configured, ask which to use.
 4. Show the user the diff and the resulting bench (which seats would be live, their families), then ask once before writing. Write only on yes; leave the file untouched on no.
 
@@ -66,7 +66,7 @@ No chairman, no artifact, no cost confirmation — this is the cheap tier. Never
 
 `/magi deliberate <decision>`: Full tribunal for decisions where being wrong is expensive.
 
-**Cost up front.** State the cost once and ask: roughly "Full tribunal: 3 seats × up to 2 rounds + chairman — 6–8 seat calls if the vote splits, several times the cost of a normal query. Convene?" Do not proceed without explicit consent. (A poll, by contrast, costs roughly 3× a normal query — that's why it needs no gate.)
+**Cost up front.** State the cost once and ask: roughly "Full tribunal: 3 seats × up to 2 rounds + chairman — 6–8 seat calls if the vote splits, several times the cost of a normal query. Convene?" Do not proceed without explicit consent. (A poll, by contrast, costs roughly 3× a normal query — that is why it needs no gate.)
 
 **Round 1 — Parallel identical verdicts.** Send the same dossier to all three seats (question, context, options considered). Each returns position, reasoning, confidence. Every seat call is STATELESS: prompt in, structured verdict out; never resume a session.
 

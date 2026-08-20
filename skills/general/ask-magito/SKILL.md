@@ -1,6 +1,6 @@
 ---
 name: ask-magito
-description: Ask which skill or flow fits your situation — a router over magito's skills, plus the promises magito makes you. Reach for it on a new machine or project, or any time you can't remember what to run.
+description: Ask which skill or flow fits your situation — a router over magito's skills, plus the promises magito makes you. Reach for it on a new machine or project, or any time you cannot remember what to run.
 disable-model-invocation: true
 ---
 
@@ -30,13 +30,13 @@ No matter how the internals change:
    owns it.)
 6. **Staging is always explicit.** No agent bulk-stages — a hook blocks `git add -A`
    everywhere.
-7. **Costs are stated before they're incurred.** A fan-out declares its executor count and
+7. **Costs are stated before they are incurred.** A fan-out declares its executor count and
    workers up front; magi's deliberate mode asks before convening.
 
 **Every human-in-the-loop moment, in one place:** plan approval before code · "ship it"
 before any PR · one prompt per worker launch · the one-time roster/bench bootstrap · magi
 deliberate cost consent · every merge. Everything else runs without you, and stops loudly the
-moment it can't.
+moment it cannot.
 
 ## The main flow: idea → ship
 
@@ -48,7 +48,7 @@ The route most work travels — the spine, `orient → decide → build → reco
    reconnaissance pass over the code, so questions build on what already exists instead of
    re-solving it.
 3. **Branch — one issue, or many?**
-   - A vague idea that isn't issue-shaped yet → **`/to-issues`** splits it into
+   - A vague idea that is not issue-shaped yet → **`/to-issues`** splits it into
      independently-grabbable tracer-bullet issues.
    - Already one clear issue → go straight to `/implement`.
 4. **`/implement <n>`** — takes one issue from spec to open PR: plan, branch, build (holding
@@ -60,7 +60,7 @@ The route most work travels — the spine, `orient → decide → build → reco
 Plain `/grilling` sharpens a plan you can hold in a single sitting. When the work is larger
 than that — the destination is still foggy and settling it will take several sessions —
 `/wayfinder` charts it as a **map** issue with child **decision tickets**, and you resolve one
-per session until the way is clear. It's a container that hands off *to* grilling: reach for
+per session until the way is clear. It is a container that hands off *to* grilling: reach for
 wayfinder when a single grilling would overflow the session, and for plain grilling otherwise. Wayfinder itself says that if charting surfaces no fog, you do not need a
 map — so the default stays one session with `/grilling` and `/to-issues`.
 
@@ -82,9 +82,9 @@ Off the main flow — reached deliberately when a situation calls for it.
   structure: options, prior art, trade-offs, a recommendation, and a source registry every
   claim traces to. Delegates angles to subagents by default, or to a worker you name. Reach
   for it to weigh approaches before deciding — not to diagnose a bug or write code.
-- **`/finding-lacunae`** — research for a missing keystone: what's absent that the field,
+- **`/finding-lacunae`** — research for a missing keystone: what is absent that the field,
   constraints, or alternatives say should be there. Where `/research` weighs the options you
-  can see, this hunts the one you can't.
+  can see, this hunts the one you cannot.
 - **`/magi <question>`** — a three-seat tribunal for an oracle-free call. The poll is cheap
   and ungated; **`/magi deliberate`** is the expensive tier and asks for cost consent first.
 - **`/reviewing-changes`** — the two-axis review (Standards + Spec) on its own, against any
@@ -93,7 +93,7 @@ Off the main flow — reached deliberately when a situation calls for it.
   losing the facts.
 - **`/teach`** — learn a concept over several sessions, using the current directory as a
   workspace.
-- **`/to-questionnaire`** — turn a decision you can't answer alone into a questionnaire for
+- **`/to-questionnaire`** — turn a decision you cannot answer alone into a questionnaire for
   one person to fill in async or work through in a meeting.
 - **`/wait-what`** — re-pitch the last message when it did not land, with the missing context
   and fewer words.
@@ -107,7 +107,7 @@ Model-invoked references that run *beneath* the other skills. Reach for them whe
   resolve an overloaded word, record a hard-to-reverse decision as an ADR. It keeps
   `docs/agents/GLOSSARY.md` honest.
 - **`/verifying`** — the testing discipline: find the real seam, red-green where behavior is
-  specifiable, pin-and-guard where it isn't, and invariant + schema checks at every data
+  specifiable, pin-and-guard where it is not, and invariant + schema checks at every data
   boundary.
 - **`/writing-for-agents`** — write documents that agents read well: skills, `AGENTS.md`,
   `CLAUDE.md`, issues, specs, prompts.
@@ -115,7 +115,7 @@ Model-invoked references that run *beneath* the other skills. Reach for them whe
 ## Crossing sessions
 
 - **`/handoff`** — at session end with work unfinished, compact the session into a
-  `.magito/journal/` entry. You don't continue in place; a fresh session reads it via
+  `.magito/journal/` entry. You do not continue in place; a fresh session reads it via
   `/catch-up`.
 
 ## Precondition

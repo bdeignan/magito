@@ -15,14 +15,14 @@ Capture once: `git diff <fixed-point>...HEAD` (three-dot, against the merge-base
 
 ## 2. Find the sources
 
-- **Spec** — the originating ticket, a path the user passed, or a PRD under `docs/` (or `.scratch/<feature>/SPEC.md`, where a local-markdown tracker keeps parent specs). Find the ticket by scanning the commit messages for the identifier form `docs/agents/issue-tracker.md` describes (`#123`, `Closes #45`, `PROJ-88`, a file path), then use that file's **fetch a ticket** operation to read it. If there's none, the Spec axis reports "no spec available."
+- **Spec** — the originating ticket, a path the user passed, or a PRD under `docs/` (or `.scratch/<feature>/SPEC.md`, where a local-markdown tracker keeps parent specs). Find the ticket by scanning the commit messages for the identifier form `docs/agents/issue-tracker.md` describes (`#123`, `Closes #45`, `PROJ-88`, a file path), then use that file's **fetch a ticket** operation to read it. If there is none, the Spec axis reports "no spec available."
 - **Standards** — `docs/agents/INDEX.md` (routing to the docs a touched area's diff should be checked against), `docs/agents/GLOSSARY.md` (domain language), `docs/adr/`, `CODING_STANDARDS.md`/`CONTRIBUTING.md`, and the project's declared toolchain conventions.
 
 ## 3. Run the two axes
 
-**Right-size first — skip the fan-out for trivial diffs.** If the diff is small and low-risk — roughly under 30 changed lines, or docs/comments-only with no code or logic change — don't spawn the two sub-agent axes. Do a single lightweight inline review instead: read the diff, check it against the obvious conventions and its stated intent, and report in one pass. This is a judgment call, not a hard gate: if a small diff still carries real risk — it touches a hook, the review/merge gate, security, or a data boundary — run the full two axes anyway. When you take this path, present the report as one `## Review (lightweight)` section instead of the two axes, and never present it as if the two axes ran and passed.
+**Right-size first — skip the fan-out for trivial diffs.** If the diff is small and low-risk — roughly under 30 changed lines, or docs/comments-only with no code or logic change — do not spawn the two sub-agent axes. Do a single lightweight inline review instead: read the diff, check it against the obvious conventions and its stated intent, and report in one pass. This is a judgment call, not a hard gate: if a small diff still carries real risk — it touches a hook, the review/merge gate, security, or a data boundary — run the full two axes anyway. When you take this path, present the report as one `## Review (lightweight)` section instead of the two axes, and never present it as if the two axes ran and passed.
 
-If sub-agents are available, spawn both in parallel so they don't pollute each other's context; otherwise run them in sequence. Give each the diff command, the commit list, and its sources.
+If sub-agents are available, spawn both in parallel so they do not pollute each other's context; otherwise run them in sequence. Give each the diff command, the commit list, and its sources.
 
 **Timebox and fallback for stalled axes:** Give each sub-agent axis a reasonable timebox, roughly 5–15 minutes depending on diff size and network latency. Treat an axis as stalled if it produces no output within that window. Stop waiting and run that axis inline in your own context instead. Say so at the time, not only in the final report. Disclose the fallback in the report too: mark the axis as `inline` rather than `sub-agent`. If the inline attempt also produces no meaningful output after a reasonable effort, mark that axis as `none` in the report. An axis with no result must never be reported as passed.
 
@@ -60,9 +60,9 @@ git rev-parse --abbrev-ref HEAD           # the branch; replace every / with - f
 git worktree list --porcelain | head -1   # prints `worktree <path>`
 ```
 
-Write one line, `<sha> reviewed`, to `<path>/.magito/review-<branch-slug>`. Resolve against that **main** worktree path rather than the current directory: otherwise every linked worktree gets its own `.magito/`, and a review run inside a worktree won't count at merge time.
+Write one line, `<sha> reviewed`, to `<path>/.magito/review-<branch-slug>`. Resolve against that **main** worktree path rather than the current directory: otherwise every linked worktree gets its own `.magito/`, and a review run inside a worktree will not count at merge time.
 
-Fallback, where there's no file-writing tool or a human is running it at a prompt:
+Fallback, where there is no file-writing tool or a human is running it at a prompt:
 
 ```bash
 d="$(git worktree list --porcelain | head -1 | cut -d' ' -f2-)/.magito" && mkdir -p "$d" && printf '%s reviewed\n' "$(git rev-parse HEAD)" >| "$d/review-$(git rev-parse --abbrev-ref HEAD | tr '/' '-')"

@@ -98,7 +98,7 @@ skill of its own.
 
 ## Cost honesty
 
-State up front exactly how many executors you're about to launch and which worker backs each.
+State up front exactly how many executors you are about to launch and which worker backs each.
 If the issues turn out to share more files than expected, say so and fall back to running them
 sequentially through the single-issue path rather than forcing parallelism that will just
 conflict.

@@ -41,7 +41,7 @@ did not check it, its status is `skipped`, not absent from the list.
 6. Git reality: the current branch, `git status`, and the last few commits.
 7. Open PRs (`gh pr list`).
 
-Then give a tight **where we are / what's next**: the current branch and whether it's
+Then give a tight **where we are / what is next**: the current branch and whether it is
 clean, the issue most likely in progress, what the recent journal entries flagged, and
 the obvious next action. When a journal entry disagrees with live git or the tracker,
 **live state wins** — treat a session's named next step as a hint to re-validate against

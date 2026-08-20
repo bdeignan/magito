@@ -25,7 +25,7 @@ not from a file: recon writes no state to read back.
    - `docs/agents/GLOSSARY.md`, plus any per-area glossaries routed from
      `docs/agents/INDEX.md`. This is why your questions and your brief speak the project's
      own vocabulary instead of inventing synonyms for terms it already defines.
-   - `docs/adr/` — the decisions already made, so you don't re-litigate them.
+   - `docs/adr/` — the decisions already made, so you do not re-litigate them.
    - `docs/agents/CONVENTIONS.md` and `docs/agents/GOTCHAS.md`, where they exist.
 
 2. **Read the code in the area under discussion.** Not the whole repo — the modules the

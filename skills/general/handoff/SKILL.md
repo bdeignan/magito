@@ -65,5 +65,5 @@ If the session landed nothing worth keeping, say exactly that and stop:
 - **Redact secrets** — API keys, tokens, PII.
 - If the user named a focus for the next session, work it into **Next**.
 
-Writing the file either works or it doesn't. If it fails, show the user the full entry
-text along with the error, so the content isn't lost.
+Writing the file either works or it does not. If it fails, show the user the full entry
+text along with the error, so the content is not lost.

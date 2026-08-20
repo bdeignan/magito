@@ -1,9 +1,9 @@
 # Adopting the session journal in an existing project
 
 For a project that already has its own notes or handoff habit. It covers what changes
-and what doesn't.
+and what does not.
 
-## What the journal is, and isn't
+## What the journal is, and is not
 
 The session journal is a directory of markdown files, `.magito/journal/` inside the
 project, one file per session. It is personal state: keep `.magito/` in

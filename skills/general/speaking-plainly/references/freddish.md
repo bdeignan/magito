@@ -10,7 +10,7 @@ rephrases the sentence before it; the same example runs through all nine.
    *"It is dangerous to play in the street."*
 2. **Rephrase in a positive manner.**
    *"It is good to play where it is safe."*
-3. **Rephrase, redirecting to a trusted authority** — preschoolers can't yet make the
+3. **Rephrase, redirecting to a trusted authority** — preschoolers cannot yet make the
    subtle distinctions the idea requires, so point them to someone who can.
    *"Ask your parents where it is safe to play."*
 4. **Remove anything prescriptive, directive, or instructive.**

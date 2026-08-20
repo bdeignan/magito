@@ -18,7 +18,7 @@ Review the artifact the user points to: something just produced in this session,
 
 Work through these in order, showing your reasoning at each step.
 
-1. **Steel-man first.** In 2–3 sentences, state why this approach is reasonable and what constraints it was working within. If you can't, your critique will be noise — understand it before attacking it.
+1. **Steel-man first.** In 2–3 sentences, state why this approach is reasonable and what constraints it was working within. If you cannot, your critique will be noise — understand it before attacking it.
 
 2. **Surface the load-bearing assumptions.** Name what the artifact silently depends on to be true — the assumptions that sink it if false. Mark which are verified and which are merely hoped. Probe them: "this assumes X; what if X does not hold?"
 
@@ -30,7 +30,7 @@ Work through these in order, showing your reasoning at each step.
    - Happy-path bias — the demo case works; error, empty, malformed, and concurrent paths are unhandled.
    - Uncritical scope — built exactly what was asked without questioning whether the ask was right or complete.
    - Confidence without verification — plausible API or library usage that was never actually run.
-   - Tests that pass but don't catch — the seam under test is mocked away; green suite, real path untested.
+   - Tests that pass but do not catch — the seam under test is mocked away; green suite, real path untested.
    - Pattern attraction — reached for a heavier pattern, framework, or abstraction than the problem needs.
    - Reactive patching — fixed the symptom at the call site instead of the root cause.
 
@@ -49,9 +49,9 @@ Verdict: Ship | Ship with changes | Rethink — [one line]
 ```
 
 - **Cap at 5 concerns**, ranked by severity. Found fifteen? Surface the five that matter.
-- **Severity is honest.** Critical = data loss, security breach, or outage. High = significant user impact or real technical debt. Medium = worth fixing, non-blocking. Don't inflate.
-- **Every concern is actionable.** If you can't say what to do about it, drop it.
-- **Apply the so-what test.** "If they ignore this, what actually happens?" If the answer is "not much," it isn't a concern.
+- **Severity is honest.** Critical = data loss, security breach, or outage. High = significant user impact or real technical debt. Medium = worth fixing, non-blocking. Do not inflate.
+- **Every concern is actionable.** If you cannot say what to do about it, drop it.
+- **Apply the so-what test.** "If they ignore this, what actually happens?" If the answer is "not much," it is not a concern.
 
 ## Stay in your lane
 
