@@ -1,31 +1,65 @@
 ---
 name: speaking-plainly
-description: On-demand plain-language reset and rewriter. Translates dense text into clear, simple language while preserving all technical facts, identifiers, and numbers.
+description: On-demand voice reset (snap-back) and STE deep rewriter. Re-asserts the baseline voice when it drifts, or rewrites text with full structural rules and linters.
 ---
 
 # Speaking Plainly
 
-This skill helps you communicate clearly. Use it to reset your writing voice mid-session or rewrite dense text. It rewrites *text*; use `/wait-what` when you need to repair the conversation you are in.
+The always-on voice baseline lives in the output style (Claude Code) and in
+`shared/SYSTEM-INSTRUCTIONS.md` (all tools). This skill is for two situations:
 
-## Mode 1: Reset Register
-When a user asks to write in a plain register or reset, write to the plain-language floor from here on. Start from your system instructions' baseline voice rules (plain word choice, active voice, one idea per sentence, defining coined terms — magito installs these from `shared/SYSTEM-INSTRUCTIONS.md`). This skill adds:
-- Write sentences under 20 words.
-- Use contractions (*it's*, *don't*, *won't*).
-- Never use AI-signature words (*delve*, *foster*, *leverage*, *transformative*). Consult [anti-ai-markers.md](./references/anti-ai-markers.md) for details.
+1. **Snap-back** — the voice has drifted mid-session. Re-assert the baseline rules fast,
+   without a full rewrite pass.
+2. **Deep rewrite** — given text to rewrite, run the full STE structural rules and linters.
 
-## Mode 2: Rewrite Text
-When given text to rewrite plainly:
-1. **List all facts, numbers, and identifiers**: Extract key technical elements (e.g., variable names, functions, files, measurements) and acceptance criteria from the source. You must preserve these exactly. Never rename them.
-2. **Consult reference files**:
-   - [simple-wikipedia.md](./references/simple-wikipedia.md) (basic structure and tenses)
-   - [plain-language-gov.md](./references/plain-language-gov.md) (sentence length, active voice)
-   - [freddish.md](./references/freddish.md) (tone, positive phrasing)
-   - [anti-ai-markers.md](./references/anti-ai-markers.md) (words and structures to avoid)
-   - [semantic-slop.md](./references/semantic-slop.md) (pseudo-insight the word list can't catch)
-3. **Draft the rewrite**: Keep it direct. Put your main point first. Do not summarize or add a conclusion.
-4. **Verify fidelity**: Ensure every extracted acceptance criterion, fact, number, and identifier is present in the rewrite. Do not drop or rename any of these.
-5. **Run the checkers** (both, relative to the skill directory):
+This skill rewrites *text*. Use `/wait-what` when you need to repair the conversation
+itself.
+
+## Snap-back
+
+When the user asks to reset the voice, re-read the baseline voice rules from
+`shared/SYSTEM-INSTRUCTIONS.md` and re-assert them. No linters, no rewrite pass. The point
+is speed: get back on track without a full audit.
+
+Re-assert these rules:
+
+- **No contractions.** Write full forms (do not, will not, it is).
+- **Active voice.** One idea per sentence.
+- **No AI-marker words or structures.** Consult [anti-ai-markers.md](./references/anti-ai-markers.md) for the full list.
+- **Modal ladder in instructional context.** Use only can, will, and must.
+- **Sentences under 20 words.**
+
+## Deep rewrite
+
+When given text to rewrite:
+
+1. **Extract all facts, numbers, and identifiers** from the source. Preserve them exactly.
+   Never rename a technical identifier.
+
+2. **Consult reference files:**
+   - [ste-rules.md](./references/ste-rules.md) — the primary structural reference (STE
+     rules, modal ladder, substitution table, self-check)
+   - [anti-ai-markers.md](./references/anti-ai-markers.md) — banned words, phrases,
+     structures, contraction ban, modal ladder
+   - [freddish.md](./references/freddish.md) — tone and positive phrasing
+   - [semantic-slop.md](./references/semantic-slop.md) — pseudo-insight the word list
+     cannot catch
+
+3. **Draft the rewrite** following STE structural rules. Classify each passage as
+   procedural or descriptive. Apply the sentence limits. Write one instruction per
+   sentence. Put the condition before the command.
+
+4. **Verify fidelity.** Every fact, number, and identifier from the source must appear in
+   the rewrite.
+
+5. **Run the linters** (both, relative to the skill directory):
    - Write the draft to a temporary file.
-   - `python3 ./scripts/readability.py <temp_file>` — flags sentences over 25 words and passive stacking. Rewrite those sections.
-   - `python3 ./scripts/anti-slop.py <temp_file>` — flags banned words, phrases, and structures from [anti-ai-markers.md](./references/anti-ai-markers.md). Fix every ERROR; judge each WARNING by hand (a warning marks a word with an innocent sense, like a literal "test harness"). The checker cannot see semantic pseudo-insight built from ordinary words, so read the draft once more against [semantic-slop.md](./references/semantic-slop.md) for the cadences no script catches.
-6. **Output the final result**: Present the text to the user. Do not include introductory filler or chat preamble.
+   - `python3 ./scripts/readability.py <temp_file>` — flags sentences over 20 words and
+     passive stacking. Rewrite flagged sections.
+   - `python3 ./scripts/anti-slop.py <temp_file>` — flags banned words, phrases,
+     structures, and contractions. Fix every ERROR. Judge each WARNING by hand (a warning
+     marks a word with an innocent sense, like a literal "test harness").
+   - Read the draft once more against [semantic-slop.md](./references/semantic-slop.md)
+     for cadences no script catches.
+
+6. **Output the result.** No introductory filler or chat preamble.
