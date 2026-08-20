@@ -1,7 +1,7 @@
 <!-- OVERVIEW.md — project INTENT only: why this exists, the deliberate approach, and the
      alternatives deliberately rejected. NOT an architecture tour or a feature list.
      Litmus for every line: "would a pure refactor (moves code, same intent) invalidate
-     this? → then cut it." Hard cap: half a page. Growing past that means you're
+     this? → then cut it." Hard cap: half a page. Growing past that means you are
      documenting the code — stop. Auto-loaded every session. -->
 
 # magito — overview
@@ -32,7 +32,7 @@ take on the governed multi-agent idea — not a framework built for anyone else 
   lands.
 
 ## Rejected alternatives
-- **Copy files into each tool's config** — edits wouldn't be live and the copies would drift
+- **Copy files into each tool's config** — edits would not be live and the copies would drift
   from the source. Symlinks keep one truth.
 - **A large fixed documentation tree** (ARCHITECTURE / MAP / PATTERNS / …) — most of it
   fails the two-gate filter this very folder enforces; kept deliberately small instead.

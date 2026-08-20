@@ -19,7 +19,7 @@ INDEX + OVERVIEW + GLOSSARY auto-load every session via this import).
 **GitHub** — issues and PRs against `bdeignan/magito`; reference issues as `#N`. Skills name
 tracker *operations*, never a backend: `docs/agents/issue-tracker.md` is the single place
 that says how each one is performed here, and it is the file to edit if the tracker ever
-changes. Don't restate its commands anywhere else.
+changes. Do not restate its commands anywhere else.
 
 The repo is opted into the merge/PR review gate (`git config magito.reviewGate true`),
 which since ADR 0014 applies only to branches created by the `/implement` fan-out —
@@ -101,7 +101,7 @@ a reinstall.
 
 1. Create `hooks/<name>.py` — a PreToolUse hook: reads the tool-call JSON on stdin,
    blocks by printing a `permissionDecision: "deny"` JSON, allows by exiting 0 silently.
-   Hooks must **fail open** (any internal error → allow); they're guardrails, not security.
+   Hooks must **fail open** (any internal error → allow); they are guardrails, not security.
 2. Run `python install.py` — symlinks the script to `~/.claude/hooks/` and idempotently
    merges its registration into `~/.claude/settings.json` (backed up before writing;
    other settings preserved). Settings changes are picked up live — no restart.

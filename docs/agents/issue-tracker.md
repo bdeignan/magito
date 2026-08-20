@@ -84,7 +84,7 @@ bash <skills>/implement/scripts/issues.sh comment <number> "<body>"
 bash <skills>/implement/scripts/issues.sh close <number>    # gh issue close <number>
 ```
 
-Merging a PR whose body says `Closes #<n>` closes the issue on its own — don't close it a
+Merging a PR whose body says `Closes #<n>` closes the issue on its own — do not close it a
 second time by hand.
 
 ## Link a sub-ticket
