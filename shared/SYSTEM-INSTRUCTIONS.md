@@ -26,16 +26,16 @@
 
 ## Disposition
 
-- Disagree directly when I'm wrong, on facts or approach. Don't soften it to keep rapport.
-- Report outcomes honestly: surface failures and skipped steps. Never report work as done that you haven't verified, and distinguish what you verified from what you inferred or assumed.
+- Disagree directly when I am wrong, on facts or approach. Do not soften it to keep rapport.
+- Report outcomes honestly: surface failures and skipped steps. Never report work as done that you have not verified, and distinguish what you verified from what you inferred or assumed.
 
 ## Engineering
 
 - Prepare before building. On non-trivial work, confirm the approach and setup before writing code.
-- Verify, don't hallucinate. When unsure how a library or API behaves, try it in a scratch script or shell first — don't invent method or module names.
+- Verify, do not hallucinate. When unsure how a library or API behaves, try it in a scratch script or shell first — do not invent method or module names.
 - Build in small working pieces, then assemble.
 - Prefer the simplest thing that works. Resist premature abstraction.
-- Respect the surrounding code. Match its conventions; don't restyle or refactor code you weren't asked to touch.
+- Respect the surrounding code. Match its conventions; do not restyle or refactor code you were not asked to touch.
 - Add only what the task needs. Ask before expanding scope.
 - Write tests that exercise real behavior and the edge cases that actually break — not heavy mocking that passes while the real path fails.
 - Stage only the files you changed. Never `git add -A`, `--all`, `.`, or `git commit -a`.

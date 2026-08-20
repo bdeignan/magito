@@ -7,17 +7,17 @@ disable-model-invocation: true
 # Catch Up
 
 Rebuild context at the start of a session by working through this checklist in order,
-then summarizing. Don't act yet — orient first.
+then summarizing. Do not act yet — orient first.
 
 Every source below resolves to exactly one status: `read`, `missing` (checked, not
 there), `skipped: <reason>` (deliberately not checked), or `failed: <reason>` (checked,
-the attempt errored). No source may be silently omitted from the final report — if you
-didn't check it, its status is `skipped`, not absent from the list.
+the attempt errored). No source can be silently omitted from the final report — if you
+did not check it, its status is `skipped`, not absent from the list.
 
 1. Session journal: glob `.magito/journal/*.md` in the repo root and sort the matches by
    filename, descending — filenames are `YYYY-MM-DD-HHMMSS-slug-hex.md`, so a lexical
    sort is already chronological. Read the newest two files with your file-reading tool
-   and show what they say. There is nothing to start or record. If the directory doesn't exist or has no matching files, status is
+   and show what they say. There is nothing to start or record. If the directory does not exist or has no matching files, status is
    `missing`. If a read errors, status is `failed: <the error>` — show it and move on.
    A journal failure never stops the rest of this checklist; every other source below is
    still readable on its own.
@@ -29,14 +29,14 @@ didn't check it, its status is `skipped`, not absent from the list.
    flagged next. Raise it when the user asks for more history, or when the newest entry
    points back at older ones — and say which N you used, so the cost is never a surprise.
 2. `CLAUDE.md` / `AGENTS.md` at the repo root. If neither exists, status is `missing`.
-3. `docs/agents/GLOSSARY.md` (in a multi-context repo, routing to per-area glossaries lives in `docs/agents/INDEX.md`). If it doesn't exist, status is
+3. `docs/agents/GLOSSARY.md` (in a multi-context repo, routing to per-area glossaries lives in `docs/agents/INDEX.md`). If it does not exist, status is
    `missing`.
-4. The most recent few ADRs under `docs/adr/`. If the directory doesn't exist or is
+4. The most recent few ADRs under `docs/adr/`. If the directory does not exist or is
    empty, status is `missing`.
 5. Open tickets — perform the **list open tickets** operation the way
    `docs/agents/issue-tracker.md` defines it for this repo. That file is the whole answer
    to which tracker this repo uses and how to reach it; read it, run what it says, show
-   what comes back. If the file doesn't exist, status is
+   what comes back. If the file does not exist, status is
    `skipped: no tracker configured — run /setup-magito`.
 6. Git reality: the current branch, `git status`, and the last few commits.
 7. Open PRs (`gh pr list`).

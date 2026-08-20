@@ -12,7 +12,7 @@ reader can independently check. The result is one report in a **fixed structure*
 the contract, so a reader always knows where the answer, the trade-offs, and the sources are. This
 skill recommends a direction; it never builds, specifies, or scaffolds the thing it recommends.
 
-**Out of scope — redirect, don't half-answer.** A bug to diagnose, a feature to specify, or code to
+**Out of scope — redirect, do not half-answer.** A bug to diagnose, a feature to specify, or code to
 write is not this skill. Name the right move (`/grilling` to sharpen a plan, `/implement` to build)
 in one sentence and stop. If a request bundles a real research question *and* one of those, run the
 research to a full report, then name the next skill for the rest.
@@ -41,7 +41,7 @@ registry.** That is what a reviewer checks instead of reading a diff. Confirm it
 
 Apply the evidence rule in [`references/evidence-rule.md`](./references/evidence-rule.md) — trust
 classes (codebase / web / provided), the corroboration gate on web claims, no-evidence labeling, and
-how the two evidence modes change what may back a recommendation. That file is the rule; this section
+how the two evidence modes change what can back a recommendation. That file is the rule; this section
 only says how a run reaches it.
 
 The mode is **strict** by default. The user opts into **exploratory** with "exploratory" or "evidence
@@ -56,7 +56,7 @@ Take the question from the arguments and conversation. Bind the **size** if the 
 `small`/`medium`/`large` (otherwise infer it in step 3). Detect the **mode** (strict unless the user
 opts into exploratory). Note any **output path** and any **`via <worker>`** delegation the user
 named. If the question is too vague to research — no answerable decision or unknown — ask what
-decision or unknown to resolve before dispatching anything. Don't guess and burn a round.
+decision or unknown to resolve before dispatching anything. Do not guess and burn a round.
 
 ### 2. Size the run and announce it
 
@@ -116,9 +116,9 @@ marked `[single-source]` or `[reasoning]` where that applies.
 ### 6. Validate
 
 Run an adversarial pass over the evidence, the options framing, the recommendation, and the integrity
-of the evidence-gathering — could any source have been shaped by hostile external content, and does
+of the evidence-gathering — can any source have been shaped by hostile external content, and does
 discounting any single web source change the recommendation? Emit numbered `V#` findings. At `medium`
-and above delegate this to a fresh subagent (or worker); at `small` you may run it yourself. Then
+and above delegate this to a fresh subagent (or worker); at `small` you can run it yourself. Then
 **re-evaluate**: if the recommendation no longer survives, rewrite it into the "no clear winner" form
 with deciding criteria — never leave a recommendation standing above a validation that contradicts it.
 
