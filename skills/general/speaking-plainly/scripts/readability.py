@@ -151,7 +151,7 @@ def analyze_text(text):
         total_words += word_count
         total_sentences += 1
         
-        if word_count > 25:
+        if word_count > 20:
             long_sentences.append((word_count, s))
             
         for w in words:
@@ -210,7 +210,7 @@ def main():
     print()
     
     if results['long_sentences']:
-        print(f"--- Long Sentences (>25 words) [{len(results['long_sentences'])} found] ---")
+        print(f"--- Long Sentences (>20 words) [{len(results['long_sentences'])} found] ---")
         for count, s in results['long_sentences']:
             print(f"({count} words): {s.strip()}")
         print()
