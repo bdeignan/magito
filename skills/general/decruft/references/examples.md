@@ -4,9 +4,9 @@ Curated from the [deslop.it pattern catalog](https://github.com/zaffnet/deslop.i
 (MIT), which documents 42 patterns across six categories with a 1.0x–1.5x weighting
 scheme. This file keeps the 13 most Python-idiom-specific of those patterns and
 regroups them under `decruft`'s own four buckets — dropping deslop.it's six categories
-and its weights entirely. `decruft` doesn't score; it proposes a handful of high-conviction
-findings. Two Test cruft examples below aren't from deslop.it — the source catalog has
-no test category, so they're written here to keep that bucket real.
+and its weights entirely. `decruft` does not score; it proposes a handful of high-conviction
+findings. Two Test cruft examples below are not from deslop.it — the source catalog has
+no test category, so they are written here to keep that bucket real.
 
 Every example is a `before → after` sketch, not a diff to apply verbatim: check the
 surrounding code before assuming the same move fits.
@@ -31,7 +31,7 @@ def load_config(path: str) -> dict:
         return json.load(f)
 ```
 
-**Impossible except** — the `try` guards an operation that can't raise the exception
+**Impossible except** — the `try` guards an operation that cannot raise the exception
 being caught, given the actual type.
 
 ```python

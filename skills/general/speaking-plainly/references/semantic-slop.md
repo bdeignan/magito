@@ -11,7 +11,7 @@ The rule under all of them: **a sentence earns its place by changing what the re
 If it only adds rhythm, emphasis, or contrast for its own sake, cut it or flatten it.
 
 ## Test 1 — False antithesis
-Defining a thing by what it is *not*: "X, not Y", "not just X — Y", "X isn't about A, it's about B",
+Defining a thing by what it is *not*: "X, not Y", "not just X — Y", "X is not about A, it is about B",
 "only narrowed, not closed".
 
 Delete the negation clause. Does the sentence still deliver its fact or instruction?
@@ -30,7 +30,7 @@ Insisting something is important, real, or hard instead of showing it: "This mat
 If only asserting, cut it or replace it with the concrete thing that makes it matter.
 
 ## Test 3 — Hollow elevation
-Inflating the ordinary into the profound: "not just a script, a philosophy", "this is where it gets
+Inflating the ordinary into the profound: "not just a script, a philosophy", "this is where it becomes
 interesting". Is the elevation doing work, or flattering the subject? Cut the flattery; keep the
 plain claim.
 
@@ -41,7 +41,7 @@ re-perform the last one? If it re-performs, cut it.
 
 ## Test 5 — Hollow abstraction
 A general-sounding line that hands the reader nothing to do: "at its core, X is about tradeoffs",
-"it's a balance". Can the reader act differently after reading it? If not, cut it or make it
+"it is a balance". Can the reader act differently after reading it? If not, cut it or make it
 concrete.
 
 ## Test 6 — Ungrounded reference
@@ -74,5 +74,5 @@ Two forms, by what the reference is doing:
 - **Prefer cutting to rewriting.** Deletion is the best fix for filler.
 - **Keep a real distinction.** When a cut would lose a genuine contrast the reader needs, leave it.
   Precision over zeal.
-- **Don't trade one tic for another.** Re-read your own rewrite against
+- **Do not trade one tic for another.** Re-read your own rewrite against
   [anti-ai-markers.md](./anti-ai-markers.md) before you settle.

@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Challenging Assumptions
 
-Genuine critique of a specific artifact before it becomes real — not contrarianism. Find what is actually wrong or unexamined; don't argue a side you don't hold. Say what you actually find, even when it's unflattering: if the thing is sound, say so plainly. A manufactured concern is worse than none.
+Genuine critique of a specific artifact before it becomes real — not contrarianism. Find what is actually wrong or unexamined; do not argue a side you do not hold. Say what you actually find, even when it is unflattering: if the thing is sound, say so plainly. A manufactured concern is worse than none.
 
 This is the deep, opt-in version of the always-on disposition — reach for it when the cost of being wrong is real.
 
@@ -20,9 +20,9 @@ Work through these in order, showing your reasoning at each step.
 
 1. **Steel-man first.** In 2–3 sentences, state why this approach is reasonable and what constraints it was working within. If you can't, your critique will be noise — understand it before attacking it.
 
-2. **Surface the load-bearing assumptions.** Name what the artifact silently depends on to be true — the assumptions that sink it if false. Mark which are verified and which are merely hoped. Probe them: "this assumes X; what if X doesn't hold?"
+2. **Surface the load-bearing assumptions.** Name what the artifact silently depends on to be true — the assumptions that sink it if false. Mark which are verified and which are merely hoped. Probe them: "this assumes X; what if X does not hold?"
 
-3. **Pre-mortem.** It's months later; this shipped and failed. What specifically went wrong? Be concrete. Don't reassure.
+3. **Pre-mortem.** It is months later; this shipped and failed. What specifically went wrong? Be concrete. Do not reassure.
 
 4. **Invert.** What would guarantee this fails? Then check: are any of those conditions already present?
 
@@ -55,6 +55,6 @@ Verdict: Ship | Ship with changes | Rethink — [one line]
 
 ## Stay in your lane
 
-- Recommend; don't rewrite. You surface and advise — someone else implements the fix.
-- Don't manufacture concerns to look thorough. "Ship it" with two minor notes is a complete, valid review.
-- Don't re-flag what a prior review or skill already covered.
+- Recommend; do not rewrite. You surface and advise — someone else implements the fix.
+- Do not manufacture concerns to look thorough. "Ship it" with two minor notes is a complete, valid review.
+- Do not re-flag what a prior review or skill already covered.
