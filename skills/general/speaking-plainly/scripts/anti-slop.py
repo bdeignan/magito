@@ -24,6 +24,25 @@ import os
 RULE_FILE = os.path.join(os.path.dirname(__file__), "..", "references", "anti-ai-markers.md")
 RULE_BASENAME = "anti-ai-markers.md"
 
+# Known contractions to flag.  Only full-word forms — bare 's after arbitrary words is
+# skipped because it's indistinguishable from possessive 's without a real parser.
+CONTRACTIONS = [
+    "don't", "won't", "can't", "isn't", "aren't", "wasn't", "weren't",
+    "hasn't", "haven't", "hadn't", "doesn't", "didn't",
+    "couldn't", "shouldn't", "wouldn't", "mustn't",
+    "it's", "that's", "there's", "what's", "here's", "let's",
+    "I'm", "I'll", "I've", "I'd",
+    "we'll", "we're", "we've", "we'd",
+    "they'll", "they're", "they've", "they'd",
+    "you'll", "you're", "you've", "you'd",
+    "he's", "she's", "who's",
+]
+_CONTRACTION_RE = re.compile(
+    r"\b(?:" + "|".join(re.escape(c) for c in
+                        sorted(CONTRACTIONS, key=len, reverse=True)) + r")\b",
+    re.IGNORECASE,
+)
+
 
 def normalize(text):
     """Fold smart quotes and dashes to ASCII so patterns match either form.
@@ -162,6 +181,9 @@ def lint(text, is_rule_file=False):
     for quoted, pattern in structures:
         for m in pattern.finditer(masked):
             add(line_of(masked, m.start()), "ERROR", "structure", f'"{quoted}"')
+
+    for m in _CONTRACTION_RE.finditer(masked):
+        add(line_of(masked, m.start()), "ERROR", "contraction", m.group(0))
 
     findings.sort(key=lambda f: (f["line"], 0 if f["severity"] == "ERROR" else 1))
     errors = sum(1 for f in findings if f["severity"] == "ERROR")
