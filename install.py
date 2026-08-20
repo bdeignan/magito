@@ -292,6 +292,18 @@ def main() -> None:
                     status = link(agent_file, dst, args.dry_run, args.force)
                     results.append((tool_name, f"agents/{agent_file.name}", str(dst), status))
 
+        # Output style files (Claude only)
+        output_styles_dst_raw = tool_config.get("output-styles")
+        if output_styles_dst_raw and is_claude:
+            output_styles_dst = Path(output_styles_dst_raw).expanduser()
+            managed_dirs.add(output_styles_dst)
+            output_styles_src_dir = repo_root / "output-styles" / "claude"
+            if output_styles_src_dir.exists():
+                for style_file in sorted(output_styles_src_dir.glob("*.md")):
+                    dst = output_styles_dst / style_file.name
+                    status = link(style_file, dst, args.dry_run, args.force)
+                    results.append((tool_name, f"output-styles/claude/{style_file.name}", str(dst), status))
+
         # Hook scripts + settings.json registration
         hooks_dst_raw = tool_config.get("hooks")
         if hooks_dst_raw:

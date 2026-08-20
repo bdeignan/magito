@@ -4,6 +4,7 @@ instructions = "~/.claude/CLAUDE.md"
 skills = "~/.claude/skills"
 agents = "~/.claude/agents"
 hooks = "~/.claude/hooks"
+output-styles = "~/.claude/output-styles"
 
 [tools.codex]
 enabled = true
