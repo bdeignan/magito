@@ -1,23 +1,23 @@
 <!-- README.md — the docs/agents/ convention manifest. Read it ONCE to learn what belongs
-     in this folder and why; you won't need it every session. Not auto-loaded. Tool-neutral:
+     in this folder and why; you will not need it every session. Not auto-loaded. Tool-neutral:
      this folder stands alone without magito — remove magito and it degrades to a
      well-documented folder, not a broken one. -->
 
 # docs/agents/ — the agent context layer
 
-A version-controlled, tool-neutral home for the project context a coding agent can't cheaply
+A version-controlled, tool-neutral home for the project context a coding agent cannot cheaply
 rederive from the code — plus a discipline that keeps it from rotting into a stale, lying
 graveyard that agents trust and act on.
 
 ## The two-gate filter
 Content earns a place here only if it passes **both** gates:
-- **Gate A — non-rederivable:** a codebase-investigator agent can't reconstruct it cheaply
+- **Gate A — non-rederivable:** a codebase-investigator agent cannot reconstruct it cheaply
   from the code. Excludes structure (module maps, call graphs, feature→file). Includes
   intent, decisions, conventions, gotchas, domain vocabulary.
 - **Gate B — stable:** it survives the next handful of PRs. A pure refactor — moves code,
   same intent — must not invalidate it.
 
-This flips the default from "document the codebase" to "document only what the code can't
+This flips the default from "document the codebase" to "document only what the code cannot
 tell you and will stay true." Most candidates fail Gate A (that keeps the set small); Gate B
 filters the rest (that keeps it honest).
 
@@ -41,7 +41,7 @@ read `AGENTS.md` never see the bundle at all.
 
 **Scaffold vs grow:** setup scaffolds only the first four, and writes `issue-tracker.md` from
 the answers you give it — real content, not an empty template. Everything else is pulled into
-existence by real content, never pushed by an empty template — that's what stops the folder
+existence by real content, never pushed by an empty template — that is what stops the folder
 rotting into empty files agents learn to distrust. It scales from two files in a personal
 repo to dozens of flows in a team monorepo without that rot.
 
@@ -56,6 +56,6 @@ When a change touches an area, load that area's INDEX-routed docs and: fix anyth
 now contradicts (stale), drop anything that fails the two gates (bloat), and remove any dead
 reference — a path or symbol the doc names that no longer exists. Detection is diff-scoped
 through INDEX, never a whole-folder re-audit. Add a term, gotcha, or convention the moment it
-resolves; don't batch. The discipline is detection and visibility, not forced correction: a
+resolves; do not batch. The discipline is detection and visibility, not forced correction: a
 review proves the docs were looked at, and fixing a flagged doc is a normal review finding,
 discretionary like any other.

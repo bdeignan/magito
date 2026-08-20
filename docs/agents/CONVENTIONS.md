@@ -1,4 +1,4 @@
-<!-- CONVENTIONS.md — agreed patterns the code doesn't announce. On-demand via INDEX.md,
+<!-- CONVENTIONS.md — agreed patterns the code does not announce. On-demand via INDEX.md,
      not auto-loaded. Same two gates as everything in this folder: not rederivable from the
      code, and stable across a pure refactor. -->
 
@@ -13,7 +13,7 @@ Where one skill needs another, ask: **does the user have a decision to make here
 | Answer | Seam | What it looks like |
 |---|---|---|
 | Yes | **Recommend** | The skill finishes, then says "now run `/B`". The user types it. |
-| No, and it's small | **Inline** | Not a seam at all. State the two or three rules directly, or share a file under `references/`. |
+| No, and it is small | **Inline** | Not a seam at all. State the two or three rules directly, or share a file under `references/`. |
 | No, and it's non-negotiable | **Invoke** | Skill A calls skill B. |
 
 **Ask, then invoke** is the fourth shape, and it is the right one when the decision is real

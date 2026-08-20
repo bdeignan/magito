@@ -7,7 +7,7 @@
          rest under `_Avoid_`.
        • Keep definitions tight — one or two sentences; say what the term IS, not what it does.
        • Group under subheadings when natural clusters emerge; a flat list is fine otherwise.
-     Add terms lazily, the moment one resolves — don't invent terms to fill this file.
+     Add terms lazily, the moment one resolves — do not invent terms to fill this file.
      Auto-loaded while small; at scale, split into per-area GLOSSARY.md near the code and
      route them from INDEX.md. -->
 
