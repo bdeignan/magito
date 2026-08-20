@@ -1,6 +1,6 @@
 ---
 name: domain-modeling
-description: Build and sharpen a project's domain model as you design — challenge terms against the glossary, sharpen fuzzy language, stress-test with edge-case scenarios, and write decisions down in docs/agents/GLOSSARY.md and ADRs the moment they're settled. Use when pinning down terminology or a ubiquitous language, recording an architectural decision, or when another skill needs to maintain the domain model.
+description: Build and sharpen a project's domain model as you design — challenge terms against the glossary, sharpen fuzzy language, stress-test with edge-case scenarios, and write decisions down in docs/agents/GLOSSARY.md and ADRs the moment they are settled. Use when pinning down terminology or a ubiquitous language, recording an architectural decision, or when another skill needs to maintain the domain model.
 ---
 
 # Domain Modeling
@@ -17,7 +17,7 @@ Single context (most repos): one `docs/agents/GLOSSARY.md`, plus a root `docs/ad
 - **Sharpen fuzzy language.** An overloaded term gets a precise canonical one: "you're saying *sample* — do you mean a row, a draw, or a participant? Those are different things."
 - **Stress-test with scenarios.** Invent edge cases that force precision about the boundaries between concepts.
 - **Cross-reference the code.** When the user states how something works, check the code agrees; surface contradictions.
-- **Update `docs/agents/GLOSSARY.md` inline.** Capture each term the moment it resolves — don't batch. The glossary is *only* a glossary: tight definitions of what terms mean, without implementation detail. It is not a spec or a scratchpad.
+- **Update `docs/agents/GLOSSARY.md` inline.** Capture each term the moment it resolves — do not batch. The glossary is *only* a glossary: tight definitions of what terms mean, without implementation detail. It is not a spec or a scratchpad.
 
 ## ADRs, sparingly
 
