@@ -14,7 +14,7 @@ Where one skill needs another, ask: **does the user have a decision to make here
 |---|---|---|
 | Yes | **Recommend** | The skill finishes, then says "now run `/B`". The user types it. |
 | No, and it is small | **Inline** | Not a seam at all. State the two or three rules directly, or share a file under `references/`. |
-| No, and it's non-negotiable | **Invoke** | Skill A calls skill B. |
+| No, and it is non-negotiable | **Invoke** | Skill A calls skill B. |
 
 **Ask, then invoke** is the fourth shape, and it is the right one when the decision is real
 but the next move belongs to the same skill. `implement` names its recommendation,

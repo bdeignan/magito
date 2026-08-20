@@ -247,7 +247,7 @@ workflow skills would otherwise raise on every read-only `git` and `gh` call:
   under `.git/magito/` was refused through both `Bash` and the file-writing tool while
   `Edit(//Users/brian/code/**/.git/magito/**)` was allowed in user settings. That refusal
   is why the marker moved out from under `.git/` to `.magito/` in the main worktree root:
-  a plain project path the classifier doesn't treat specially.
+  a plain project path the classifier does not treat specially.
   **That move only half worked, and how it half-worked is the useful part.** At `.magito/`
   the file-writing tool succeeds, but the shell one-liner is still refused — as is a
   read-only command that merely computes the same path. Each of that one-liner's parts
@@ -262,7 +262,7 @@ workflow skills would otherwise raise on every read-only `git` and `gh` call:
 - Required: `name`, `description`
 - Optional: `model` (alias: `haiku`, `sonnet`, `opus`, `fable`, or full ID), `tools`,
   `permissionMode` (`acceptEdits`, `auto`, `bypassPermissions`, etc.), `color`, `effort`
-- No `permissions.allow` block — that's a `settings.json` construct, not valid in agent frontmatter
+- No `permissions.allow` block — that is a `settings.json` construct, not valid in agent frontmatter
 
 ## Notes
 
