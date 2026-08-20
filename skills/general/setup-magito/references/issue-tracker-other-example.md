@@ -25,7 +25,7 @@
 
 Work is tracked in Jira, project key `PLAT`, reached with the `jira` CLI (already
 authenticated on this machine). Ticket types are Story, Task, and Bug; states are
-`To Do`, `In Progress`, `In Review`, `Done`. Epics are not used here — don't create one.
+`To Do`, `In Progress`, `In Review`, `Done`. Epics are not used here — do not create one.
 Code review happens on GitHub pull requests, which Jira never sees.
 
 Skills never name a backend. They name one of the operations below and read this file to

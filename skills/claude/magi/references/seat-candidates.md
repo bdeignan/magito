@@ -11,7 +11,7 @@ beware seating a second anthropic-family judge next to Melchior.
 Any candidate whose command takes a `--model`-style flag (agy, pi, opencode) can use
 the `{model}` placeholder convention documented in [SKILL.md](../SKILL.md)'s Seat
 resolution section, so the model choice survives a vendor renaming its flags. codex
-and gemini are close enough to single-family defaults that this usually isn't needed;
+and gemini are close enough to single-family defaults that this usually is not needed;
 qwen's documented headless command below takes no model flag at all. omp's docs prefer
 `--model` (`--provider` is legacy), so it can use the placeholder too.
 

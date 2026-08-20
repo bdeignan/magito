@@ -11,11 +11,11 @@ preference, a priority, or a trade-off call still goes to the user. It upgrades 
 should we handle retries?" asked cold becomes "three callers already retry with the backoff
 helper in `lib/` — follow it, or does this one differ?" The second is faster to answer and
 surfaces drift as a decision instead of letting it happen silently. Fewer questions is a
-side effect, not the goal: don't tune for it.
+side effect, not the goal: do not tune for it.
 
 ## When to skip
 
-There is one skip. If you already surveyed this same area earlier in this session, don't
+There is one skip. If you already surveyed this same area earlier in this session, do not
 repeat the full survey — do the delta for whatever is new. Judge this from the conversation,
 not from a file: recon writes no state to read back.
 
@@ -56,7 +56,7 @@ not from a file: recon writes no state to read back.
 
    | Finding | Home |
    |---|---|
-   | An established pattern the code doesn't announce | `docs/agents/CONVENTIONS.md` |
+   | An established pattern the code does not announce | `docs/agents/CONVENTIONS.md` |
    | A trap spanning 2+ areas | `docs/agents/GOTCHAS.md` (create it if this is the first such trap) |
    | Hard to reverse, surprising without context, and a real trade-off — all three | `docs/adr/` |
    | A term that was ambiguous | `docs/agents/GLOSSARY.md` |

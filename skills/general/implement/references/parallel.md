@@ -86,7 +86,7 @@ skill of its own.
    base branch. Write the body per `~/.claude/skills/implement/references/pr-body.md`; do not
    leave it as only `Closes #N`. The script is where the fan-out gate actually runs, so it
    refuses a branch whose review decision is missing or stale. That refusal is the gate doing
-   its job: go back to step 4, don't reach for raw `gh pr create`.
+   its job: go back to step 4, do not reach for raw `gh pr create`.
 
    Tear down finished worktrees with `gitflow.sh worktree remove <path>`, which uses `git
    worktree remove` (never `rm -rf`) and clears the branch's marker. A dirty worktree makes it

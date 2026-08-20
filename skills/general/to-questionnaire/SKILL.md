@@ -1,6 +1,6 @@
 ---
 name: to-questionnaire
-description: Turn a decision you can't answer alone into a questionnaire for one person to fill in async or work through in a meeting.
+description: Turn a decision you cannot answer alone into a questionnaire for one person to fill in async or work through in a meeting.
 disable-model-invocation: true
 ---
 

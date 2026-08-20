@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Ask Magito
 
-You don't remember every skill, so ask. This is the map: what magito guarantees you, and
+You do not remember every skill, so ask. This is the map: what magito guarantees you, and
 what to run when.
 
 **Skills are the source of truth.** This router promises behavior and points at skills. If it
@@ -61,7 +61,7 @@ Plain `/grilling` sharpens a plan you can hold in a single sitting. When the wor
 than that — the destination is still foggy and settling it will take several sessions —
 `/wayfinder` charts it as a **map** issue with child **decision tickets**, and you resolve one
 per session until the way is clear. It's a container that hands off *to* grilling: reach for
-wayfinder when a single grilling would overflow the session, and for plain grilling otherwise. Wayfinder itself says that if charting surfaces no fog, you don't need a
+wayfinder when a single grilling would overflow the session, and for plain grilling otherwise. Wayfinder itself says that if charting surfaces no fog, you do not need a
 map — so the default stays one session with `/grilling` and `/to-issues`.
 
 ## Standalone
@@ -70,9 +70,9 @@ Off the main flow — reached deliberately when a situation calls for it.
 
 - **Still on the real problem?** — the weekly course-check. Build a dossier (the week's `git
   log` plus the one higher-order goal), then run **`/magi deliberate`** framed about the
-  *work, not you*. A hung or abstaining tribunal is the "you're fine" signal. It's a
+  *work, not you*. A hung or abstaining tribunal is the "you are fine" signal. It is a
   composition of skills, not its own skill — run it on a fixed cadence, since the cadence
-  catches drift you can't see from inside.
+  catches drift you cannot see from inside.
 - **`/decruft`** — a harsh structural review that hunts the cruft AI agents leave: dead
   fallbacks, thin wrappers, speculative generality. It proposes; you approve the cuts.
 - **`/challenging-assumptions`** — an adversarial pre-mortem of a plan before you commit:

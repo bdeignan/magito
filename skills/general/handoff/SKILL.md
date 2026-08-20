@@ -37,7 +37,7 @@ ledger's summaries averaged 550 tokens against a spec that only said "one short
 paragraph," so soft wording did not hold.
 
 **Spend the budget on the gotcha.** Landed and Next are a sentence or two each. The
-gotcha is the part with durable value, and gotchas are specific: "worker reports can't be
+gotcha is the part with durable value, and gotchas are specific: "worker reports cannot be
 trusted" is nearly worthless next to "the worker claimed a prior DONE report that never
 existed, so judge the diff yourself." Vague is not the same as brief.
 
@@ -57,10 +57,10 @@ If the session landed nothing worth keeping, say exactly that and stop:
   operation, performed the way `docs/agents/issue-tracker.md` defines it for this repo.
   Correct anything that disagrees; a ticket you think is still open may have merged.
 - **Capture durable decisions first.** If terms or architectural decisions crystallized
-  and aren't written down yet, run `domain-modeling` to land them in
+  and are not written down yet, run `domain-modeling` to land them in
   `docs/agents/GLOSSARY.md` or an ADR **before** writing the entry. Those belong in the
   repo, not in a journal entry.
-- **Don't duplicate artifacts.** Issues, PRs, ADRs, and commits already exist. Reference
+- **Do not duplicate artifacts.** Issues, PRs, ADRs, and commits already exist. Reference
   them by number or path.
 - **Redact secrets** — API keys, tokens, PII.
 - If the user named a focus for the next session, work it into **Next**.

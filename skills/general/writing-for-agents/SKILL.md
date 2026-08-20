@@ -22,7 +22,7 @@ A document is made of **steps** (ordered actions) and **reference** (facts consu
 
 A leading word is a compact concept the model already knows from pretraining — *tight*, *red*, *tracer bullets*. Pick one such word for a recurring idea and reuse that same word on every mention, rather than re-describing the idea in a fresh phrase each time. "A *tight* loop" and later "keep it *tight*" builds meaning onto the word; rewriting "a fast, deterministic, low-overhead loop" each time just spends tokens and hands the reader no shorthand. The repeated word works because it pulls in knowledge the model already has, so the behaviour you want arrives anchored to one cheap word.
 
-**Don't steer by negation.** A prohibition names the behaviour you don't want, and naming it pulls it into the agent's attention — tell someone not to think of an elephant and the elephant is all they see. State the positive target instead: write "keep comments to one line", not "don't write long comments".
+**Do not steer by negation.** A prohibition names the behaviour you do not want, and naming it pulls it into the agent's attention — tell someone not to think of an elephant and the elephant is all they see. State the positive target instead: write "keep comments to one line", not "do not write long comments".
 
 ## The no-op test
 

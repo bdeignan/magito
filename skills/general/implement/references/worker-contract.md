@@ -9,7 +9,7 @@ review, merge, and PR.
 ## The brief
 
 A brief must be self-contained: workers cannot reach the tracker, load skills, or ask
-the user. The default rule is **paste, don't reference** — but it has one qualified
+the user. The default rule is **paste, do not reference** — but it has one qualified
 exception. The contract essentials below are always pasted in full; in-worktree
 standing docs are the only thing that may be named by exact repo-relative path.
 
@@ -110,7 +110,7 @@ no `{cwd}` at all — the launcher sets the working directory itself.
 
 ## Bootstrap
 
-First time a worker is named and `~/.magito/workers.toml` doesn't exist: create it.
+First time a worker is named and `~/.magito/workers.toml` does not exist: create it.
 Probe the installed candidates — omp, codex, claude, gemini; **never agy**. It earns
 its magi seat behind a pty wrapper, but a worker needs what it lacks: reliable
 non-TTY output (open stdout-drop bug, google-antigravity/antigravity-cli#76),
@@ -128,7 +128,7 @@ Before dispatching to a named worker, probe it once: `python3 <skills>/implement
 sends "Reply with exactly: VERDICT-OK" and checks the token comes back. The
 launcher strips approval-bypass flags from the probe itself — a ping needs no
 permissions, and permission tooling rightly balks at bypass flags on a command that
-doesn't need them.
+does not need them.
 
 - **Dead at probe** (missing binary, auth failure, quota, timeout): stop and ask the
   user — fall back to `haiku-executor`, or abort. Never substitute silently: the user
@@ -143,7 +143,7 @@ doesn't need them.
   refuses to start inside itself otherwise.
 - **Claude billing**: a subprocess `claude -p` bills API pay-as-you-go when
   `ANTHROPIC_API_KEY` is set in its environment, and the logged-in subscription
-  otherwise. Don't leak the key into a worker's env unless API billing is intended.
+  otherwise. Do not leak the key into a worker's env unless API billing is intended.
 - **codex as driver**: its `workspace-write` sandbox blocks child processes' network
   by default — a spawned worker can't reach its API without
   `[sandbox_workspace_write] network_access = true`.
@@ -155,9 +155,9 @@ doesn't need them.
   own. Pair the worker-side cap (omp `--max-time`) with a driver-side timeout on the
   shell call.
 - **Claude Code permission modes**: run fan-out sessions in default (prompting)
-  mode — the first `python3 .../scripts/worker.py` launch prompts once, and "don't ask again this
+  mode — the first `python3 .../scripts/worker.py` launch prompts once, and "do not ask again this
   session" covers the rest of the batch. Auto mode may deny the launch outright; if
-  you're then offered a fallback to `haiku-executor`, present it as a billing
+  you are then offered a fallback to `haiku-executor`, present it as a billing
   decision, never a convenience. The launcher's single stable prefix
   (`python3 .../scripts/worker.py`) is also what makes a tight allow rule possible
   if the user ever wants zero prompts.

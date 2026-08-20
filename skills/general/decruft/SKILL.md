@@ -11,7 +11,7 @@ A structural-quality review of working code. Behavior stays fixed; you review th
 
 ## Scope
 
-Default target: the current branch's diff against the base branch (`git diff main...HEAD`, substituting the repo's actual base branch). If the user names a file, module, or directory, review that instead. Read enough surrounding code to judge structure — a diff hunk alone can't tell you whether a helper duplicates an existing one.
+Default target: the current branch's diff against the base branch (`git diff main...HEAD`, substituting the repo's actual base branch). If the user names a file, module, or directory, review that instead. Read enough surrounding code to judge structure — a diff hunk alone cannot tell you whether a helper duplicates an existing one.
 
 ## Posture
 
@@ -52,9 +52,9 @@ Ranked findings, capped at 7, highest-leverage first:
 
 ```
 **[one-line claim]** — file:line
-Why it's cruft: [1–2 lines]
+Why it is cruft: [1–2 lines]
 Simplification: [concrete before → after sketch — what disappears]
-Risk: [what could break, and how to check it doesn't]
+Risk: [what could break, and how to check it does not]
 ```
 
 End with a verdict: **Clean** | **Worth a pass** (name which findings) | **Needs restructuring** (spell out the restructuring move). Offer to apply the accepted findings as a separate, explicit next step.
@@ -62,5 +62,5 @@ End with a verdict: **Clean** | **Worth a pass** (name which findings) | **Needs
 ## Rules
 
 - Behavior-preserving only. A finding that changes observable behavior belongs in a bug report, not here.
-- Propose, don't apply. Invoking this skill authorizes aggressive proposals, not edits.
-- Don't re-flag what a prior review already surfaced.
+- Propose, do not apply. Invoking this skill authorizes aggressive proposals, not edits.
+- Do not re-flag what a prior review already surfaced.
