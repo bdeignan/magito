@@ -116,11 +116,34 @@ case "$cmd" in
     git checkout -b "$name"
     ;;
   commit)
-    # commit "<message>" <file>...   stages only the listed files
+    # commit "<message>" <file>...   stages only the listed files, whatever
+    # their state: new, modified, deleted-but-unstaged, or already staged as
+    # deleted. Each path is handled on its own, because `git add` refuses a
+    # path already gone from both the working tree and the index (a file
+    # `git rm`'d before this call) with "pathspec did not match any files".
+    # GIT_LITERAL_PATHSPECS makes every path a literal filename, so a name
+    # like `*.txt` never expands to files the caller did not name.
+    #   on disk             -> git add
+    #   gone, still indexed -> git rm --cached (stages the deletion, whatever
+    #                          the index held: " D", "MD", "AD")
+    #   gone, only in HEAD  -> already staged as deleted; nothing to do
+    #   none of these       -> the path matches nothing; fail loudly
     guard_not_base
     msg="${1:?message required}"; shift
     [ "$#" -gt 0 ] || { echo "commit needs explicit files — never git add -A" >&2; exit 1; }
-    git add -- "$@"
+    export GIT_LITERAL_PATHSPECS=1
+    for f in "$@"; do
+      if [ -e "$f" ] || [ -L "$f" ]; then
+        git add -- "$f"
+      elif git ls-files --error-unmatch -- "$f" >/dev/null 2>&1; then
+        git rm -q --cached -- "$f"
+      elif git cat-file -e "HEAD:./$f" 2>/dev/null; then
+        :  # already staged as deleted
+      else
+        echo "gitflow.sh commit: '$f' matches nothing — not in the working tree, the index, or HEAD" >&2
+        exit 1
+      fi
+    done
     git commit -m "$msg"
     ;;
   push)
