@@ -174,6 +174,12 @@ shared ignore file). The review-decision marker (`.magito/review-<branch>`) live
 it, which is why that exclude line is load-bearing. See `bin/journal` and
 `skills/general/catch-up/references/adopting-the-journal.md`.
 
+A third file lives in the same excluded directory: `.magito/config.toml`, the per-repo
+settings file every later pipeline step reads — mode (owner or guest), the default issue
+tracker, the check command, the intent-docs location, and which magito commit last
+audited the repo. `setup-magito` writes and repairs it; see
+`skills/general/setup-magito/SKILL.md`.
+
 Conventions: agents never overwrite an existing *user* file here on their own
 initiative — `bench.toml`, `workers.toml`, and the handoffs are the user's.
 `bin/` is magito-managed, not a user file: `install.py` owns it outright, creating
