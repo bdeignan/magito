@@ -42,7 +42,7 @@ before it does anything — a tier-2 check, in a script, running in every tool o
 with nothing to opt into. `review-gate.py` does also recognize a raw `gh pr create`, so the
 hole is not total; but that is tier-3 insurance, present only in Claude Code and only where
 `magito.reviewGate` is set. An adapter that told an agent to run `gh pr create` would trade
-the check that always runs for the one that usually doesn't, and would do it silently, in a
+the check that always runs for the one that usually does not, and would do it silently, in a
 config file nobody re-reads.
 
 The carve-out is therefore written into every tracker template, pointing here, because "why

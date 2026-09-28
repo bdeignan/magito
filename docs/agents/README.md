@@ -51,7 +51,7 @@ repo to dozens of flows in a team monorepo without that rot.
 pin-and-guard thresholds — they live with the tests), `reports/` (session output; promote a
 durable finding to a gotcha or an ADR).
 
-## Maintenance — keep it honest, not comprehensive
+## Maintenance — keep it honest, not exhaustive
 When a change touches an area, load that area's INDEX-routed docs and: fix anything the diff
 now contradicts (stale), drop anything that fails the two gates (bloat), and remove any dead
 reference — a path or symbol the doc names that no longer exists. Detection is diff-scoped

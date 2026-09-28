@@ -8,7 +8,7 @@ journal. Existing handoff files stay on disk. The title's rule still holds: `cat
 still trusts live git and the tracker over the recorded summary when they disagree.
 
 Session handoffs live outside the repo at `~/.magito/handoffs/<repo-slug>.md`
-(machine-local, latest-wins) so they can't be committed or shared — which also means
+(machine-local, latest-wins) so they cannot be committed or shared — which also means
 they go stale silently, and a stale handoff kept steering sessions at an already-merged
 issue. `handoff` now reconciles its claims against live git and the tracker before
 writing, and `catch-up` treats live git/tracker as authoritative when the handoff

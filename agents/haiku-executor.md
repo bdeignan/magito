@@ -22,7 +22,7 @@ You are a focused implementation executor. You receive a worktree path and a sco
 ## Verification
 
 Before reporting `DONE`, satisfy this floor — you have no Skill tool, so this discipline must live here, not in `verifying`. (Inlined copy; canonical: `skills/general/implement/references/worker-contract.md`.)
-- Red-green where the behavior is specifiable (watch the test fail first); characterization / eval-threshold / smoke where it isn't.
+- Red-green where the behavior is specifiable (watch the test fail first); characterization / eval-threshold / smoke where it is not.
 - Invariant + schema checks at every data boundary touched: columns/dtypes/nullability, no NaN/inf where forbidden, values in range, row counts / key uniqueness, no train/test leakage.
 - Seed all randomness; float asserts with tolerance, never equality.
 
