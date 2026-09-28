@@ -116,11 +116,35 @@ case "$cmd" in
     git checkout -b "$name"
     ;;
   commit)
-    # commit "<message>" <file>...   stages only the listed files
+    # commit "<message>" <file>...   stages only the listed files, whatever
+    # their state: new, modified, deleted-but-unstaged, or already staged as
+    # deleted. Each path is added individually rather than in one `git add`
+    # call, because `git add` refuses a path already gone from both the
+    # working tree and the index (a file `git rm`'d before this call) with
+    # "pathspec did not match any files" — even though the path is valid and
+    # already staged. `git status --porcelain` on that single path tells the
+    # three cases apart: "D " means already staged as deleted (nothing to
+    # do), " D" means deleted but not yet staged (`git rm` stages it), and no
+    # output plus no file on disk means the path matches nothing at all,
+    # which still fails loudly.
     guard_not_base
     msg="${1:?message required}"; shift
     [ "$#" -gt 0 ] || { echo "commit needs explicit files — never git add -A" >&2; exit 1; }
-    git add -- "$@"
+    for f in "$@"; do
+      if [ -e "$f" ] || [ -L "$f" ]; then
+        git add -- "$f"
+        continue
+      fi
+      status="$(git status --porcelain=v1 -- "$f")"
+      case "$status" in
+        "D "*) ;;  # already staged as deleted — already included
+        " D"*) git rm -q -- "$f" ;;
+        *)
+          echo "gitflow.sh commit: '$f' matches nothing — not in the working tree, the index, or HEAD" >&2
+          exit 1
+          ;;
+      esac
+    done
     git commit -m "$msg"
     ;;
   push)
