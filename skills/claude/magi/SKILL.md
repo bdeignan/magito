@@ -1,6 +1,6 @@
 ---
 name: magi
-description: A MAGI-inspired tribunal of three seats — ideally three model families — that votes on oracle-free questions — decisions no test or dry-run can settle, like architecture choices, ship/no-ship, "which approach". Poll mode for quick three-mind opinions; deliberate mode for expensive decisions. Never use this for code review — use reviewing-changes.
+description: A MAGI-inspired tribunal of three seats — ideally three model families — that votes on oracle-free questions — decisions no test or dry-run can settle, like architecture choices, ship/no-ship, "which approach". Poll mode for quick three-mind opinions; deliberate mode for expensive decisions. Use when a decision has no test that can settle it and a second or third model's view is worth the cost. Never use this for code review — use reviewing-changes.
 argument-hint: "<question> | deliberate <decision> | config"
 ---
 

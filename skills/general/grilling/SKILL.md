@@ -1,6 +1,6 @@
 ---
 name: grilling
-description: Interview the user relentlessly about a plan or design, one question at a time, to reach a shared understanding before building. Opens with a mandatory reconnaissance pass so questions build on what the code already does instead of re-solving it. Reach for it when a plan needs stress-testing and the open questions are worth walking through in order.
+description: Interview the user relentlessly about a plan or design, one question at a time, to reach a shared understanding before building. Opens with a mandatory reconnaissance pass so questions build on what the code already does instead of re-solving it. Reach for it when a plan needs stress-testing and the open questions are worth walking through in order, or when the user asks to be grilled. Do not start it on your own while the user is away: every question waits for a live answer.
 ---
 
 Interview me relentlessly about every aspect of this plan until we reach a shared understanding. Walk down each branch of the design tree, resolving dependencies between decisions one-by-one. For each question, provide your recommended answer.
