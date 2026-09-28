@@ -48,11 +48,11 @@ Take the unsettled items one at a time. Skip anything the inventory settled. For
 
 ### Config file and mode
 
-`.magito/config.toml` is the one file every later pipeline step reads to learn three things about this repo: whether magito files can be committed here, which tracker to use by default, and which command checks the work. It lives in the main worktree root, under `.magito/`, which is already in `.git/info/exclude` (see §Private-state excludes) — the file is never committed, in any repo, in either mode. Python 3.11's `tomllib` reads it; write it with your file-writing tool, no script is needed. It holds:
+`.magito/config.toml` is the one file every later pipeline step reads to learn how this repo works with magito: its mode, its default tracker, its check command, where intent docs go, and when it was last audited. It lives in the main worktree root, under `.magito/`, never in a linked worktree. Resolve that root with `git worktree list --porcelain | head -1`, which prints `worktree <path>`, and write to `<path>/.magito/config.toml`. Never write it relative to the current directory: from a linked worktree, that creates a second config that nothing reads. The review marker is resolved the same way (ADR 0014). The directory `.magito/` is already in `.git/info/exclude` (see §Private-state excludes), so the file is never committed, in any repo, in either mode. Python 3.11's `tomllib` reads it; write it with your file-writing tool, no script is needed. It holds:
 
 ```toml
 mode = "owner"            # "owner" or "guest"
-tracker = "github"        # "github", "jira", or "local" — the repo default
+tracker = "github"        # "github", "local", or "other" — the repo default
 check = "bash scripts/check.sh"   # the one command that exits non-zero on failure
 intent_dir = "docs/intent"        # where intent docs go
 audited = "<sha>"         # magito commit that last audited this repo
@@ -75,7 +75,7 @@ Offer three choices:
 - **Local markdown** — tickets as files under `.scratch/<feature>/` (good for solo or remote-less repos).
 - **Something else** — Jira, Linear, Beads, a wiki, a spreadsheet. Ask the user to describe the workflow in a paragraph; you record it as prose under the same operation headings, and nothing else has to change to support it.
 
-Write `docs/agents/issue-tracker.md` from the matching template in [references/](./references/) — `issue-tracker-github.md.template`, `issue-tracker-local.md.template`, or `issue-tracker-other.md.template` for the third case. Create `docs/agents/` if it does not exist; this file is written whether or not the user accepts the agent-docs section, because every workflow skill depends on it. If the repo already has one, diff and propose — never overwrite. The chosen tracker also becomes `tracker` in `.magito/config.toml` — the repo default an intent doc can later override (out of scope here; see the `intent` and `to-issues` steps).
+Write `docs/agents/issue-tracker.md` from the matching template in [references/](./references/) — `issue-tracker-github.md.template`, `issue-tracker-local.md.template`, or `issue-tracker-other.md.template` for the third case. Create `docs/agents/` if it does not exist; this file is written whether or not the user accepts the agent-docs section, because every workflow skill depends on it. If the repo already has one, diff and propose — never overwrite. The chosen tracker also becomes `tracker` in `.magito/config.toml`: `github`, `local`, or `other` for the third case, matching the template used. `other` covers Jira, Linear, and every other prose-backed tracker, because `docs/agents/issue-tracker.md` holds the details (ADR 0015). It is the repo default an intent doc can later override (out of scope here; see the `intent` and `to-issues` steps).
 
 [`issue-tracker-other-example.md`](./references/issue-tracker-other-example.md) is a worked example of the third case — one paragraph about a fictional Jira setup, and the file it produces. Read it before filling the skeleton freehand.
 

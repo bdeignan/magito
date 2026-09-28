@@ -1,6 +1,6 @@
 ---
 name: to-issues
-description: Break a plan, spec, or conversation into independently-grabbable issues using vertical slices, and publish them to the project's issue tracker (GitHub or local). Use once a plan is settled and ready to become tracked work.
+description: Break a plan, spec, or conversation into independently-grabbable issues using vertical slices, and publish them to the project's issue tracker. Use once a plan is settled and ready to become tracked work.
 ---
 
 # To Issues

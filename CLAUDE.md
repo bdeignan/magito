@@ -84,10 +84,8 @@ a reinstall.
 ## Adding a New Skill
 
 1. Create `skills/general/<name>/SKILL.md` (cross-tool) or `skills/claude/<name>/SKILL.md` (Claude-only)
-2. Add `name:` and `description:` frontmatter fields. Every skill is model-invocable
-   (`docs/agents/CONVENTIONS.md`, "Skill invocation"), so the description is what decides
-   when the skill fires: say when to use it, and, where a wrong trigger would be
-   disruptive, say when not to.
+2. Add `name:` and `description:` frontmatter fields. Write the description to the rule in
+   `docs/agents/CONVENTIONS.md`, "Skill invocation."
 3. Run `python install.py` to symlink and regenerate INDEX.md
 4. If the skill is user-facing, update `skills/general/ask-magito/SKILL.md` so the router
    places it. A new skill the router never mentions, or a renamed one it still points at, is
