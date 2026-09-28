@@ -1,7 +1,6 @@
 ---
 name: wayfinder
 description: Plan a chunk of work too big for one agent session as a shared map of decision tickets on your issue tracker, then resolve them one at a time until the way to the destination is clear. Charts a map ticket with child tickets, a fog-of-war section for what cannot be specified yet, and a frontier of open unblocked tickets worked one per session. Reach for it only when the effort exceeds a single session; for a plan that fits one sitting, use grilling.
-disable-model-invocation: true
 ---
 
 # Wayfinder
@@ -24,7 +23,7 @@ Every map and ticket has a **name** — its title. In everything the human reads
 
 ## Working with grilling
 
-The default ticket is a **grilling** — a live, one-question-at-a-time interview. In magito `grilling` is user-invoked (`disable-model-invocation: true`), so wayfinder **never invokes it**. Wherever a grilling is called for — naming the destination, mapping the frontier, resolving a grilling ticket — wayfinder **hands off**: it presents what needs deciding and asks the user to run `/grilling`, then continues once they return with the answer. `domain-modeling` stays model-invocable, so wayfinder can invoke that directly. A grilling ticket is human-in-the-loop by definition; the human was always going to be present, so the handoff costs one step, not a workflow.
+The default ticket is a **grilling** — a live, one-question-at-a-time interview that needs the human present to answer each question, not just started. So wayfinder **never invokes it directly**. Wherever a grilling is called for — naming the destination, mapping the frontier, resolving a grilling ticket — wayfinder **hands off**: it presents what needs deciding and asks the user to run `/grilling`, then continues once they return with the answer. `domain-modeling` carries no such back-and-forth, so wayfinder invokes that directly. A grilling ticket is human-in-the-loop by definition; the human was always going to be present, so the handoff costs one step, not a workflow.
 
 ## The map
 

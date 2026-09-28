@@ -1,7 +1,6 @@
 ---
 name: to-questionnaire
 description: Turn a decision you cannot answer alone into a questionnaire for one person to fill in async or work through in a meeting.
-disable-model-invocation: true
 ---
 
 Turn something the user cannot answer alone into a **questionnaire** — a Markdown document they hand to one person. The recipient holds knowledge the user lacks; the questionnaire pulls it out of them.

@@ -1,7 +1,6 @@
 ---
 name: teach
-description: Teach the user a new skill or concept, within this workspace.
-disable-model-invocation: true
+description: Teach the user a new skill or concept, within this workspace. Use when the user asks to learn, or be taught, a topic — this is a stateful request that can span multiple sessions.
 argument-hint: "What would you like to learn about?"
 ---
 <!-- Borrowed verbatim from matt-pocock-skills (MIT License, Copyright (c) 2026 Matt Pocock). -->
