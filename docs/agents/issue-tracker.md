@@ -123,40 +123,6 @@ gh issue view <n> --json blockedBy --jq '[.blockedBy.nodes[] | select(.state=="O
 
 The ticket is ready when the result is `0`.
 
-## Wayfinding operations
-
-_Used only by `wayfinder`, which plans work too big for one session as a **map** issue with
-child **decision tickets**. The general operations above do most of the work — attaching a
-child is *Link a sub-ticket*, blocking is *Blocking edges*, resolving a ticket is *Comment*
-then *Close*. This section adds only the map-specific pieces. A tracker doc without this
-section does not support wayfinding; `wayfinder` checks for it and stops if it is missing._
-
-- **Labels.** The map issue carries `wayfinder:map`; each child ticket carries
-  `wayfinder:<type>` — one of `research`, `prototype`, `grilling`, `task`. Create a label the
-  first time it is used if it does not exist: `gh label create wayfinder:map` (and the four
-  types). GitHub will not create a label implicitly, so it must exist before `--label` uses it.
-- **Create the map.** *Publish a ticket*, then label it:
-  `gh issue create --title "<name>" --body "<body>" --label wayfinder:map`. Create each child
-  the same way with its `wayfinder:<type>` label, then attach it with *Link a sub-ticket*.
-- **Read / update the map body.** The map body is the low-resolution index loaded once per
-  session. Read: `gh issue view <map> --json body`. Rewrite:
-  `gh issue edit <map> --body-file <file>` (or `--body "<text>"`).
-- **Claim a ticket.** Assign it to the driver *before any work*, so a concurrent session skips
-  it: `gh issue edit <n> --add-assignee @me`. An open, unassigned child is unclaimed. The
-  assignee *is* the claim — re-read it immediately (`gh issue view <n> --json assignees`) and
-  yield if another session won. This narrows the race window; no `gh` call closes it.
-- **Query the frontier.** The frontier is the map's open, unblocked, unassigned child
-  tickets. `subIssues` is a connection object — its children are in `.nodes`. `assignees` is
-  a plain array. There is no single flag — filter the children:
-
-  ```
-  gh issue view <map> --json subIssues --jq '.subIssues.nodes[] | select(.state=="OPEN") | .number'
-  gh issue view <n> --json assignees --jq '.assignees | length'
-  gh issue view <n> --json blockedBy --jq '[.blockedBy.nodes[] | select(.state=="OPEN")] | length'
-  ```
-
-  Keep children whose assignee count is `0` and whose open-blocker count is `0`.
-
 ## Pull requests
 
 **PR creation does not route through this file.** It stays on
