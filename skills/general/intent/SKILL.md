@@ -49,9 +49,8 @@ recommended answer. Call `research`, `challenging-assumptions`, `magi`, or `doma
 when a question needs one of them.
 
 Mark each open question **agent** (you can settle it alone) or **user** (only the user can
-answer it). While the user answers a live question, dispatch every agent question as a
-background subagent, the way `research` dispatches an angle, and fold each answer into the doc
-as it lands.
+answer it). While the user answers a live question, dispatch every agent question to a
+background subagent that runs `research` on it, and fold each answer into the doc as it lands.
 
 An open question is one you can already state precisely, even without an answer. Something you
 can tell is coming but cannot yet phrase that precisely goes into "Not yet clear" instead, and
@@ -59,8 +58,9 @@ graduates into "Open questions" once it sharpens.
 
 ## Resume a draft
 
-When the user asks to continue an intent, read the draft and resume at its "Open questions" and
-"Not yet clear" sections. They are the map; nothing else needs loading. This is how an effort
+When the user asks to continue an intent, read the draft, then run recon again: the code can
+have changed since the draft was written. Resume at its "Open questions" and "Not yet clear"
+sections. They are the map; no other planning document needs loading. This is how an effort
 spans several sessions — no separate skill for it.
 
 ## Accept means go

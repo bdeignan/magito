@@ -6,9 +6,12 @@
 
 ## Seams between skills
 
-**Skills chain at their ends, not in their middles.**
+**A skill hands off to another only where the user has no decision to make.**
 
-Where one skill needs another, ask: **does the user have a decision to make here?**
+The pipeline in `docs/intent/0001-agentic-pipeline.md` runs on invokes: an accepted intent
+calls `to-issues`, and `intent` calls `research` or `magi` in the middle of an interview when a
+question needs one. Both are fine, because in neither case is there anything for the user to
+decide. Where one skill needs another, ask: **does the user have a decision to make here?**
 
 | Answer | Seam | What it looks like |
 |---|---|---|
@@ -23,7 +26,7 @@ user never leaves the skill — and it is not a bare invoke, because the choice 
 Reach for it when handing the user back to the prompt would only make them type their way
 back in.
 
-**Invoke is the narrow case and has to earn itself.** The `implement` fan-out invokes
+**Invoke is the default inside the pipeline, and recommend is the default outside it.** The `implement` fan-out invokes
 `reviewing-changes` on every worktree and calls it non-negotiable — there is no decision to
 make, and turning it into a recommendation would make it skippable, which is the whole reason
 it is not one. `implement` reaching `verifying` is the same shape.

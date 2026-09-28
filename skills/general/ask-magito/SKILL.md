@@ -47,8 +47,9 @@ The route most work travels — the spine, `orient → decide → build → reco
    intent doc. It opens with a reconnaissance pass over the code, so questions build on what
    already exists instead of re-solving it. Accepting the doc hands off to `/to-issues`
    directly.
-3. **Branch — one issue, or many?**
-   - A vague idea that is not issue-shaped yet → **`/to-issues`** splits it into
+3. **Coming from an accepted intent, `/to-issues` runs on its own.** Starting here without an
+   intent, pick the entry point:
+   - A settled plan that is not issue-shaped yet → **`/to-issues`** splits it into
      independently-grabbable tracer-bullet issues.
    - Already one clear issue → go straight to `/implement`.
 4. **`/implement <n>`** — takes one issue from spec to open PR: plan, branch, build (holding
