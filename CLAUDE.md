@@ -36,8 +36,9 @@ cutover.
 - Stdlib-only Python 3.11+ everywhere in this repo, with no runtime dependencies by
   design. That covers `install.py`, `hooks/*.py`, `bin/journal`, and any skill's
   `scripts/*.py`.
-- No test suite; verify with `python install.py --dry-run` and by driving hooks with
-  synthetic stdin payloads.
+- No test suite; verify with `bash scripts/check.sh`, which runs `install.py --dry-run`,
+  `anti-slop.py` against every tracked markdown file, and the hook payload checks in one
+  command that exits non-zero if any of them fails.
 - Markdown (skills, agents, instructions) is the product. Content edits are live via
   symlink; new files need `python install.py`.
 
