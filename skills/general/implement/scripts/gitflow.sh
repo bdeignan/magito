@@ -137,7 +137,7 @@ case "$cmd" in
         git add -- "$f"
       elif git ls-files --error-unmatch -- "$f" >/dev/null 2>&1; then
         git rm -q --cached -- "$f"
-      elif git cat-file -e "HEAD:$f" 2>/dev/null; then
+      elif git cat-file -e "HEAD:./$f" 2>/dev/null; then
         :  # already staged as deleted
       else
         echo "gitflow.sh commit: '$f' matches nothing — not in the working tree, the index, or HEAD" >&2
