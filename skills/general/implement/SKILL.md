@@ -1,7 +1,6 @@
 ---
 name: implement
-description: Implement one or more issues end-to-end. One issue runs a single sequential pass — plan (for non-trivial work), branch, build, verify, self-review, open a PR. Several independent issues fan out to a worker each. You own the git lifecycle; the human owns the merge.
-disable-model-invocation: true
+description: Implement one or more issues end-to-end, once each has a ready definition of done. One issue runs a single sequential pass — plan (for non-trivial work), branch, build, verify, self-review, open a PR. Several independent issues fan out to a worker each. You own the git lifecycle; the human owns the merge. Do not use it to explore an idea or draft a spec — an issue with no definition of done is not ready to build; run grilling or to-issues first, then come back here.
 argument-hint: "one issue (number, URL, or path) for the sequential path; several, or a label, for the parallel fan-out"
 ---
 

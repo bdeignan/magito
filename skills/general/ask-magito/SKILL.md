@@ -1,7 +1,6 @@
 ---
 name: ask-magito
 description: Ask which skill or flow fits your situation — a router over magito's skills, plus the promises magito makes you. Reach for it on a new machine or project, or any time you cannot remember what to run.
-disable-model-invocation: true
 ---
 
 # Ask Magito

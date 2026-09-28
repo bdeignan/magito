@@ -32,4 +32,4 @@ The default move is deletion, not explanation. Read the document sentence by sen
 
 ## Skill-specific mechanics
 
-For the rules that govern skills themselves — frontmatter, user-invoked versus model-invocable choice, router skills, and seams between skills — see `docs/agents/CONVENTIONS.md`. Do not restate those rules inside a skill; point at that file and keep this one about writing.
+For the rules that govern skills themselves — frontmatter, invocation and trigger descriptions, router skills, and seams between skills — see `docs/agents/CONVENTIONS.md`. Do not restate those rules inside a skill; point at that file and keep this one about writing.
