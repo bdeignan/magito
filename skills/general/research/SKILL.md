@@ -1,7 +1,6 @@
 ---
 name: research
 description: Research an open-ended question — options, prior art, trade-offs, or how something works — and produce an evidence-backed report in a fixed structure that recommends a direction without committing you to build it. Delegates angles to subagents by default, or to a named worker on request. Reach for it to weigh approaches or survey the state of the art before deciding. Not for diagnosing a bug, specifying a feature, or writing code.
-disable-model-invocation: true
 argument-hint: '[small|medium|large] [the question] [optional output path] [optional: "exploratory"] [optional: "via <worker>"]'
 ---
 

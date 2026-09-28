@@ -1,7 +1,6 @@
 ---
 name: decruft
 description: Harsh, behavior-preserving structural review that finds the cruft AI agents leave behind — redundant tests, defensive try/except, thin wrappers, dead fallbacks, speculative generality — and proposes ambitious simplifications without applying them. Use when asked to decruft, deep-clean, simplify aggressively, or audit code quality on working code.
-disable-model-invocation: true
 argument-hint: "[diff | file | module — defaults to the branch diff]"
 ---
 

@@ -84,11 +84,12 @@ a reinstall.
 ## Adding a New Skill
 
 1. Create `skills/general/<name>/SKILL.md` (cross-tool) or `skills/claude/<name>/SKILL.md` (Claude-only)
-2. Add `name:` and `description:` frontmatter fields
-3. For a user-invoked general skill, add `disable-model-invocation: true` and the Codex
-   companion policy described in `docs/agents/CONVENTIONS.md`
-4. Run `python install.py` to validate invocation policy, symlink, and regenerate INDEX.md
-5. If the skill is user-facing, update `skills/general/ask-magito/SKILL.md` so the router
+2. Add `name:` and `description:` frontmatter fields. Every skill is model-invocable
+   (`docs/agents/CONVENTIONS.md`, "Skill invocation"), so the description is what decides
+   when the skill fires: say when to use it, and, where a wrong trigger would be
+   disruptive, say when not to.
+3. Run `python install.py` to symlink and regenerate INDEX.md
+4. If the skill is user-facing, update `skills/general/ask-magito/SKILL.md` so the router
    places it. A new skill the router never mentions, or a renamed one it still points at, is
    a router that lies — the same reason a stale `docs/agents/` entry is worse than none.
 
@@ -187,7 +188,7 @@ worker contract's gotchas.
 **Skills** are organized by scope:
 - `skills/general/` — installs to the cross-tool `~/.agents/skills` standard (read by Codex and 30+ tools at home scope), to `~/.gemini/config/skills` for Antigravity (which reads `~/.agents/skills` only at workspace scope), AND to `~/.claude/skills` (Claude Code does not yet read `~/.agents/skills`)
 - `skills/claude/` — Claude Code-specific: the skill's *content or mechanics* require CC features (e.g. `magi` needs subagents); installs to `~/.claude/skills` only
-- The split is about content, not frontmatter: general skills MAY carry tool-specific invocation metadata; `docs/agents/CONVENTIONS.md` owns the cross-tool rule
+- The split is about content, not frontmatter: a skill lives in `skills/claude/` only when its mechanics need a Claude Code feature (e.g. subagents), never because of a frontmatter difference
 - Each skill is a directory with a `SKILL.md` file; subdirs (`references/`, `scripts/`) are supported
 - `skills/INDEX.md` is auto-generated and human-facing only; agents discover skills via SKILL.md frontmatter, not via the index
 

@@ -1,7 +1,6 @@
 ---
 name: setup-magito
-description: Inventory a repo's MAGITO configuration and fill the gaps in one idempotent pass — issue tracker, review gate and base branch, agent docs, permission allowlist, private-state excludes, the session journal, legacy-note import, delegation and magi rosters, Python toolchain, and stale managed symlinks. Reports each item configured/missing/stale before asking anything, then fills only the gaps. Safe to re-run. Run once per project, and again to change or repair.
-disable-model-invocation: true
+description: Inventory a repo's MAGITO configuration and fill the gaps in one idempotent pass — issue tracker, review gate and base branch, agent docs, permission allowlist, private-state excludes, the session journal, legacy-note import, delegation and magi rosters, Python toolchain, and stale managed symlinks. Reports each item configured/missing/stale before asking anything, then fills only the gaps. Safe to re-run. Use once per new project, or when asked to check or repair its configuration. Do not run it as part of ordinary session startup — it is a deliberate audit, not a routine check, and firing it on every session interrupts work with questions about setup nobody asked to revisit.
 ---
 
 # Setup MAGITO

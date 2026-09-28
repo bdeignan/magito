@@ -12,6 +12,8 @@
 #      the files in SKIP_LIST below.
 #   3. Each hook in hooks/ gives the expected decision for a few synthetic
 #      PreToolUse stdin payloads.
+#   4. No `SKILL.md` under skills/ carries `disable-model-invocation`. Every
+#      skill is model-invocable (#174), so the flag never comes back.
 #
 # Collects all failures instead of stopping at the first one, prints a summary,
 # and exits 1 if anything failed, 0 otherwise. Bash and the stdlib Python
@@ -152,10 +154,24 @@ check_hooks() {
   fi
 }
 
+# --- 4. no SKILL.md carries disable-model-invocation -------------------------
+check_model_invocation() {
+  local hits
+  hits=$(grep -rl "disable-model-invocation" skills --include="SKILL.md" 2>/dev/null || true)
+  if [[ -z "$hits" ]]; then
+    echo "model-invocation: ok"
+  else
+    echo "model-invocation: FAILED — disable-model-invocation found in:"
+    echo "$hits" | sed 's/^/    /'
+    FAILURES+=("disable-model-invocation present in: $(echo "$hits" | tr '\n' ' ')")
+  fi
+}
+
 # --- run everything, then summarize ------------------------------------------
 check_install
 check_anti_slop
 check_hooks
+check_model_invocation
 
 echo
 if [[ ${#FAILURES[@]} -eq 0 ]]; then

@@ -28,23 +28,13 @@ back in.
 make, and turning it into a recommendation would make it skippable, which is the whole reason
 it is not one. `implement` reaching `verifying` is the same shape.
 
-**Before writing skill A to invoke skill B, check that B does not carry
-`disable-model-invocation`.** That field blocks every model invocation, including one skill
-calling another:
-
-```
-Skill catch-up cannot be used with Skill tool due to disable-model-invocation
-```
-
-A user-invoked skill can call a model-invocable one — `handoff` calls `domain-modeling` this
-way. The reverse fails. This check is cheap and skipping it has already produced one skill
-written against a seam that could not exist.
-
-**The failure mode this rule prevents** is the seam that is none of the three: an automatic
-invocation the user did not choose and cannot see. That is not a correctness bug, it is a
-memorability bug. You remember what you type. A system that chains itself invisibly teaches
-nothing about its own shape, and a system you cannot hold in your head is one you stop
-reaching for.
+**The failure mode Invoke has to guard against** is the seam that is none of the three: an
+automatic invocation the user did not choose and cannot see. Every skill is model-invocable
+(see "Skill invocation" below), so nothing on the mechanics stops skill A from calling skill
+B — the guard is judgment at the point you write the call, not a check `install.py` runs for
+you. Before writing an Invoke seam, check that B's `description:` on its own would tell a
+reader why the call fires. If it would not, the seam belongs in the doc, spelled out, not
+buried silently in the code.
 
 **Reuse a rule by pointing, not restating.** The seams above route *behavior* — one skill's
 procedure triggering another's. Reusing a **rule** — a definition, a policy, a gate — is a
@@ -68,14 +58,21 @@ sourced copy is the accepted cost.
 
 ## Skill invocation
 
-A skill is either **user-invoked** or **model-invocable**. `SKILL.md` is the canonical source:
-`disable-model-invocation: true` declares a user-invoked skill. A user-invoked general skill
-also carries `policy.allow_implicit_invocation: false` in `agents/openai.yaml`, because Codex
-does not read the Claude Code frontmatter field. `install.py` checks that the two tool formats
-stay aligned. The split follows from the seam rule, and the test is whether the skill is a
-step or part of a step.
+Every skill is model-invocable. No `SKILL.md` carries a flag that blocks the model from
+starting it, or blocks one skill from calling another. The reason is the pipeline
+(`docs/intent/0001-agentic-pipeline.md`, migration step 1, "Skills can call skills"): an
+automated pipeline is skills calling skills, so a skill that nothing else can call cannot be
+a pipeline step. `docs/adr/0016-every-skill-is-model-invocable.md` records the change and
+names the flag it replaces.
 
-**User-invoked — the workflow you drive.** The default path is four verbs:
+With no flag to enforce the split, the `description:` field is the only thing that decides
+when a skill fires. Write it to say when to use the skill, and, where a wrong trigger would
+be disruptive, to say when not to as well. `handoff` names its trigger as "only when the
+session is wrapping up" and its anti-trigger as "not as a running status update," because
+firing on the wrong one interrupts the wrong moment.
+
+**The spine is a habit the description encodes, not a mechanism that enforces it.** The
+default workflow is still four verbs, run in order:
 
 ```
 /catch-up  →  /grilling  →  /implement  →  /handoff
@@ -83,17 +80,16 @@ step or part of a step.
 ```
 
 `/wayfinder` sits between orient and decide when the work is too big for one session, and
-hands back to `/grilling` per ticket. The rest of the user-invoked skills are off-spine:
-reached deliberately when a situation calls for them. `/ask-magito` covers situation → play;
-the spine is what happens when no special situation applies.
+hands back to `/grilling` per ticket. The rest of the skills are off-spine: reached
+deliberately when a situation calls for them, which `/ask-magito` covers as situation → play.
+Nothing stops the model from starting any of these on its own now; what keeps `catch-up` at
+the start of a session and `handoff` at the end is that each one's description says so.
 
-**Model-invocable — parts of a step, never stations on the line.** `reviewing-changes` and
-`verifying` fire inside build. `domain-modeling` fires inside decide and record.
-`speaking-plainly` fires wherever prose goes dense. You never type them because there is
-nothing to decide.
-
-That is the real reason those keep model invocation, better than "something calls them": a
-skill with no decision attached is not a step, so there is nothing for the user to enter.
+**A skill with no decision attached fires wherever its description matches**, not on a
+spine position. `reviewing-changes` and `verifying` fire inside build; `domain-modeling`
+fires inside decide and record; `speaking-plainly` fires wherever prose goes dense. That was
+already true before this change — dropping the flag only removed the mechanism that also
+happened to block them from being called by another skill.
 
 ## Reaching for a tool
 
