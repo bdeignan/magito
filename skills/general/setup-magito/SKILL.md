@@ -28,7 +28,7 @@ Read the starting state and classify each item. **Configured** = present and cur
 | Check command documented | Owner mode: `AGENTS.md`/`CLAUDE.md` names the check command. Guest mode: not required | `AGENTS.md`/`CLAUDE.md` |
 | Gemini context | `GEMINI.md` exists, or `.gemini/settings.json` sets `contextFileName` to the repo's instruction file | `GEMINI.md`, `.gemini/settings.json` |
 | Guest excludes | Guest mode only: every path this skill created is in `.git/info/exclude` and none shows in `git status` | `.git/info/exclude` |
-| Audit version | `audited` matches the current magito commit. If older, newer checklist rows may be unchecked — re-run them | `.magito/config.toml` |
+| Audit version | `audited` matches the current magito commit. If older, newer checklist rows can be unchecked — re-run them | `.magito/config.toml` |
 | Issue tracker | `docs/agents/issue-tracker.md` present? | `docs/agents/issue-tracker.md` (see #112) |
 | Review gate + base branch | `git config magito.reviewGate`, `git config magito.baseBranch` | git config |
 | Agent docs | `docs/agents/` files + the `@docs/agents/INDEX.md` import | `docs/agents/`, `CLAUDE.md`/`AGENTS.md` |
