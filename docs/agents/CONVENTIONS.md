@@ -50,7 +50,7 @@ gets named and linked: `docs/agents/README.md` owns the two gates,
 points rather than recopies.
 
 The one exception, and its cost: when an agent must apply a rule *at the point of decision*
-mid-flow — `grilling/references/recon.md` states both gates inline because promotion is judged
+mid-flow — `intent/references/recon.md` states both gates inline because promotion is judged
 right there — a restatement is allowed, but as a synced copy, not a fork. Name the canonical
 source and flag it "change one, change the other," the way `hooks/staging-guard.py` and
 `hooks/review-gate.py` already do. The unflagged paraphrase is the failure; the flagged,
@@ -75,13 +75,14 @@ firing on the wrong one interrupts the wrong moment.
 default workflow is still four verbs, run in order:
 
 ```
-/catch-up  →  /grilling  →  /implement  →  /handoff
-   orient       decide          build             record
+/catch-up  →  /intent  →  /implement  →  /handoff
+   orient       decide        build            record
 ```
 
-`/wayfinder` sits between orient and decide when the work is too big for one session, and
-hands back to `/grilling` per ticket. The rest of the skills are off-spine: reached
-deliberately when a situation calls for them, which `/ask-magito` covers as situation → play.
+`/intent` spans multiple sessions on its own — a later session resumes an existing draft at its
+open questions — so nothing else sits between orient and decide. The rest of the skills are
+off-spine: reached deliberately when a situation calls for them, which `/ask-magito` covers as
+situation → play.
 Nothing stops the model from starting any of these on its own now; what keeps `catch-up` at
 the start of a session and `handoff` at the end is that each one's description says so.
 

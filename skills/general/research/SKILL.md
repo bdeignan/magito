@@ -12,7 +12,7 @@ the contract, so a reader always knows where the answer, the trade-offs, and the
 skill recommends a direction; it never builds, specifies, or scaffolds the thing it recommends.
 
 **Out of scope — redirect, do not half-answer.** A bug to diagnose, a feature to specify, or code to
-write is not this skill. Name the right move (`/grilling` to sharpen a plan, `/implement` to build)
+write is not this skill. Name the right move (`/intent` to sharpen a plan, `/implement` to build)
 in one sentence and stop. If a request bundles a real research question *and* one of those, run the
 research to a full report, then name the next skill for the rest.
 

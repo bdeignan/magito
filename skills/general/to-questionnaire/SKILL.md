@@ -43,4 +43,4 @@ A closing catch-all: anything we did not ask that we should know?
 
 ## Limitation
 
-This skill has no ingest phase. It must run in the same conversation as the grilling that surfaced the questions, or it knows nothing about them. Do not assume it can read prior turns from another session.
+This skill has no ingest phase. It must run in the same conversation as the `intent` session that surfaced the questions, or it knows nothing about them. Do not assume it can read prior turns from another session.
