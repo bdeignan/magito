@@ -46,14 +46,26 @@ is_skipped() {
 }
 
 # --- 1. install.py --dry-run -------------------------------------------------
+# A fresh worktree has no install.toml — it is gitignored and machine-local — so
+# this falls back to install.toml.example instead of failing. See #178.
 check_install() {
   local out
-  if out=$(python3 "$REPO_ROOT/install.py" --dry-run 2>&1); then
-    echo "install.py --dry-run: ok"
+  if [[ -f "$REPO_ROOT/install.toml" ]]; then
+    if out=$(python3 "$REPO_ROOT/install.py" --dry-run 2>&1); then
+      echo "install.py --dry-run: ok (used install.toml)"
+    else
+      echo "install.py --dry-run: FAILED (used install.toml)"
+      echo "$out" | sed 's/^/    /'
+      FAILURES+=("install.py --dry-run exited non-zero")
+    fi
   else
-    echo "install.py --dry-run: FAILED"
-    echo "$out" | sed 's/^/    /'
-    FAILURES+=("install.py --dry-run exited non-zero")
+    if out=$(python3 "$REPO_ROOT/install.py" --dry-run --config "$REPO_ROOT/install.toml.example" 2>&1); then
+      echo "install.py --dry-run: ok (used install.toml.example)"
+    else
+      echo "install.py --dry-run: FAILED (used install.toml.example)"
+      echo "$out" | sed 's/^/    /'
+      FAILURES+=("install.py --dry-run exited non-zero")
+    fi
   fi
 }
 

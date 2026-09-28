@@ -5,9 +5,10 @@
 install.py — Symlink agent configs to the right locations for each tool.
 
 Usage:
-    python install.py [--dry-run] [--force]
+    python install.py [--dry-run] [--force] [--config PATH]
 
-Reads install.toml (copy from install.toml.example and edit). For each enabled tool:
+Reads install.toml (copy from install.toml.example and edit), or the file given via
+--config in its place. For each enabled tool:
   - Symlinks shared/SYSTEM-INSTRUCTIONS.md to the tool's user instruction file path
   - Symlinks skills/general/* to every enabled tool's skills directory (the cross-tool
     ~/.agents/skills standard for most tools, ~/.claude/skills for Claude, ~/.gemini/config/skills
@@ -200,15 +201,22 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Install agent config symlinks")
     parser.add_argument("--dry-run", action="store_true", help="Preview without making changes")
     parser.add_argument("--force", action="store_true", help="Replace foreign symlinks")
+    parser.add_argument("--config", metavar="PATH", help="Read this TOML file instead of install.toml")
     args = parser.parse_args()
 
     repo_root = Path(__file__).resolve().parent
-    toml_path = repo_root / "install.toml"
 
-    if not toml_path.exists():
-        print("Error: install.toml not found.")
-        print("Run: cp install.toml.example install.toml  then edit it.")
-        raise SystemExit(1)
+    if args.config:
+        toml_path = Path(args.config).expanduser()
+        if not toml_path.exists():
+            print(f"Error: config file not found: {toml_path}")
+            raise SystemExit(1)
+    else:
+        toml_path = repo_root / "install.toml"
+        if not toml_path.exists():
+            print("Error: install.toml not found.")
+            print("Run: cp install.toml.example install.toml  then edit it.")
+            raise SystemExit(1)
 
     with open(toml_path, "rb") as f:
         config = tomllib.load(f)
