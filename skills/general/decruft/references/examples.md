@@ -3,8 +3,8 @@
 Curated from the [deslop.it pattern catalog](https://github.com/zaffnet/deslop.it/blob/main/skills/deslop/references/pattern-catalog.md)
 (MIT), which documents 42 patterns across six categories with a 1.0x–1.5x weighting
 scheme. This file keeps the 13 most Python-idiom-specific of those patterns and
-regroups them under `decruft`'s own four buckets — dropping deslop.it's six categories
-and its weights entirely. `decruft` does not score; it proposes a handful of high-conviction
+regroups them under `decruft`'s own four buckets — dropping the six categories and the
+weights of deslop.it entirely. `decruft` does not score; it proposes a handful of high-conviction
 findings. Two Test cruft examples below are not from deslop.it — the source catalog has
 no test category, so they are written here to keep that bucket real.
 
@@ -79,8 +79,8 @@ def _compute_score(values: list[float]) -> float:
 
 ## Test cruft
 
-**Mocking the seam under test** — the test mocks the exact function it claims to
-verify, so the real path never runs and the suite stays green regardless.
+**Mocking the seam under test** — the test mocks the exact function under test,
+so the real path never runs and the suite stays green regardless.
 
 ```python
 # Before

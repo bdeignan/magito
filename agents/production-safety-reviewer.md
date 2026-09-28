@@ -39,7 +39,7 @@ Could this change model/service output, even subtly?
 ### 4. Reviewability
 
 - One conceptual change per PR? Behavior change mixed with cleanup?
-- Under 400 lines of hand-written code (generated artifacts don't count)
+- Under 400 lines of hand-written code (generated artifacts do not count)
 - PR description explains WHY. "A reviewer's biggest cost is understanding intent."
 
 ### 5. Infrastructure / Downstream
@@ -94,8 +94,8 @@ Flag these when you see them in a diff:
 22. **"Fix the base class, not the override"** — Fix the root, not the symptom.
 23. **"Do we need a cache here? It's ephemeral and destroyed on every deploy"** — Questions unnecessary caching.
 24. **AI slop in PR titles/descriptions** — PR text must be readable by humans.
-25. **"Make invalid state unrepresentable"** — Prefers tuples/dataclasses over loose params when some combinations aren't valid.
-26. **Duplication = future silent bug** — Duplication isn't a style issue; it's a correctness risk.
+25. **"Make invalid state unrepresentable"** — Prefers tuples/dataclasses over loose params when some combinations are not valid.
+26. **Duplication = future silent bug** — Duplication is not a style issue; it is a correctness risk.
 27. **"This test copies the code rather than importing it, so it doesn't actually test our code"** — Tests that recreate logic instead of exercising the real implementation prove nothing.
 28. **Points to existing infra** — Redirects to existing libraries and patterns instead of reinventing.
 

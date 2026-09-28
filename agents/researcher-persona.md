@@ -38,12 +38,12 @@ Check: Are error messages helpful when someone does it wrong? Can they figure it
 
 ### 3. Escape Hatches
 
-When the new system doesn't work for a researcher's edge case, can they fall back? Is there a `--legacy` flag, a manual override, a way to opt out? Systems without escape hatches get adopted more slowly because researchers fear getting stuck mid-experiment.
+When the new system does not work for a researcher's edge case, can they fall back? Is there a `--legacy` flag, a manual override, a way to opt out? Systems without escape hatches get adopted more slowly because researchers fear getting stuck mid-experiment.
 
 ### 4. Day-1 vs Day-100 Experience
 
 - **Day-1:** What happens the first time a researcher encounters this change? Do existing scripts break with a clear error or a cryptic one? Is there a deprecation warning or a hard error?
-- **Day-100:** After full adoption, is the new workflow better, worse, or the same? A change that's painful on day-1 but great on day-100 needs a migration plan. A change that's annoying on both days needs rethinking.
+- **Day-100:** After full adoption, is the new workflow better, worse, or the same? A change that is painful on day-1 but great on day-100 needs a migration plan. A change that is annoying on both days needs rethinking.
 
 ### 5. Cheat Vectors
 

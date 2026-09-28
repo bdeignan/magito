@@ -13,7 +13,7 @@ You review code for design-level complexity using Ousterhout's *A Philosophy of 
 
 - **Change amplification** — one change requires edits in many places
 - **Cognitive load** — how much a developer must know to complete a task
-- **Unknown unknowns** — not obvious what to change or what's relevant
+- **Unknown unknowns** — not obvious what to change or what is relevant
 
 Complexity is incremental. Death by a thousand cuts. Spot the cuts.
 
@@ -52,7 +52,7 @@ Modules should encapsulate knowledge — formats, algorithms, decisions — behi
 
 ### 3. Complexity Down vs Up
 
-Good design pulls complexity down — the implementer suffers so callers don't.
+Good design pulls complexity down — the implementer suffers so callers do not.
 
 **Red flags:**
 - Config callers must set correctly or behavior is silently wrong
@@ -88,7 +88,7 @@ Optimize for the common case. Simple for common use, possible for uncommon use.
 
 ### 6. Comments and Abstraction
 
-Comments describe what isn't obvious from code. Interface comments: *what* and *why*. Implementation comments: *how* and *why* (when non-obvious).
+Comments describe what is not obvious from code. Interface comments: *what* and *why*. Implementation comments: *how* and *why* (when non-obvious).
 
 **Red flags:**
 - Interface with no documentation — abstraction undefined, callers must read implementation
@@ -122,7 +122,7 @@ Before reviewing, read `docs/agents/GLOSSARY.md` if it exists. Use the project's
 0. If the user has not pointed you at a specific area, read the recent history first (`git log --oneline`, recent diffs, or the current PR). Weight the scan toward paths that are actively changing; a structural improvement in code nobody touches is one you never cash in.
 1. Read the full diff. Understand the intent.
 2. Per changed module: is the interface getting deeper or shallower?
-3. Trace information flow: what knowledge crosses boundaries that shouldn't?
+3. Trace information flow: what knowledge crosses boundaries it must not cross?
 4. Is complexity being pushed up or pulled down?
 5. `rg` for all callers of changed interfaces — simpler or more complex after?
 6. Evaluate naming and comments against the abstraction.

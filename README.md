@@ -23,10 +23,10 @@ tool on every machine stays in sync.
 <details>
 <summary>Why "MAGITO"?</summary>
 
-It's named after — and lightly modeled on — the **MAGI** supercomputer system from
+It is named after — and lightly modeled on — the **MAGI** supercomputer system from
 *Neon Genesis Evangelion*: three semi-independent cores deliberating under one
 governance layer. The MAGI decided the fate of humanity. This decides which markdown
-file your CLI reads. The ambition is, let's say, *scoped*.
+file your CLI reads. The ambition here is deliberately *scoped*.
 
 | MAGI core      | …governs       | Role here                                  |
 |----------------|----------------|--------------------------------------------|
@@ -46,7 +46,7 @@ can delegate implementation work to *other* CLIs as headless workers — a cheap
 builds in an isolated worktree, the orchestrator reviews and lands it. Worker
 commands are machine-local (`~/.magito/workers.toml`), so each machine hires from
 whatever CLIs it actually has. It also keeps a session journal — one file per
-session recording what happened and what's unfinished — so a fresh session can
+session recording what happened and what is unfinished — so a fresh session can
 pick up where the last one left off.
 
 Learning to drive it? Run **`/ask-magito`** — it maps every skill to the situation it
@@ -57,7 +57,7 @@ while the internals evolve.
 
 The model is dead simple: **files live in this repo; the tools read them via symlink.**
 `install.py` (stdlib-only Python, 3.11+) reads your machine-local `install.toml` and
-creates those symlinks for every tool you've enabled. Because they're symlinks:
+creates those symlinks for every tool you have enabled. Because they are symlinks:
 
 - **Editing the content of an existing file is live instantly** — no reinstall. The tool
   reads through the link to the repo file.
@@ -80,7 +80,7 @@ python install.py --dry-run            # preview every symlink it would create
 python install.py                      # apply
 ```
 
-That's it — your CLIs now read this repo.
+That is it — your CLIs now read this repo.
 
 ---
 
@@ -88,7 +88,7 @@ That's it — your CLIs now read this repo.
 
 ### 🔄 Syncing a change to another machine
 
-This is the one you'll reach for most. You changed something on machine A; pull it down
+This is the one you will reach for most. You changed something on machine A; pull it down
 on machine B:
 
 ```bash
@@ -103,7 +103,7 @@ python install.py        # only strictly needed if NEW skills/agents/tools/bin f
 |-----------------------------------------------------------|-------------------|
 | Edited `SYSTEM-INSTRUCTIONS.md` or an existing `SKILL.md`  | **No** — symlink already points there, change is live |
 | Added a brand-new skill, agent, hook, tool stanza, or `bin/` file (e.g. `journal`) | **Yes** — needs a new symlink |
-| Not sure                                                  | Just run it — it's idempotent and harmless |
+| Not sure                                                  | Just run it — it is idempotent and harmless |
 
 When in doubt, run `python install.py`. It never does damage on a re-run.
 
@@ -112,7 +112,7 @@ When in doubt, run `python install.py`. It never does damage on a re-run.
 
 Full steps for each — which directory a skill goes in, subagent frontmatter fields, the
 hook contract, wiring up a new tool stanza — live in [`CLAUDE.md`](CLAUDE.md) under
-"Adding a New Skill / Agent / Hook / Tool". That's the file the agents themselves read
+"Adding a New Skill / Agent / Hook / Tool". That is the file the agents themselves read
 before extending this repo, so it stays the one source of truth for these steps.
 
 Short version, every case: create the file with the right frontmatter, then run
@@ -140,7 +140,7 @@ ls -la ~/.claude/CLAUDE.md       # confirm a link resolves back into this repo
 ---
 
 Full repo layout and the per-tool path table live in [`CLAUDE.md`](CLAUDE.md), kept in
-one place so they don't drift out of sync with what the agents actually see.
+one place so they do not drift out of sync with what the agents actually see.
 
 ---
 
