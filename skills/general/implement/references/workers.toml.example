@@ -1,0 +1,66 @@
+# Example worker roster for ~/.magito/workers.toml (machine-local, never synced).
+# Uncomment the entries for the tools installed on this machine, then run
+# `python3 <skills>/implement/scripts/worker.py probe <name>` for each one.
+# Each entry pins one model. A different model means a separate entry with its own name.
+# Put the top-level keys below above the first [workers.*] table.
+
+# Ranked reviewers: tried in this order, then every other worker in file order.
+# A reviewer must pass a different family than the writer and answer its probe.
+# reviewers = ["codex", "cursor-openai", "gemini", "omp"]
+
+# Checked 2026-09-29: gpt-6-astra is in ~/.codex/models_cache.json (codex 0.158).
+# [workers.codex]
+# cmd = "codex exec --sandbox workspace-write --ephemeral -m {model} -C {cwd} {brief}"
+# model = "gpt-6-astra"
+# family = "openai"
+# tier = "strong"
+
+# Checked 2026-09-29: `claude --help` (2.1.284) lists `opus` as a model alias and shows
+# --model and --permission-mode. The `fable` alias names Anthropic's higher, costlier tier;
+# copy this entry as `claude-fable` and set its model to the `fable` alias to use it.
+# [workers.claude]
+# cmd = "env -u CLAUDECODE claude -p --permission-mode bypassPermissions --model {model} {brief}"
+# model = "opus"
+# family = "anthropic"
+# tier = "strong"
+
+# Flags checked 2026-09-29 against `gemini --help` (gemini-cli 0.46.0).
+# unverified: Gemini CLI has no model list command. The id below is the newest
+# pro model named in the 0.46.0 bundle; as of 2026-09-29, Gemini 3.1 Pro is still Google's
+# top Pro model (3.5 Pro is unreleased). Check with `gemini -m <id> -p "Reply OK"`.
+# [workers.gemini]
+# cmd = "gemini --skip-trust --approval-mode yolo --model {model} --include-directories {cwd} -p {brief}"
+# model = "gemini-3.1-pro-preview"
+# family = "google"
+# tier = "strong"
+
+# Cursor entries take their family from the pinned model, not from the tool.
+# Both Cursor entries are review-only: `--mode ask` keeps the agent read-only, so they
+# cannot build. For a build worker, copy an entry under a new name and replace
+# `--mode ask` with `--force`.
+# unverified: check with `agent models`. Cursor's `agent` CLI is not installed on the
+# machine that wrote this file, so the whole cmd line follows https://cursor.com/docs/cli
+# (`agent -p --model <id> <prompt>`, and https://cursor.com/docs/cli/using#ask-mode for
+# `--mode ask`). Confirm the flags with `agent --help`.
+# [workers.cursor-openai]
+# cmd = "agent -p --mode ask --model {model} {brief}"
+# model = "gpt-5.6-sol-medium"
+# family = "openai"
+# tier = "strong"
+
+# unverified: check with `agent models`. Cursor lists Claude Opus 5.5 and Fable 5.1, but its
+# docs give no CLI id. The model value below is a deliberate placeholder, not an id:
+# replace it with the Opus 5.5 id that `agent models` prints before uncommenting.
+# [workers.cursor-anthropic]
+# cmd = "agent -p --mode ask --model {model} {brief}"
+# model = "REPLACE-with-opus-5.5-id-from-agent-models"
+# family = "anthropic"
+# tier = "strong"
+
+# Checked 2026-09-29: `omp models find kimi-k3` lists moonshotai/kimi-k3 under openrouter.
+# The family comes from the pinned model (moonshot), not from omp.
+# [workers.omp]
+# cmd = "omp -p --no-session --no-skills --approval-mode yolo --max-time 900 --cwd {cwd} --model {model} {brief}"
+# model = "openrouter/moonshotai/kimi-k3"
+# family = "moonshot"
+# tier = "strong"
