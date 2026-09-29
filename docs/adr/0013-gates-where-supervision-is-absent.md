@@ -55,3 +55,7 @@ driving, so every candidate is a proxy — whether the command runs from a linke
 environment variable set by `dispatch`, a separate config flag. Choosing one by guess is how
 the last two designs in this area went wrong. The decision above stands on its own; the
 mechanism is a separate question with its own issue.
+
+---
+
+_2026-09-29 (#193): ADR 0018 supersedes this ADR's premise that a human is present on the pipeline path. Between accepting an intent and merging its pull request, agents build with no one watching, so the review gate applies there too. This ADR still holds for the manual path._

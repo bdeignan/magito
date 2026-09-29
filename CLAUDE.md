@@ -24,8 +24,8 @@ changes. Intent-specific overrides use the selection contract in
 adapter owns that run's operations. Do not restate commands in workflow skills.
 
 The repo is opted into the merge/PR review gate (`git config magito.reviewGate true`),
-which since ADR 0014 applies only to branches created by the `/implement` fan-out —
-ordinary work lands with no gate and no marker. By default `gitflow.sh pr` targets the
+which since ADR 0014 and ADR 0018 applies only to branches created by `gitflow.sh worktree add`:
+the `/implement` fan-out and every pipeline branch. Ordinary work lands with no gate and no marker. By default `gitflow.sh pr` targets the
 repo's GitHub default branch (main); `gitflow.sh
 merge` never consults GitHub — it detects the base locally instead (`origin/HEAD`, then
 `init.defaultBranch`, then local `main`/`master`). Set `git config magito.baseBranch
@@ -207,11 +207,14 @@ the floor. Put a new rule in the lowest tier that can hold it.
 
 A second rule decides whether a rule needs teeth at all: **gates belong where supervision is
 absent** (ADR 0013). magito assumes an active human, so blocking that person to collect an
-attestation nobody reads is ceremony. The unsupervised `/implement` fan-out is the exception.
+attestation nobody reads is ceremony. The exception is the work no one watches. That was the
+`/implement` fan-out, and ADR 0018 adds the pipeline path: the human acts only at accepting an
+intent and merging a pull request, so every pipeline branch gets a marker and an automatic
+review from a different model family. The manual path keeps the rule of no gate.
 
 **Hooks** (Claude Code only), as they stand today:
 - `staging-guard.py` — denies `git add -A`/`--all`/`.` and `git commit -a` in every repo.
-- `review-gate.py` — denies landing unreviewed **fan-out** work: `gitflow.sh merge|pr`
+- `review-gate.py` — denies landing unreviewed **fan-out and pipeline** work (ADR 0018): `gitflow.sh merge|pr`
   always; raw `git merge` (on the base branch) and `gh pr create` only in repos opted in
   via `git config magito.reviewGate true` (set by `setup-magito`). The gate checks the
   marker at `<main-worktree-root>/.magito/review-<branch>`. It holds `<sha> <decision>` once

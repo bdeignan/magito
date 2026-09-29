@@ -93,3 +93,7 @@ _2026-08-03 (#109): the `dispatch` skill was absorbed into `/implement`'s parall
 `/implement <a> <b>` now fans out where `/dispatch a b` did. The fan-out mechanism this ADR
 describes is unchanged; only the caller's name is. Every "`dispatch`" in this record is that
 same path under its former name._
+
+---
+
+_2026-09-29 (#193): ADR 0018 extends the marker from the fan-out alone to every pipeline branch, because the pipeline creates each branch with `gitflow.sh worktree add`. A branch without a marker is still not gated._

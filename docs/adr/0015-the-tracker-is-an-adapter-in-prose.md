@@ -75,3 +75,7 @@ config doc first. Small, paid every session, and the honest price of not hardcod
 supported here** rather than delete the heading. A missing section reads as an oversight and
 invites an agent to improvise; an explicit refusal tells it to stop. Whether people actually
 fill it in that way is untested.
+
+---
+
+_2026-09-29 (#193): ADR 0017 changes the rule that a repo has exactly one tracker. An intent can select its own tracker, and the selected adapter serves that run. The default adapter stays `docs/agents/issue-tracker.md`._
