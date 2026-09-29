@@ -40,8 +40,9 @@ cutover.
   `scripts/*.py`.
 - No test framework; verify with `bash scripts/check.sh`. It runs `install.py --dry-run`,
   `anti-slop.py` against every tracked markdown file, the hook payload checks, the
-  model-invocation check, and the `worker.py reviewer` test script, in one command that
-  exits non-zero if any of them fails. Its header comment lists each check.
+  model-invocation check, and the stdlib test scripts in `scripts/` (workers, evals,
+  installer, `gitflow.sh`), in one command that exits non-zero if any of them fails. Its
+  header comment is the full list; update it when you add a check.
 - Markdown (skills, agents, instructions) is the product. Content edits are live via
   symlink; new files need `python install.py`.
 
@@ -55,8 +56,10 @@ magito/
 ├── install.toml.example    # Template — commit this, not install.toml
 ├── README.md               # Entry point — what this is, quick start, user guide
 ├── bin/                    # Machine-global commands (journal), symlinked to ~/.magito/bin/
+├── scripts/                # check.sh, the paid evals, and their stdlib test scripts
 ├── docs/
 │   ├── adr/                # Architecture decision log
+│   ├── intent/             # Intent docs from /intent, one per change
 │   └── agents/             # Project context for agents — see docs/agents/README.md
 ├── shared/
 │   └── SYSTEM-INSTRUCTIONS.md  # Symlinked to each tool's user instruction file
@@ -180,6 +183,10 @@ settings file every later pipeline step reads — mode (owner or guest), the def
 tracker, the check command, the intent-docs location, and which magito commit last
 audited the repo. `setup-magito` writes and repairs it; see
 `skills/general/setup-magito/SKILL.md`.
+
+Build worktrees live there too, at `.magito/worktrees/<branch>`: `gitflow.sh worktree add`
+puts them inside the repo so an editor opened at the root shows them, and the same exclude
+line keeps them out of git (ADR 0019).
 
 Conventions: agents never overwrite an existing *user* file here on their own
 initiative — `bench.toml`, `workers.toml`, and the handoffs are the user's.

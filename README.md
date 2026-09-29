@@ -81,6 +81,71 @@ python install.py                      # apply
 
 That is it — your CLIs now read this repo.
 
+## Cheat sheet
+
+Short steps to remember. [Which skill when](#which-skill-when) explains each one.
+
+### Set up a project (once per repo)
+
+1. Open the repo in your agent and run **`/setup-magito`**. It checks what is already there, then asks only about what is missing. It is safe to re-run.
+2. It asks one question first: **owner or guest?**
+   - **Owner:** the repo is yours. magito's files are committed like any other file, and pull request titles follow Conventional Commits (`fix(scope): summary`).
+   - **Guest:** the repo belongs to a team. magito never edits a file the team tracks. Everything it creates is listed in `.git/info/exclude`, so none of it shows up in `git status` or a commit. Pull requests follow the repo's own template (`.github/pull_request_template.md`) and its title style.
+3. Your answer and the other settings land in `.magito/config.toml`. Change a choice by editing that file or re-running `/setup-magito`.
+
+### The daily loop
+
+```
+/catch-up            start: what happened last time, and what is next
+/intent              describe the change; answer one question at a time; say "accept"
+                     → tickets, build, and review run on their own
+                     → you answer only escalations
+merge the pull request on GitHub
+/handoff             end: one short journal entry
+```
+
+- **Already know exactly what to build?** Skip `/intent`. Run `/to-issues` with your plan, or `/implement 42` on one clear issue. Those ask you to approve the plan and say "ship it" before the pull request.
+- **Several unrelated issues at once?** `/implement 12 13 14` builds each in its own worktree, in parallel, and opens one pull request each.
+- **Interrupted?** Start a new session and run the same `/implement <tickets>` again. For tickets from one intent, it skips any ticket already merged into the run's integration branch and carries on.
+
+### What stops for you
+
+Only these: accepting an intent, answering an **escalation**, and merging. An escalation is one of six named reasons to stop:
+1. the ticket is ambiguous;
+2. three review rounds end without a pass;
+3. a locked test or out-of-scope work must change;
+4. the red check passes before any change;
+5. no check command exists;
+6. a merge turns the check red.
+
+The agent quotes the evidence each time. Everything else it decides alone and lists in the pull request body for you to overrule at the merge.
+
+### Settings that change behavior
+
+| Setting | Where | Effect |
+|---|---|---|
+| `mode` | `.magito/config.toml` | `owner` or `guest`, as above |
+| `check` | `.magito/config.toml` | the one command that must pass after every build step |
+| `Tracker:` in an intent's header | the intent doc | use `local` or `other` instead of the repo's default tracker for that intent |
+| `thrifty = true`, or `MAGITO_THRIFTY=1` | `~/.magito/workers.toml`, or your shell | builds and reviews use cheap models only |
+| `reviewers = [...]` | `~/.magito/workers.toml` | which reviewer to try first; it must come from another model family |
+| "via omp" (any worker name) | your request | hands the build to that worker instead of your own session |
+| `magito.prTitlePattern` | `git config` | the pull request title rule; `off` for a guest repo with its own style |
+| `magito.worktreeDir` | `git config` | put worktrees somewhere other than `.magito/worktrees/` |
+| `magito.baseBranch` | `git config` | merge into a branch other than the default, such as `develop` |
+
+### Where things live
+
+| Path | What |
+|---|---|
+| `.magito/config.toml` | this repo's magito settings (never committed) |
+| `.magito/journal/` | one file per session, read by `/catch-up` |
+| `.magito/worktrees/<branch>` | each build's working copy, visible from your editor, hidden from git |
+| `docs/intent/` | intent docs (in a guest repo, hidden from git) |
+| `~/.magito/workers.toml` | this machine's workers and reviewers |
+| `~/.magito/bench.toml` | this machine's `/magi` seats |
+| `install.toml` | which tools this machine installs into (gitignored) |
+
 ## Which skill when
 
 Skills are the source of truth. If this section disagrees with a skill, the skill is right and

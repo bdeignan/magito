@@ -31,3 +31,25 @@ tickets*, *fetch a ticket*, *publish a ticket*, *close a ticket*, and the rest.
 [`issue-tracker.md`](./issue-tracker.md) is the one file that says how each is performed in
 this repo; the canonical list of the operations themselves lives in
 `skills/general/setup-magito/references/issue-tracker-other.md.template`.
+
+## The workflow
+
+**owner mode / guest mode** — a repo's relationship to magito, set once as `mode` in
+`.magito/config.toml`. In owner mode the repo is the user's, and magito's files are committed
+like any other. In guest mode the repo belongs to a team: magito never edits a file the team
+tracks, hides every file it creates in `.git/info/exclude`, and follows the repo's own pull
+request template and title style.
+
+**intent** — a signed-off Markdown doc under `docs/intent/` recording one change's problem,
+decisions, and open questions. `/intent` writes it; the user's "accept" sets
+`Status: accepted`, and that acceptance is the human's sign-off for everything built from it.
+_Avoid_ "spec" or "PRD" for this doc.
+
+**pipeline ticket** — a ticket whose body links an accepted intent and carries a
+`Spec review:` line. `implement` builds it with no approval stops: it runs from build to an
+open pull request and stops only for an escalation. Any other ticket keeps plan approval
+and "ship it."
+
+**escalation** — one of the six named reasons the pipeline stops and asks the human, listed
+in `skills/general/implement/references/pipeline.md`. Anything else the agent decides alone
+and lists in the pull request body.
