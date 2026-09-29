@@ -241,12 +241,16 @@ else
 
   grep -Eq '(^|[[:space:]`])VERDICT PASS' "$RESPONSE" || fail "final response has no VERDICT PASS line"
 
-  # The only question in the response is the last non-empty line, and it asks to merge.
-  LAST="$(grep -v '^[[:space:]]*$' "$RESPONSE" | tail -1)"
-  [[ "$LAST" == *'?'* ]] || fail "final response does not end at the merge checkpoint question"
-  echo "$LAST" | grep -qi 'merge' || fail "last question is not the merge checkpoint: $LAST"
-  if [[ "$(grep -c '?' "$RESPONSE")" -ne 1 ]]; then
+  # The response ends at the merge checkpoint: one line asks for merge approval, as a
+  # question or as a request ("Approve the merge and I will run..."). No question may come
+  # before that line, and none after it.
+  ASK_LINE="$( { grep -nEi 'merge' "$RESPONSE" || true; } | { grep -Ei '\?|approv' || true; } | tail -1 | cut -d: -f1)"
+  [[ -n "$ASK_LINE" ]] || fail "final response does not end at the merge checkpoint"
+  if head -n $((ASK_LINE - 1)) "$RESPONSE" | grep -q '?'; then
     fail "final response asks a question before the merge checkpoint"
+  fi
+  if tail -n +$((ASK_LINE + 1)) "$RESPONSE" | grep -q '?'; then
+    fail "final response asks a question after the merge checkpoint"
   fi
   echo "$LABEL: PASS"
 fi

@@ -75,6 +75,8 @@ else:
         response = "Is the plan fine?\\n" + response
     if mode == "no-final-question":
         response += "Done.\\n"
+    elif mode == "imperative-approval":
+        response += "Approve the merge and I will run gitflow.sh merge.\\n"
     else:
         response += "Ready to merge feat/1-hello into main?\\n"
     if mode == "no-branch":
@@ -107,6 +109,10 @@ def main() -> None:
         green = run("green", roster)
         assert green.returncode == 0, green.stdout + green.stderr
         assert "implement: PASS" in green.stdout, green.stdout
+
+        # A merge checkpoint phrased as a request, not a question, also passes.
+        imperative = run("imperative-approval", roster)
+        assert "implement: PASS" in imperative.stdout, imperative.stdout
 
         for mode, needle in [
             ("no-branch", "no branch"),
