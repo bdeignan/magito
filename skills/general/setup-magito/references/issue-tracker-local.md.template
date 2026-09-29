@@ -17,10 +17,12 @@ out how to perform it here.
 ```
 .scratch/
   <feature-slug>/
-    SPEC.md          # optional parent spec; only when a breakdown produced 4+ slices
     01-<slug>.md     # one ticket per file, numbered from 01
     02-<slug>.md
+    drafts/          # draft tickets waiting for review; never listed as open
 ```
+
+`<feature-slug>` is `<intent-number>-<intent-slug>` when the tickets come from an intent doc, for example `0003-to-issues` for `docs/intent/0003-to-issues.md`. A directory name is then enough to find the intent behind a ticket. Tickets written without an intent use a short free slug, as before.
 
 Every ticket file opens with a short header block, then the body:
 
@@ -29,15 +31,17 @@ Every ticket file opens with a short header block, then the body:
 
 Status: open
 Blocked by: 01, 03
+Made: 2026-09-28
+Use by: 2026-10-12
 
-<body — context, acceptance criteria>
+<body>
 
 ## Comments
 ```
 
-`Status:` is one of `open`, `in-progress`, `done`. `Blocked by:` is omitted when there is
-nothing blocking. Keep both lines directly under the title so a skill can read a ticket's
-state without parsing the whole file.
+`Status:` is one of `open`, `in-progress`, `done`. `Blocked by:` is omitted when there is nothing blocking. `Made:` is the date the ticket was published. `Use by:` is `Made:` plus `use_by_days` from `.magito/config.toml`, or 14 days when that key is absent. Keep all four lines directly under the title so a skill can read a ticket's state without parsing the whole file.
+
+A ticket whose `Use by:` date has passed is **expired**. Before building an expired ticket, re-check it against the current code, and update or close it if the code has moved. Never delete an expired ticket.
 
 ## Ticket identifiers
 
@@ -48,7 +52,9 @@ the path in commit messages so `reviewing-changes` can find the spec behind a di
 ## List open tickets
 
 Read every `.scratch/*/[0-9][0-9]-*.md` and keep the ones whose `Status:` is not `done`.
-Report them as `<feature-slug>/NN — <title>`, grouped by feature.
+This glob does not match files under `drafts/`, so a draft is never listed as open.
+Report them as `<feature-slug>/NN — <title>`, grouped by feature. Report `(expired)` after
+the title of any open ticket whose `Use by:` date has passed.
 
 ## Fetch a ticket
 
@@ -62,6 +68,12 @@ Write a new file at `.scratch/<feature-slug>/<NN>-<slug>.md`, creating the direc
 does not exist. `NN` is the next unused number in that directory, zero-padded to two digits.
 Start it with the header block above, `Status: open`.
 
+Write `Made:` as today's date and `Use by:` as described under the header block.
+
+Before writing the first file under `.scratch/`, make sure `.scratch/` is a line in
+`.git/info/exclude`, using the shell form from `setup-magito`'s *Private-state excludes*
+section. A line already present is left alone.
+
 ## Comment on a ticket
 
 Append to the `## Comments` section at the bottom of the file, newest last, each entry
@@ -74,8 +86,8 @@ deleting it strands every ticket that lists it under `Blocked by:`.
 
 ## Link a sub-ticket
 
-Put the parent spec at `.scratch/<feature-slug>/SPEC.md` and list the ticket files under it,
-in dependency order. The directory is the link; there is nothing else to record.
+Not used. The intent doc is the parent. Every ticket links to it in its body, and the
+directory name carries the intent number.
 
 ## Blocking edges
 

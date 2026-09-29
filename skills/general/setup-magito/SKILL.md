@@ -55,6 +55,7 @@ mode = "owner"            # "owner" or "guest"
 tracker = "github"        # "github", "local", or "other" — the repo default
 check = "bash scripts/check.sh"   # the one command that exits non-zero on failure
 intent_dir = "docs/intent"        # where intent docs go
+use_by_days = 14                  # optional; how long a local ticket stays fresh
 audited = "<sha>"         # magito commit that last audited this repo
 audited_on = "2026-09-28"
 ```
