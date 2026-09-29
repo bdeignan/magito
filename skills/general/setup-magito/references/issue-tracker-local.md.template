@@ -5,9 +5,11 @@
 
 # Issue tracker: local markdown
 
+All `.scratch/` paths below resolve against the main worktree root.
+
 Work for this repo is tracked as markdown files under `.scratch/`, one directory per feature.
 There is no service and no CLI — every operation below is a file read or a file write, which
-is the point: it works in a repo with no remote, and the tickets travel with the branch.
+is the point: it works in a repo with no remote, and the tickets stay in the main worktree across implementation branches.
 
 Skills never name a backend. They name one of the operations below and read this file to find
 out how to perform it here.
@@ -49,6 +51,10 @@ The path, or `<feature-slug>/NN` in prose. Numbers restart at `01` in each featu
 so a bare `03` means nothing on its own — always carry the feature slug with it. Reference
 the path in commit messages so `reviewing-changes` can find the spec behind a diff.
 
+When given a file path, an absolute path is used directly. A path starting with `.scratch/`
+is relative to the main worktree root. A path starting with a feature slug, such as
+`0001-hello/01-hello.md`, is relative to that root's `.scratch/` directory.
+
 ## List open tickets
 
 Read every `.scratch/*/[0-9][0-9]-*.md` and keep the ones whose `Status:` is not `done`.
@@ -61,6 +67,12 @@ the title of any open ticket whose `Use by:` date has passed.
 Read the file. The user normally passes the path or the feature and number directly; if only
 a number is given and more than one feature directory exists, ask which feature rather than
 guessing.
+
+## Find a published ticket
+
+Read all `.scratch/*/[0-9][0-9]-*.md` under the main worktree root, including done tickets.
+Match the exact `Publication-ID: <identity>` line in the body. Return all matching paths.
+The glob excludes draft tickets. A read error is an uncertain result, never an empty result.
 
 ## Publish a ticket
 
@@ -94,6 +106,10 @@ directory name carries the intent number.
 The `Blocked by:` line in the child ticket, holding the blockers' numbers within the same
 feature directory. A ticket is ready to start when every number it lists has `Status: done`.
 Cross-feature blockers are written as `<other-feature>/NN`.
+
+To add a blocker, add its number to the child's `Blocked by:` line, separated by a comma. If
+the child has no `Blocked by:` line yet, add one directly under `Status:`. Read the line back
+afterwards; a number already on it is left alone.
 
 ## Pull requests
 

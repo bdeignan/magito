@@ -19,7 +19,9 @@ INDEX + OVERVIEW + GLOSSARY auto-load every session via this import).
 **GitHub** — issues and PRs against `bdeignan/magito`; reference issues as `#N`. Skills name
 tracker *operations*, never a backend: `docs/agents/issue-tracker.md` is the single place
 that says how each one is performed here, and it is the file to edit if the tracker ever
-changes. Do not restate its commands anywhere else.
+changes. Intent-specific overrides use the selection contract in
+`skills/general/setup-magito/references/tracker-selection.md` (ADR 0017). The selected
+adapter owns that run's operations. Do not restate commands in workflow skills.
 
 The repo is opted into the merge/PR review gate (`git config magito.reviewGate true`),
 which since ADR 0014 applies only to branches created by the `/implement` fan-out —

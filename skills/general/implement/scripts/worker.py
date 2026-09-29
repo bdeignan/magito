@@ -28,7 +28,7 @@ import tomllib
 from pathlib import Path
 from types import SimpleNamespace
 
-ROSTER = Path.home() / ".magito" / "workers.toml"
+ROSTER = Path(os.environ.get("MAGITO_WORKERS_FILE", Path.home() / ".magito" / "workers.toml"))
 BYPASS_PAIRS = {"--approval-mode", "--permission-mode"}  # flag + value
 BYPASS_SINGLE = {
     "--auto-approve", "--yolo", "--full-auto",

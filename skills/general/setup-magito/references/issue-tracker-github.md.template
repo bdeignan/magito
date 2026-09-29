@@ -61,6 +61,20 @@ bash <skills>/implement/scripts/issues.sh view <number>
 The wrapper takes the number and nothing else — use plain `gh` above for `--comments` or
 `--json`.
 
+## Find a published ticket
+
+Find the exact `Publication-ID: <identity>` line in ticket bodies across all states. Read
+all pages, not only open tickets or search-index results:
+
+```
+gh api --paginate 'repos/{owner}/{repo}/issues?state=all&per_page=100'
+```
+
+Keep objects without `pull_request` whose body contains the exact identity line. Return
+all matching issue numbers; zero and multiple matches are distinct results. An API error
+or incomplete pagination is an uncertain result, never an empty result. Fetch a recovered
+issue to compare its body before reusing it.
+
 ## Publish a ticket
 
 ```

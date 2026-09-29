@@ -16,6 +16,10 @@
 #      skill is model-invocable (#174), so the flag never comes back.
 #   5. `worker.py reviewer` picks a worker from a different family than the
 #      writer's, probing candidates in roster order. See issue #183.
+#   6. The to-issues review snapshot catches content edits that git status
+#      cannot see, including ignored drafts and already-dirty tracked files.
+#   7. The paid to-issues evaluator checks its complete final response and
+#      preserves a worker failure.
 #
 # Collects all failures instead of stopping at the first one, prints a summary,
 # and exits 1 if anything failed, 0 otherwise. Bash and the stdlib Python
@@ -193,12 +197,37 @@ check_worker_reviewer() {
   fi
 }
 
+# --- 6. to-issues contract ---------------------------------------------------
+check_to_issues_contract() {
+  local out
+  if out=$(python3 "$REPO_ROOT/scripts/test_to_issues_contract.py" 2>&1); then
+    echo "to-issues-contract: ok"
+  else
+    echo "to-issues-contract: FAILED"
+    echo "$out" | sed 's/^/    /'
+    FAILURES+=("to-issues review snapshot")
+  fi
+}
+
+check_eval_to_issues() {
+  local out
+  if out=$(python3 "$REPO_ROOT/scripts/test_eval_to_issues.py" 2>&1); then
+    echo "eval-to-issues: ok"
+  else
+    echo "eval-to-issues: FAILED"
+    echo "$out" | sed 's/^/    /'
+    FAILURES+=("eval-to-issues response handling")
+  fi
+}
+
 # --- run everything, then summarize ------------------------------------------
 check_install
 check_anti_slop
 check_hooks
 check_model_invocation
 check_worker_reviewer
+check_to_issues_contract
+check_eval_to_issues
 
 echo
 if [[ ${#FAILURES[@]} -eq 0 ]]; then

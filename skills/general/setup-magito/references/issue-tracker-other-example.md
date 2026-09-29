@@ -48,6 +48,11 @@ jira issue list -p PLAT -s~Done --plain
 jira issue view PLAT-<n> --comments 20
 ```
 
+## Find a published ticket
+
+**Not supported here.** If a publish result is uncertain, stop and reconcile the matching
+`Publication-ID:` with the user before retrying. Never treat missing lookup as zero matches.
+
 ## Publish a ticket
 
 ```
@@ -72,9 +77,8 @@ Jira has no auto-close from a merge — this is always a deliberate step.
 
 ## Link a sub-ticket
 
-**Not supported here.** This team does not use epics or sub-tasks. When a breakdown needs a
-parent spec, publish the spec as an ordinary ticket and put `Part of PLAT-<n>` on the first
-line of each child's description.
+**Not supported here.** This team does not use epics or sub-tasks. Tickets point at their
+intent doc in the body instead, so nothing needs a parent ticket.
 
 ## Blocking edges
 

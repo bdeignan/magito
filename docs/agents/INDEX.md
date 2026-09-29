@@ -30,7 +30,7 @@ currently deferred, see the file.)
 | Skill, hook, and agent design conventions | `CLAUDE.md` — "Skill and Agent Design Notes" |
 | Why hooks are optional and what enforces rules instead | `docs/adr/0012`, `docs/adr/0013` |
 | Why the review gate fires on a fan-out but not on your own work | `docs/adr/0014` |
-| Why skills name tracker operations instead of `gh` | `docs/adr/0015` |
+| Why skills name tracker operations instead of `gh`, including intent overrides | `docs/adr/0015`, `docs/adr/0017` |
 | Delegating a build (shell workers, worktrees) | `skills/general/implement/references/worker-contract.md` |
 | The magi tribunal | `skills/claude/magi/SKILL.md` |
 | Why a past decision was made | `docs/adr/` |

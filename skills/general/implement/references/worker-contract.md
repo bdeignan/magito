@@ -77,6 +77,9 @@ python3 <skills>/implement/scripts/worker.py run <worker> <dir> <brief-file> [ti
 (`<skills>` is your tool's installed skills directory — `~/.claude/skills` for Claude
 Code, `~/.agents/skills` for most others.)
 
+`MAGITO_WORKERS_FILE` can select a separate roster for an isolated eval. When unset, the
+launcher uses `~/.magito/workers.toml`. The eval roster follows the same format.
+
 Each worker declares `cmd` — an **argv template**, not a shell line: it is split
 into arguments and placeholders are substituted per argument, so it cannot contain
 `&&`, `|`, `;`, or a leading `cd` (the launcher sets the working directory itself,
@@ -121,6 +124,36 @@ aliases, codex profiles). CLIs with no working-directory flag (gemini, claude) n
 no `{cwd}` at all — the launcher sets the working directory itself.
 
 ## Bootstrap
+
+### Optional Cursor reviewer
+
+When seeding a roster, include the commented settings from
+[`cursor-reviewer.toml.example`](./cursor-reviewer.toml.example). Keep the selector above
+every worker table and the commented worker table after existing tables. Existing rosters
+receive the block only when the user asks; keep their active settings and avoid duplicates.
+
+The example targets GPT-5.6 Sol at medium effort, the Cursor Sol family documented on
+2026-09-28. Medium is the starting budget for routine reviews. High is an explicit choice
+for difficult reviews, not an automatic fallback. The model family is `openai`, so this
+worker gives a different-family review of Claude or Gemini work, not GPT work.
+
+To activate on the target machine:
+
+1. Install [Cursor CLI](https://cursor.com/docs/cli/installation), then run `agent login`.
+2. Run `agent models`. Confirm the example's exact model ID is available; if it is absent,
+   replace it with an available Sol ID at the chosen effort. Keep the block commented until
+   that choice is verified. A newer model elsewhere does not establish Cursor availability.
+3. Uncomment the worker table and its three fields. Uncomment the selector at the top of
+   the file, replacing an existing `spec_reviewer` rather than adding a second key.
+4. Run `python3 <skills>/implement/scripts/worker.py probe cursor-reviewer` and verify a
+   review on a known diff before assigning real tickets.
+
+The command uses [Ask mode](https://cursor.com/docs/cli/using#ask-mode) and requests plain
+final-response output. The review still checks input contents before and after the call.
+The [model catalog](https://cursor.com/docs/models/gpt-5-6-sol) names the Sol family;
+`agent models` is the authority for the installed CLI and account's exact IDs.
+
+### First roster
 
 First time a worker is named and `~/.magito/workers.toml` does not exist: create it.
 Probe the installed candidates — omp, codex, claude, gemini; **never agy**. It earns
