@@ -183,10 +183,12 @@ check_model_invocation() {
 
 # --- 5. worker.py reviewer --------------------------------------------------
 check_worker_reviewer() {
-  if python3 "$REPO_ROOT/scripts/test_worker_reviewer.py" >/dev/null 2>&1; then
+  local out
+  if out=$(python3 "$REPO_ROOT/scripts/test_worker_reviewer.py" 2>&1); then
     echo "worker-reviewer: ok"
   else
     echo "worker-reviewer: FAILED"
+    echo "$out" | sed 's/^/    /'
     FAILURES+=("worker.py reviewer selection")
   fi
 }

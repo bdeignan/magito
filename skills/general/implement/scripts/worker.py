@@ -152,10 +152,14 @@ def main():
             sys.exit(0)
         die(3, f"probe failed for '{name}' (no VERDICT-OK)")
     elif len(args) >= 2 and args[0] == "reviewer":
-        writer_family = args[1].lower()
+        writer_family = args[1]
         data = load_roster()
         workers = data.get("workers", {})
+        if not isinstance(workers, dict):
+            die(2, f"'workers' in {ROSTER} must be a table of [workers.<name>] entries")
         spec_name = data.get("spec_reviewer")
+        if spec_name is not None and not isinstance(spec_name, str):
+            die(2, f"spec_reviewer in {ROSTER} must be a worker name string")
         if spec_name is not None and spec_name not in workers:
             die(2, f"spec_reviewer '{spec_name}' is not in {ROSTER}")
         names = []
@@ -166,14 +170,23 @@ def main():
                 names.append(name)
         for name in names:
             entry = workers[name]
-            family = entry.get("family")
+            family = entry.get("family") if isinstance(entry, dict) else None
             if family is None:
                 print(f"worker.py: skip {name}: no family", file=sys.stderr)
                 continue
-            if family.lower() == writer_family:
+            if not isinstance(family, str):
+                print(f"worker.py: skip {name}: family is not a string", file=sys.stderr)
+                continue
+            if family.lower() == writer_family.lower():
                 print(f"worker.py: skip {name}: same family ({family})", file=sys.stderr)
                 continue
-            if probe_ok(name):
+            # A dead candidate (missing binary, no cmd, probe timeout) makes
+            # probe_ok die(); that must skip to the next candidate, not end the search.
+            try:
+                ok = probe_ok(name)
+            except SystemExit:
+                ok = False
+            if ok:
                 print(name)
                 sys.exit(0)
             print(f"worker.py: skip {name}: probe failed", file=sys.stderr)

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Tests for worker.py reviewer subcommand. Stdlib only."""
 import os
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -123,6 +122,47 @@ def main() -> int:
             "spec_reviewer not in roster errors",
             [
                 'spec_reviewer = "zzz"',
+                "[workers.a]",
+                f'cmd = "{passing_cmd}"',
+                'family = "openai"',
+            ],
+            "anthropic",
+            None,
+            2,
+        ),
+        case(
+            "missing binary is skipped, next passes",
+            [
+                'spec_reviewer = "a"',
+                "[workers.a]",
+                'cmd = "no-such-binary-magito-test {brief}"',
+                'family = "openai"',
+                "[workers.b]",
+                f'cmd = "{passing_cmd}"',
+                'family = "google"',
+            ],
+            "anthropic",
+            "b",
+            0,
+        ),
+        case(
+            "non-string family is skipped, next passes",
+            [
+                "[workers.a]",
+                f'cmd = "{passing_cmd}"',
+                "family = 1",
+                "[workers.b]",
+                f'cmd = "{passing_cmd}"',
+                'family = "google"',
+            ],
+            "anthropic",
+            "b",
+            0,
+        ),
+        case(
+            "non-string spec_reviewer errors",
+            [
+                'spec_reviewer = ["a"]',
                 "[workers.a]",
                 f'cmd = "{passing_cmd}"',
                 'family = "openai"',
