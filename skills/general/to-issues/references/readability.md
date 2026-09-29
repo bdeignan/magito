@@ -31,7 +31,7 @@ An issue serves two readers, so scope the frame to the section:
 
 - **Summary, problem, why** — full reader frame. Main point first, plain words, no file paths
   or symbols unless the point genuinely needs one.
-- **What to build, acceptance criteria** — written for the weaker implementing agent: precise
+- **Behavior, done when** — written for the weaker implementing agent: precise
   and complete, but still in plain words. Keep identifiers exact (`clock_in`,
   `PRAGMA foreign_keys`) and define them; never rename them to sound simpler.
 

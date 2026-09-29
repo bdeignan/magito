@@ -72,9 +72,8 @@ Jira has no auto-close from a merge — this is always a deliberate step.
 
 ## Link a sub-ticket
 
-**Not supported here.** This team does not use epics or sub-tasks. When a breakdown needs a
-parent spec, publish the spec as an ordinary ticket and put `Part of PLAT-<n>` on the first
-line of each child's description.
+**Not supported here.** This team does not use epics or sub-tasks. Tickets point at their
+intent doc in the body instead, so nothing needs a parent ticket.
 
 ## Blocking edges
 

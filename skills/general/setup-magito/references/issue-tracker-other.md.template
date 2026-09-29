@@ -68,8 +68,9 @@ _Mark a ticket done._
 
 ## Link a sub-ticket
 
-_Attach a child ticket to a parent, so a spec and its slices hang together. Used by
-`to-issues` when a breakdown produces a parent spec._
+_Attach a child ticket to a parent. `to-issues` does not use it: the intent doc is the
+parent, and every ticket links to it in its body. Keep the heading so this list of
+operations stays complete._
 
 {{command or steps, or **not supported here** — in which case say how a parent is referenced
 instead, e.g. a line at the top of each child body}}
