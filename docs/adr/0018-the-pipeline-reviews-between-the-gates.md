@@ -21,7 +21,8 @@ The same rule that made the fan-out the exception now covers the whole pipeline 
 pipeline branch is created with `gitflow.sh worktree add`, so it gets a review marker. That
 includes the integration branch of an integrated run, which
 `skills/general/implement/references/integrate.md` describes. The gate in `gitflow.sh pr|merge`
-applies to any branch with a marker at the moment that branch lands. This extends ADR 0014 from
+applies to any branch with a marker when that branch opens a pull request through
+`gitflow.sh pr` or is merged through `gitflow.sh merge`. This extends ADR 0014 from
 the fan-out alone to the pipeline. The mechanism is unchanged. A branch with a marker is gated,
 and a branch without one is not.
 
