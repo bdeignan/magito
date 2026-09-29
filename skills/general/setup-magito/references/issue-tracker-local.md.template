@@ -53,8 +53,7 @@ the path in commit messages so `reviewing-changes` can find the spec behind a di
 
 When given a file path, an absolute path is used directly. A path starting with `.scratch/`
 is relative to the main worktree root. A path starting with a feature slug, such as
-`0001-hello/01-hello.md`, is relative to that root's `.scratch/` directory. Persist the
-canonical `.scratch/<feature>/<NN>-<slug>.md` path in publication records after resolving it.
+`0001-hello/01-hello.md`, is relative to that root's `.scratch/` directory.
 
 ## List open tickets
 

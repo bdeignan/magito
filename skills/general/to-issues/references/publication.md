@@ -1,63 +1,38 @@
-# Publish once and resume after interruption
+# Publish once, and rerun safely
 
-Keep one `publication.json` in the intent's private ticket directory. It records what the
-tracker confirmed so a resumed run can finish without creating duplicate tickets.
-Only one publisher can work on this directory at a time. Claim it by creating a
-`publication.lock` directory with `mkdir <ticket-directory>/publication.lock` before
-reading or changing publication state. Use plain `mkdir`, so an existing lock is an error. An existing lock
-stops the run; after an interruption, establish that the previous publisher has stopped
-before removing its lock. Remove the lock when the run finishes or stops cleanly.
+Every published ticket body carries one line that names the draft it came from:
 
-## Record the reviewed input
+```
+Publication-ID: <NNNN>-<slug>/<draft-filename>
+```
 
-Before the first tracker write, compare the original input with the reviewed `input.md`
-copy. A change requires fresh review. Save a JSON object with:
-
-- `run_id`: a generated UUID, kept across retries;
-- `input_sha256`: SHA-256 of the reviewed `input.md` copy;
-- `adapter_path`, `adapter_sha256`, and `main_root`;
-- `review`: reviewer name, family, round, complete verdicts, and persistent evidence paths
-  with their SHA-256 hashes;
-- `tickets`: one entry keyed by draft filename, holding `draft_sha256`, `publication_id`,
-  `identifier` (initially null), `phase` (initially `ready`), and `edges_done` (initially false).
-
-The publication identity is `<run_id>:<draft-filename>`. Hash the reviewed draft bytes
-before adding publication metadata or converting dependency names. Keep those drafts
-unchanged. Write each record update to a temporary sibling and replace `publication.json`
-atomically. Keep snapshots and captured review output outside the protected worktree until
-its content comparison passes.
-
-On resume, validate this record and compare the current input, adapter, and retained draft
-hashes. Verify the recorded evidence hashes too. Missing or changed evidence stops publication. Re-review changed drafts as a complete
-set before accepting new hashes. If any ticket was already published, reconcile its content
-with the changed plan before proceeding; a new UUID is not a way to bypass that reconciliation.
-Do not recreate missing reviewed drafts by guessing.
+For example, `Publication-ID: 0003-to-issues/01-local-dates.md`. The line is the same on
+every run of the same intent, so a rerun can find what an earlier run already published.
+There is no other record to keep.
 
 ## Publish in dependency order
 
-For each draft:
+For each draft, blockers first:
 
-1. If it has an identifier, fetch that ticket and verify its publication identity and body.
-   Compare against the expected reviewed body after dependency conversion and metadata.
-   Tracker-managed dates, status, and comments can differ. Other changes require reconciliation.
-2. If phase is `publishing` and the identifier is absent, use **find a published ticket**
-   with its exact publication identity. One matching ticket recovers the identifier.
-   Multiple matches, unavailable lookup, or an uncertain result stop the run. A zero result
-   after an uncertain write also stops: delayed visibility is not proof the write failed.
-   Retry only after establishing that the original operation did not create a ticket.
-3. For a `ready` draft, build the outgoing body from the retained draft. Its first `# ` line
-   supplies the title; remove that line from the body. Convert dependency filenames to the
-   confirmed tracker identifiers. Add the review line and
-   `Publication-ID: <publication_id>` to the body.
-4. Persist phase `publishing` before **publish a ticket**. When it succeeds, persist the
-   returned identifier and phase `published` immediately. The selected adapter owns title,
-   body, and header serialization, including local status, blocker, and date headers. If the call fails or its result
-   is uncertain, keep phase `publishing`; resolve it through step 2 before another attempt.
-5. Fetch the ticket and verify its identity and expected body. Read its existing blockers,
-   add only missing edges with **blocking edges**, and read them back. Mark `edges_done`
-   true only after confirmation. A resumed run repeats this readback even for a true flag.
+1. **Look first.** Run the tracker's **find a published ticket** operation with the draft's
+   `Publication-ID`.
+   - One match: that ticket is already published. Use its identifier and go to step 3.
+   - No match: go to step 2.
+   - Several matches, or the lookup itself fails: stop and escalate. Never publish when you
+     cannot tell whether the ticket exists.
+2. **Publish.** Build the body from the draft. The text after `# ` on the first line is the
+   title; remove that line from the body. Replace each draft file name under "Depends on"
+   with the identifier of the published blocker. Add the `Spec review:` line and the
+   `Publication-ID:` line at the end. Run **publish a ticket**. If the call fails, or you
+   cannot tell whether it succeeded, return to step 1 for this draft before trying again.
+3. **Link blockers.** Read the ticket's existing blockers, add only the missing ones with
+   **blocking edges**, and read them back.
 
-Once every ticket and edge is confirmed, mark the record `complete: true` and hand off the
-identifiers with the selected adapter and main root. Retain the record, reviewed drafts,
-and review evidence for resume and audit. A later explicit cleanup can remove them after
-implementation is complete. The local tracker's open-ticket glob excludes `drafts/`.
+Once every ticket and blocker is confirmed, delete the drafts, `review-brief.md`, and the
+empty `drafts/` folder.
+
+## After an interruption
+
+Run `to-issues` on the same intent again. If `drafts/` still holds numbered drafts, an
+earlier run stopped partway: keep those drafts, skip drafting, and resume at the spec review.
+Step 1 above then skips every ticket that already exists, so nothing is published twice.

@@ -15,12 +15,11 @@ use the tracker described by `docs/agents/issue-tracker.md` at that root.
   Stop and request it. A generic skeleton cannot describe the user's tracker.
 - An unknown tracker value is an error. Do not change the repo default to accommodate a run.
 
-Resolve the selected file to an absolute path. Read it before use and retain its contents
-with the publication evidence. Pass the path and main worktree root to every consumer,
+Resolve the selected file to an absolute path and read it before use. Pass the path and main worktree root to every consumer,
 including `implement` and its parallel path. Commands address the selected repo; private
 local ticket paths address the main worktree root, even when code lives in a linked worktree.
 
 An explicit adapter passed by the caller wins over the repo default. A missing passed
 adapter is an error, not permission to fall back to a different tracker. Standalone calls
-with no passed adapter use the repo default. A resumed publication uses its saved adapter;
-if the adapter contents or choice changed, stop and reconcile before further writes.
+with no passed adapter use the repo default. A rerun of the same intent selects the same
+adapter, because the choice comes from the intent's header and the repo default.

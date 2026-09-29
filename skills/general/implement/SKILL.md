@@ -10,15 +10,12 @@ Take an issue from spec to open PR. You own the git lifecycle; the human owns th
 
 **Tracker handoff.** Resolve the adapter through
 [tracker-selection.md](../setup-magito/references/tracker-selection.md). When `to-issues`
-passes `tracker_adapter`, `main_root`, and a publication record path, use them for every ticket operation below and in
+passes `tracker_adapter` and `main_root`, use them for every ticket operation below and in
 references, including fetching blockers and closing tickets. References to
 `docs/agents/issue-tracker.md` mean that selected adapter for this run. Resolve local ticket
-paths against the passed main root, not the implementation worktree. On a resumed handoff,
-read the passed publication record to recover those fields, then inspect existing branches
-and PRs before starting duplicate implementation work. For a local ticket passed by file path,
-read a sibling `publication.json` when present and recover its adapter and main root. Validate
-that its ticket identifiers include the requested ticket. Conflicting explicit fields or
-missing recorded adapter files stop the run rather than switching trackers.
+paths against the passed main root, not the implementation worktree. A passed adapter file
+that does not exist stops the run; never fall back to a different tracker. On a rerun,
+inspect existing branches and PRs before starting duplicate implementation work.
 
 **Route on how many issues you were handed.** One issue takes the sequential path below — the default. Several *independent* issues fan out to a worker each: read [`references/parallel.md`](./references/parallel.md), loaded only when you actually have more than one. Keeping the parallel prose in a reference is deliberate — the single-issue path stays cheap, and fanning out is the expensive exception.
 

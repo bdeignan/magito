@@ -12,14 +12,15 @@ still `docs/agents/issue-tracker.md`. Selection now has one canonical home in
 `skills/general/setup-magito/references/tracker-selection.md`; workflow skills point there.
 A different custom tracker requires a concrete adapter supplied by the user.
 
-Publication keeps a private record with input hashes, review evidence, stable ticket
-identities, returned identifiers, and dependency completion. Adapters expose lookup by
-publication identity across all ticket states. An uncertain write stops until reconciled;
-repeating a publish after a missing response is not safe. This provides recovery instructions,
-not transactional guarantees across a tracker and local files.
+Every published ticket carries a `Publication-ID:` line naming its intent and draft file,
+and adapters expose **find a published ticket** by that line across all ticket states.
+`to-issues` looks before it publishes, so a rerun after an interruption skips tickets that
+already exist. A failed or ambiguous lookup stops the run rather than risk a duplicate. No
+other publication record is kept: a lock, run IDs, and hashes were tried during review of
+PR #187 and dropped, since they only recorded state that the lookup already recovers.
 
 The user approved these repairs to intent 0003 during review of PR #187. That approval also
 replaces exact-text implementation criteria with behavioral criteria, adds review of coverage
-across the complete ticket set, and retains reviewed drafts for recovery. The accepted intent
-remains the historical record; these changes supersede its instruction to delete remote
-tracker drafts immediately after publishing. PR creation remains on `gitflow.sh`.
+across the complete ticket set, and keeps reviewed drafts until every ticket is published,
+so a rerun can resume. The accepted intent remains the historical record; these changes
+supersede its instruction to delete remote tracker drafts immediately after publishing. PR creation remains on `gitflow.sh`.

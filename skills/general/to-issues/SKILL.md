@@ -7,8 +7,7 @@ description: Turn an accepted intent doc into reviewed, buildable tickets and pu
 
 **First rule. If the input is an intent doc whose header line says `Status: accepted`, never
 ask the user to approve the breakdown. Go from drafting to publishing without stopping. Stop
-only for unresolved intent, unavailable review or tracker operations, failed review, or
-uncertain publication state.** Any other input (a plan, a conversation, a
+only for an escalation named in steps 5 to 7.** Any other input (a plan, a conversation, a
 draft intent) gets the approval step in step 4, because no human signed it off yet.
 
 Each ticket is a thin slice that works end to end and can be built alone. The agent that
@@ -49,13 +48,8 @@ is a different folder.
    line in `.git/info/exclude`, exactly as the "Private-state excludes" section of
    `<skills>/setup-magito/SKILL.md` does it.
 
-   If this directory already has `publication.json`, resume through
-   [publication.md](./references/publication.md), then proceed to step 8. Reuse its passing
-   review when the reviewed input, adapter, and drafts are unchanged. Changed inputs require
-   reconciliation and fresh review of the whole set.
-
-   For a new run, preserve the exact input as `.scratch/<NNNN>-<slug>/input.md` before review.
-   Only numbered files in `drafts/` are draft tickets.
+   If `drafts/` already holds numbered drafts, an earlier run stopped partway. Keep them,
+   skip drafting, and go to step 5. Only numbered files in `drafts/` are draft tickets.
 
    Use the ticket template below. Every ticket needs at least one edge case in "Done when":
    empty input, a boundary value, a duplicate, a missing file. Happy-path-only is not ready.
@@ -80,20 +74,17 @@ is a different folder.
    instruction: "You are reviewing, not building. Do not create, edit, or delete any file.
    Reply with one VERDICT line per ticket file and one COVERAGE line for the complete set." Then:
 
-   Protect the reviewed contents with `scripts/worktree_snapshot.py` from this skill.
-   Create a temporary evidence directory outside the main worktree. After writing the brief,
-   run `capture <main-root> <absolute-ticket-directory> <evidence>/before.json`. Run the
-   reviewer with stdout and stderr redirected into that evidence directory. Then run
-   `capture <main-root> <absolute-ticket-directory> <evidence>/after.json` and
-   `compare <evidence>/before.json <evidence>/after.json`, using `python3 <skills>/to-issues/scripts/worktree_snapshot.py`
-   for each command. Any nonzero exit from capture, review, or compare stops publication.
-   Report changed paths or the execution failure. The snapshot covers tracked contents,
-   unignored files, and the ignored ticket directory. Keep logs and snapshots outside that
-   scope so writing evidence cannot count as a reviewer edit. A subagent review uses the
-   same before/after comparison. After compare passes, copy that round's snapshots, stdout,
-   and stderr into `.scratch/<NNNN>-<slug>/review-evidence/round-<n>/`. Use those persistent
-   paths and their SHA-256 hashes in the publication record. Copy after comparison so saving
-   evidence cannot look like a reviewer edit.
+   A reviewer must not change any file. Check this by file contents, since `git status`
+   cannot see the excluded drafts. `S` below means
+   `python3 <skills>/to-issues/scripts/worktree_snapshot.py`, `T` means the absolute ticket
+   directory, and `E` means a new temporary directory outside the repo, from `mktemp -d`.
+   1. Before the review: `S capture <main-root> T E/before.json`.
+   2. Run the review, saving its output to `E/review.txt`.
+   3. After the review: `S capture <main-root> T E/after.json`, then
+      `S compare E/before.json E/after.json`.
+
+   If any of these commands fails, or `compare` lists a changed file, stop and escalate with
+   its output. A subagent review gets the same three steps.
 
    - With a worker name: `python3 <skills>/implement/scripts/worker.py run <name> <main-worktree-root> <main-worktree-root>/.scratch/<NNNN>-<slug>/review-brief.md`.
    - With none: give the same brief to a fresh-context subagent, and tell the user in one line
@@ -131,21 +122,17 @@ is a different folder.
      not guess.
    - **FIX** on any ticket: revise those drafts and run step 5 again. After two FIX rounds,
      stop and escalate with the remaining FIX lines.
-   - **PASS** on every ticket and COVERAGE: record the worker, family, round, and verdicts
-     in the publication record described below, then publish. Add
-     `Spec review: <worker or "subagent"> (<family>), round <n>` to each published body.
+   - **PASS** on every ticket and COVERAGE: publish. Each published body ends with
+     `Spec review: <worker or "subagent"> (<family>), round <n>`.
 
-7. **Publish and resume** through [publication.md](./references/publication.md). It owns
-   the publication record, stable ticket identities, dependency conversion, and recovery.
-   Keep reviewed drafts until every ticket and dependency is confirmed in the tracker.
+7. **Publish** by following [publication.md](./references/publication.md). It looks for
+   each ticket before publishing it, so a rerun after an interruption never publishes a
+   ticket twice.
 
-8. **Hand off.** For an accepted intent, call `implement` with the published ticket identifiers,
-   the publication record's absolute path, and these named fields in the invocation:
-   `tracker_adapter: <absolute-path>` and `main_root: <absolute-path>`. The record stores
-   the same values for a resumed invocation.
-   `implement` must use that adapter for ticket reads, blockers, comments, and closing tickets.
-   Otherwise, report the published tickets and stop. On a resumed completed publication,
-   inspect the existing implementation status before handing off again.
+8. **Hand off.** For an accepted intent, call `implement` with the published ticket
+   identifiers and these two named fields: `tracker_adapter: <absolute-path>` and
+   `main_root: <absolute-path>`. `implement` uses that adapter for every ticket operation.
+   Otherwise, report the published tickets and stop.
 
 <issue-template>
 # <short title: what this ticket delivers>
