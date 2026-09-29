@@ -84,6 +84,14 @@ def main() -> None:
 
     with tempfile.TemporaryDirectory() as t:
         repo = Repo(Path(t))
+        repo.exclude.write_text("*.log")  # no final newline
+        r = repo.add("feat/5-v")
+        lines = repo.exclude.read_text().splitlines()
+        check(r.returncode == 0 and lines == ["*.log", ".magito/"],
+              f"no final newline: the entry gets its own line (got {lines!r})")
+
+    with tempfile.TemporaryDirectory() as t:
+        repo = Repo(Path(t))
         elsewhere = (Path(t) / "elsewhere").resolve()
         repo.git("config", "magito.worktreeDir", str(elsewhere))
         r = repo.add("feat/4-w")

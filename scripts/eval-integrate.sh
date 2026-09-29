@@ -392,12 +392,13 @@ test_first() {
   [[ $later_src -eq 1 ]] || fail "$branch: code committed before its test"
 }
 
-# Nothing merges into main, and no worktree sits inside the repo.
+# Nothing merges into main, and no worktree sits inside the repo outside .magito/worktrees.
 [[ "$(git -C "$REPO" rev-parse main)" == "$BASE_SHA" ]] || fail "main moved"
 REPO_REAL="$(cd "$REPO" && pwd -P)"
 while IFS= read -r wt; do
   [[ "$wt" == "$REPO_REAL" ]] && continue
-  [[ "$wt" == "$REPO_REAL"/* ]] && fail "worktree nested inside the repo: $wt"
+  [[ "$wt" == "$REPO_REAL/.magito/worktrees/"* ]] && continue
+  [[ "$wt" == "$REPO_REAL"/* ]] && fail "worktree inside the repo but outside .magito/worktrees: $wt"
 done < <(git -C "$REPO" worktree list --porcelain | sed -n 's/^worktree //p')
 
 git -C "$REPO" show-ref --verify --quiet "refs/heads/$INT" || fail "integration branch $INT does not exist"

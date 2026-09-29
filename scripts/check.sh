@@ -29,6 +29,8 @@
 #      magito.prTitlePattern (Conventional Commits when unset). See issue #207.
 #  12. `worker.py review` runs one review round, fails a reviewer that changed a
 #      file, and prints only the verdict lines. See issue #209.
+#  13. `gitflow.sh worktree add` puts worktrees in .magito/worktrees and keeps
+#      them out of git status. See issue #209 and ADR 0019.
 #
 # Collects all failures instead of stopping at the first one, prints a summary,
 # and exits 1 if anything failed, 0 otherwise. Bash and the stdlib Python
@@ -284,6 +286,17 @@ check_worker_review() {
   fi
 }
 
+check_gitflow_worktree() {
+  local out
+  if out=$(python3 "$REPO_ROOT/scripts/test_gitflow_worktree.py" 2>&1); then
+    echo "gitflow-worktree: ok"
+  else
+    echo "gitflow-worktree: FAILED"
+    echo "$out" | sed 's/^/    /'
+    FAILURES+=("gitflow.sh worktree location")
+  fi
+}
+
 # --- run everything, then summarize ------------------------------------------
 check_install
 check_anti_slop
@@ -297,6 +310,7 @@ check_eval_integrate
 check_install_codex_hooks
 check_gitflow_pr
 check_worker_review
+check_gitflow_worktree
 
 echo
 if [[ ${#FAILURES[@]} -eq 0 ]]; then
