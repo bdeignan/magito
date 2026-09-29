@@ -1,9 +1,0 @@
-# Optional Cursor reviewer. All settings stay disabled until uncommented.
-# Put this selector above every [workers.*] table. Replace an existing selector.
-# spec_reviewer = "cursor-reviewer"
-
-# Put this worker table after the existing worker tables.
-# [workers.cursor-reviewer]
-# cmd = "agent --print --mode ask --output-format text --model {model} {brief}"
-# model = "gpt-5.6-sol-medium"
-# family = "openai"

@@ -88,15 +88,23 @@ receives the brief file's content as one argument. An optional `model` field
 follows magi's bench convention: substituted where `cmd` contains `{model}`,
 documentation otherwise. An optional `family` field is a free lowercase string that
 names the model family (`openai`, `google`, `anthropic`, ...). Two workers are the
-same family when their `family` strings are equal after lowercasing. A top-level
-`spec_reviewer` key names the worker tried first when the pipeline asks for a spec
-reviewer from a different family. It must sit above the first `[workers.*]` table:
-TOML reads any key written below a table header as part of that table, so a
-`spec_reviewer` placed there silently becomes a field of that worker.
+same family when their `family` strings are equal after lowercasing. An optional `tier` field
+labels how strong the pinned model is; the example roster uses `strong`, and thrifty mode
+will read it later. A top-level `reviewers` key is a list of worker names, ranked: the
+pipeline tries them in that order when it asks for a spec reviewer from a different family,
+then every other worker in file order. Each candidate must pass the family rule and its
+probe, so when the first reviewer is out of quota the next one takes over. The older
+`spec_reviewer = "name"` key still works and counts as a list of one when `reviewers` is
+absent or empty. When both are set, `reviewers` wins and stderr says so. A `reviewers`
+value that is not a list of strings, or that names a worker the roster lacks, exits 2.
+Top-level keys must sit above the first `[workers.*]` table: TOML reads any key written
+below a table header as part of that table, so a `reviewers` placed there silently becomes
+a field of that worker. [`workers.toml.example`](./workers.toml.example) is a ready roster
+with one commented entry per popular tool, each pinned to that tool's strongest model.
 
 ```toml
 # ~/.magito/workers.toml — machine-local, never synced
-spec_reviewer = "codex"   # top-level: above every [workers.*] table
+reviewers = ["codex", "omp"]   # top-level: above every [workers.*] table
 
 [workers.codex]
 cmd = "codex exec --sandbox workspace-write --ephemeral -C {cwd} {brief}"
@@ -125,33 +133,20 @@ no `{cwd}` at all — the launcher sets the working directory itself.
 
 ## Bootstrap
 
-### Optional Cursor reviewer
+### Example roster
 
-When seeding a roster, include the commented settings from
-[`cursor-reviewer.toml.example`](./cursor-reviewer.toml.example). Keep the selector above
-every worker table and the commented worker table after existing tables. Existing rosters
-receive the block only when the user asks; keep their active settings and avoid duplicates.
+When seeding a roster, start from [`workers.toml.example`](./workers.toml.example). Every
+entry there is commented out. Uncomment the entries for the tools installed on the machine,
+then run `python3 <skills>/implement/scripts/worker.py probe <name>` for each one. Existing
+rosters receive an entry only when the user asks; keep their active settings and avoid
+duplicates.
 
-The example targets GPT-5.6 Sol at medium effort, the Cursor Sol family documented on
-2026-09-28. Medium is the starting budget for routine reviews. High is an explicit choice
-for difficult reviews, not an automatic fallback. The model family is `openai`, so this
-worker gives a different-family review of Claude or Gemini work, not GPT work.
-
-To activate on the target machine:
-
-1. Install [Cursor CLI](https://cursor.com/docs/cli/installation), then run `agent login`.
-2. Run `agent models`. Confirm the example's exact model ID is available; if it is absent,
-   replace it with an available Sol ID at the chosen effort. Keep the block commented until
-   that choice is verified. A newer model elsewhere does not establish Cursor availability.
-3. Uncomment the worker table and its three fields. Uncomment the selector at the top of
-   the file, replacing an existing `spec_reviewer` rather than adding a second key.
-4. Run `python3 <skills>/implement/scripts/worker.py probe cursor-reviewer` and verify a
-   review on a known diff before assigning real tickets.
-
-The command uses [Ask mode](https://cursor.com/docs/cli/using#ask-mode) and requests plain
-final-response output. The review still checks input contents before and after the call.
-The [model catalog](https://cursor.com/docs/models/gpt-5-6-sol) names the Sol family;
-`agent models` is the authority for the installed CLI and account's exact IDs.
+Each comment above an entry records the date its model id was checked, or says
+`unverified: check with <command>`. Treat an unverified id as a guess until that command
+confirms it. A newer model elsewhere does not establish availability in a given tool. The
+Cursor entries need `agent login` first, and `agent models` is the authority for the exact
+ids on the installed CLI and account. The Cursor and omp entries take their family from the
+pinned model, not from the tool. A different model means a separate entry with its own name.
 
 ### First roster
 
@@ -184,8 +179,9 @@ does not need them.
 
 Picking a spec reviewer is the one exception to "stop and ask." The user named no single
 worker for it, so there is no spend choice to override. `python3
-<skills>/implement/scripts/worker.py reviewer <writer-family>` tries `spec_reviewer`
-first, then every other worker in file order. It skips any worker with no `family`, a
+<skills>/implement/scripts/worker.py reviewer <writer-family>` tries the workers named in
+`reviewers`, in that order, then every other worker in file order. When `reviewers` is
+absent or empty, `spec_reviewer` counts as a list of one. It skips any worker with no `family`, a
 family equal to the writer's, or a failed probe, and says so on stderr. It prints the
 name of the first worker that passes, alone on stdout. It exits 3 when none passes.
 

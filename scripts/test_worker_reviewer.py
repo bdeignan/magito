@@ -32,12 +32,14 @@ def write_roster(home: Path, lines: list[str]) -> Path:
     return roster
 
 
-def case(name: str, roster: list[str], writer_family: str, expected_stdout: str | None, expected_code: int) -> bool:
+def case(name: str, roster: list[str], writer_family: str, expected_stdout: str | None, expected_code: int,
+         stderr_has: str | None = None) -> bool:
     with tempfile.TemporaryDirectory() as tmp:
         home = Path(tmp)
         write_roster(home, roster)
         r = run_reviewer(home, writer_family)
         ok = r.returncode == expected_code and (expected_stdout is None or r.stdout.strip() == expected_stdout)
+        ok = ok and (stderr_has is None or stderr_has in r.stderr)
         if ok:
             print(f"ok - {name}")
         else:
@@ -170,6 +172,108 @@ def main() -> int:
             "anthropic",
             None,
             2,
+        ),
+        case(
+            "reviewers list order wins over file order",
+            [
+                'reviewers = ["b", "a"]',
+                "[workers.a]",
+                f'cmd = "{passing_cmd}"',
+                'family = "openai"',
+                "[workers.b]",
+                f'cmd = "{passing_cmd}"',
+                'family = "google"',
+            ],
+            "anthropic",
+            "b",
+            0,
+        ),
+        case(
+            "reviewers wins over spec_reviewer, stderr says so",
+            [
+                'reviewers = ["a"]',
+                'spec_reviewer = "b"',
+                "[workers.a]",
+                f'cmd = "{passing_cmd}"',
+                'family = "openai"',
+                "[workers.b]",
+                f'cmd = "{passing_cmd}"',
+                'family = "google"',
+            ],
+            "anthropic",
+            "a",
+            0,
+            stderr_has="worker.py: spec_reviewer ignored; reviewers is set",
+        ),
+        case(
+            "reviewers as a string errors",
+            [
+                'reviewers = "a"',
+                "[workers.a]",
+                f'cmd = "{passing_cmd}"',
+                'family = "openai"',
+            ],
+            "anthropic",
+            None,
+            2,
+        ),
+        case(
+            "reviewers naming a missing worker errors",
+            [
+                'reviewers = ["zzz"]',
+                "[workers.a]",
+                f'cmd = "{passing_cmd}"',
+                'family = "openai"',
+            ],
+            "anthropic",
+            None,
+            2,
+        ),
+        case(
+            "reviewers with a non-string item errors",
+            [
+                "reviewers = [1]",
+                "[workers.a]",
+                f'cmd = "{passing_cmd}"',
+                'family = "openai"',
+            ],
+            "anthropic",
+            None,
+            2,
+        ),
+        case(
+            "empty reviewers behaves as absent (spec_reviewer still used, no ignored line)",
+            [
+                "reviewers = []",
+                'spec_reviewer = "b"',
+                "[workers.a]",
+                f'cmd = "{passing_cmd}"',
+                'family = "openai"',
+                "[workers.b]",
+                f'cmd = "{passing_cmd}"',
+                'family = "google"',
+            ],
+            "anthropic",
+            "b",
+            0,
+        ),
+        case(
+            "first ranked reviewer fails probe, next ranked passes",
+            [
+                'reviewers = ["a", "c"]',
+                "[workers.a]",
+                f'cmd = "{failing_cmd}"',
+                'family = "openai"',
+                "[workers.b]",
+                f'cmd = "{passing_cmd}"',
+                'family = "google"',
+                "[workers.c]",
+                f'cmd = "{passing_cmd}"',
+                'family = "moonshot"',
+            ],
+            "anthropic",
+            "c",
+            0,
         ),
     ]
 

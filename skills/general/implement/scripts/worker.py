@@ -14,7 +14,8 @@ runs the worker with its working directory set, and enforces a timeout.
 
 probe strips approval-bypass flags (a ping needs no permissions) and checks the
 worker answers VERDICT-OK. reviewer picks a working worker whose family differs
-from the writer's. Judgement (bootstrap, fallback choice) stays with the driver;
+from the writer's, trying the top-level `reviewers` list first (or the older
+`spec_reviewer` name). Judgement (bootstrap, fallback choice) stays with the driver;
 this script only fails loudly. Exit: 0 ok, 2 config error, 3 probe fail or no
 reviewer found, 124 timeout, otherwise the worker's own exit code. Stdlib only,
 by design.
@@ -157,14 +158,27 @@ def main():
         workers = data.get("workers", {})
         if not isinstance(workers, dict):
             die(2, f"'workers' in {ROSTER} must be a table of [workers.<name>] entries")
+        ranked = data.get("reviewers")
         spec_name = data.get("spec_reviewer")
-        if spec_name is not None and not isinstance(spec_name, str):
-            die(2, f"spec_reviewer in {ROSTER} must be a worker name string")
-        if spec_name is not None and spec_name not in workers:
-            die(2, f"spec_reviewer '{spec_name}' is not in {ROSTER}")
-        names = []
-        if spec_name is not None:
-            names.append(spec_name)
+        if ranked is not None:
+            if (not isinstance(ranked, list)
+                    or not all(isinstance(n, str) for n in ranked)):
+                die(2, f"reviewers in {ROSTER} must be a list of worker name strings, "
+                       f"got: {ranked!r}")
+            for n in ranked:
+                if n not in workers:
+                    die(2, f"reviewers names '{n}', which is not in {ROSTER}")
+        if ranked:
+            if spec_name is not None:
+                print("worker.py: spec_reviewer ignored; reviewers is set", file=sys.stderr)
+            names = list(dict.fromkeys(ranked))
+        else:
+            # Absent or empty reviewers: the old single-name key counts as a list of one.
+            if spec_name is not None and not isinstance(spec_name, str):
+                die(2, f"spec_reviewer in {ROSTER} must be a worker name string")
+            if spec_name is not None and spec_name not in workers:
+                die(2, f"spec_reviewer '{spec_name}' is not in {ROSTER}")
+            names = [spec_name] if spec_name is not None else []
         for name in workers:
             if name not in names:
                 names.append(name)
