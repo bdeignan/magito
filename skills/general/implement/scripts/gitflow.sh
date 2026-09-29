@@ -172,10 +172,11 @@ case "$cmd" in
       add)
         branch="${1:?branch required}"; path="${2:-}"
         root="$(main_worktree)"
-        # Probe a path inside each thing `add` creates: a directory-only pattern
-        # cannot match a folder that does not exist yet, but it does match a path below it.
-        if ! git -C "$root" check-ignore -q .magito/worktrees/probe \
-          || ! git -C "$root" check-ignore -q .magito/review-probe; then
+        # Probe the real paths `add` creates. A directory-only pattern cannot match
+        # a folder that does not exist yet, so probe a path inside the worktree.
+        slug="${branch//\//-}"
+        if ! git -C "$root" check-ignore -q ".magito/worktrees/${slug}/x" \
+          || ! git -C "$root" check-ignore -q ".magito/review-${slug}"; then
           exclude="$(git -C "$root" rev-parse --git-path info/exclude)"
           case "$exclude" in /*) ;; *) exclude="$root/$exclude" ;; esac
           mkdir -p "$(dirname "$exclude")"
@@ -186,7 +187,7 @@ case "$cmd" in
         if [ -z "$path" ]; then
           dir="$(git config --get magito.worktreeDir 2>/dev/null || true)"
           [ -n "$dir" ] || dir="$root/.magito/worktrees"
-          path="${dir}/${branch//\//-}"
+          path="${dir}/${slug}"
         fi
         # `add -b` fails outright when the branch exists, so don't assume it's new.
         if git show-ref --verify --quiet "refs/heads/${branch}"; then

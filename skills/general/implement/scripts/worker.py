@@ -219,10 +219,11 @@ def review(name, cwd, brief_file, timeout):
     if cmp.returncode:
         print(cmp.stdout.strip(), file=sys.stderr)
         die(4, "the reviewer changed files — discard its verdict, revert, and review again")
-    # Some CLIs echo the brief, whose reply format quotes verdict lines, print the
-    # final answer twice, or print it on stderr. Read both streams, drop the echo,
-    # then keep each verdict line once.
-    answer = (r.stdout + "\n" + r.stderr).replace(brief.strip(), "", 1)
+    # Read stdout only. `codex exec` prints its final answer there and everything
+    # else on stderr: the echoed brief and the files it read, which can quote
+    # verdict lines. Still drop an echo in case a CLI prints the brief on stdout,
+    # and keep each verdict line once.
+    answer = r.stdout.replace(brief.strip(), "", 1)
     verdicts = []
     for line in answer.splitlines():
         m = VERDICT_LINE.match(line)
