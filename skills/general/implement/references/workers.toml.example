@@ -12,10 +12,14 @@
 # The environment variable MAGITO_THRIFTY set to 1 or 0 overrides this line for one session.
 # thrifty = true
 
-# Checked 2026-09-29: gpt-6-astra is in ~/.codex/models_cache.json (codex 0.158).
+# Checked 2026-09-29: gpt-6-sol and gpt-6-astra are in ~/.codex/models_cache.json
+# (codex 0.158), and both accept effort levels from low to ultra. Sol at medium effort is
+# the default here: strong, and far cheaper than Astra. `-c model_reasoning_effort=<level>`
+# sets the effort for one run. For Astra, copy this entry as `codex-astra`, point its model
+# at gpt-6-astra, and use it only when a review needs the strongest model.
 # [workers.codex]
-# cmd = "codex exec --sandbox workspace-write --ephemeral -m {model} -C {cwd} {brief}"
-# model = "gpt-6-astra"
+# cmd = "codex exec --sandbox workspace-write --ephemeral -m {model} -c model_reasoning_effort=medium -C {cwd} {brief}"
+# model = "gpt-6-sol"
 # family = "openai"
 # tier = "strong"
 
