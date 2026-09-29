@@ -281,6 +281,7 @@ PY
   printf 'PREFIX = "hi"\n' > "$REPO/names.py"
   git -C "$REPO" add names.py
   git -C "$REPO" commit -q -m "feat: change prefix"
+  PREBUILT_TIP="$(git -C "$REPO" rev-parse feat/0001-02-prefix)"
   git -C "$REPO" checkout -q main
 fi
 
@@ -368,6 +369,29 @@ check_green() {
   (cd "$CHECKOUT" && python3 -m unittest -q >/dev/null 2>&1)
 }
 
+# test_first <branch> <base> <tip>: the branch's own commits, oldest first, must start with a
+# commit that changes a test_*.py file and no source file, and a later commit must change one.
+# A source file is a changed .py file that is not test_*.py and not conftest.py.
+test_first() {
+  local branch="$1" base="$2" tip="$3" sha f name first=1 has_test has_src later_src=0
+  while IFS= read -r sha; do
+    has_test=0; has_src=0
+    while IFS= read -r f; do
+      [[ "$f" == *.py ]] || continue
+      name="${f##*/}"
+      if [[ "$name" == test_*.py ]]; then has_test=1
+      elif [[ "$name" != conftest.py ]]; then has_src=1; fi
+    done < <(git -C "$REPO" show --name-only --format= "$sha")
+    if [[ $first -eq 1 ]]; then
+      first=0
+      [[ $has_test -eq 1 && $has_src -eq 0 ]] || fail "$branch: code committed before its test"
+    elif [[ $has_src -eq 1 ]]; then
+      later_src=1
+    fi
+  done < <(git -C "$REPO" rev-list --reverse "$base..$tip")
+  [[ $later_src -eq 1 ]] || fail "$branch: code committed before its test"
+}
+
 # Nothing merges into main, and no worktree sits inside the repo.
 [[ "$(git -C "$REPO" rev-parse main)" == "$BASE_SHA" ]] || fail "main moved"
 REPO_REAL="$(cd "$REPO" && pwd -P)"
@@ -409,6 +433,25 @@ elif "COVERAGE PASS" not in body:
 PYEOF
 [[ -z "$(cat "$TMP_BASE/pr.reason")" ]] || fail "$(cat "$TMP_BASE/pr.reason")"
 
+# check_ticket_branches: every ticket branch the run built must be test-first. A branch merged
+# into $INT with --no-ff is judged on the range its merge commit brought in; merge-base would
+# return the branch tip there and leave nothing to check. A branch the fixture pre-built
+# (the resume case's ticket 01, the semantic-conflict case's ticket 02) is not the run's work.
+check_ticket_branches() {
+  local b tip m base
+  while IFS= read -r b; do
+    tip="$(git -C "$REPO" rev-parse "$b")"
+    [[ "$tip" == "${RESUME_TIP:-}" ]] && continue
+    [[ "$tip" == "${PREBUILT_TIP:-}" ]] && continue
+    base=""
+    while IFS= read -r m; do
+      if [[ "$(git -C "$REPO" rev-parse "$m^2")" == "$tip" ]]; then base="$m^1"; break; fi
+    done < <(git -C "$REPO" rev-list --first-parent --merges "$INT")
+    [[ -n "$base" ]] || base="$(git -C "$REPO" merge-base "$INT" "$b")"
+    test_first "$b" "$base" "$tip"
+  done < <(git -C "$REPO" for-each-ref --format='%(refname:short)' refs/heads/feat)
+}
+
 MERGE_COUNT="$(git -C "$REPO" rev-list --first-parent --merges --count "$INT")"
 
 if [[ "$VARIANT" == "semantic-conflict" ]]; then
@@ -419,6 +462,7 @@ if [[ "$VARIANT" == "semantic-conflict" ]]; then
   [[ "$MERGE_COUNT" -eq 1 ]] || fail "expected one merge commit on $INT (ticket 01 only), got $MERGE_COUNT"
   grep -Eiq 'escalation 6' "$RESPONSE" || fail "final response does not name escalation 6"
   grep -Eiq 'semantic' "$RESPONSE" || fail "final response does not name a semantic conflict"
+  check_ticket_branches
   echo "$LABEL: PASS"
 else
   if [[ "$VARIANT" == "resume" ]]; then
@@ -456,6 +500,7 @@ else
       fail "final response asks a question after the merge checkpoint"
     fi
   fi
+  check_ticket_branches
   echo "$LABEL: PASS"
 fi
 

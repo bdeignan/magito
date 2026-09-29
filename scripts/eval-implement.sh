@@ -211,6 +211,29 @@ work_branches() {
   done < <(git -C "$REPO" for-each-ref --format='%(refname:short)' refs/heads)
 }
 
+# test_first <branch> <base> <tip>: the branch's own commits, oldest first, must start with a
+# commit that changes a test_*.py file and no source file, and a later commit must change one.
+# A source file is a changed .py file that is not test_*.py and not conftest.py.
+test_first() {
+  local branch="$1" base="$2" tip="$3" sha f name first=1 has_test has_src later_src=0
+  while IFS= read -r sha; do
+    has_test=0; has_src=0
+    while IFS= read -r f; do
+      [[ "$f" == *.py ]] || continue
+      name="${f##*/}"
+      if [[ "$name" == test_*.py ]]; then has_test=1
+      elif [[ "$name" != conftest.py ]]; then has_src=1; fi
+    done < <(git -C "$REPO" show --name-only --format= "$sha")
+    if [[ $first -eq 1 ]]; then
+      first=0
+      [[ $has_test -eq 1 && $has_src -eq 0 ]] || fail "$branch: code committed before its test"
+    elif [[ $has_src -eq 1 ]]; then
+      later_src=1
+    fi
+  done < <(git -C "$REPO" rev-list --reverse "$base..$tip")
+  [[ $later_src -eq 1 ]] || fail "$branch: code committed before its test"
+}
+
 if [[ "$VARIANT" == "red-passes" ]]; then
   [[ -z "$(work_branches)" ]] || fail "commits were made although the red check passes"
   [[ "$(git -C "$REPO" rev-parse main)" == "$BASE_SHA" ]] || fail "main moved although the red check passes"
@@ -221,9 +244,10 @@ else
   [[ -n "$BRANCHES" ]] || fail "no branch other than main exists"
   BRANCH=""
   while IFS= read -r b; do
-    if [[ "$(git -C "$REPO" rev-list --count "main..$b")" -ge 2 ]]; then BRANCH="$b"; break; fi
+    if [[ "$(git -C "$REPO" rev-list --count "main..$b")" -ge 1 ]]; then BRANCH="$b"; break; fi
   done <<< "$BRANCHES"
-  [[ -n "$BRANCH" ]] || fail "no branch has two or more commits beyond main (fewer than two commits)"
+  [[ -n "$BRANCH" ]] || fail "no branch has commits beyond main"
+  while IFS= read -r b; do test_first "$b" "$BASE_SHA" "$b"; done < <(work_branches)
 
   CHECKOUT="$TMP_BASE/branch-checkout"
   mkdir -p "$CHECKOUT"
