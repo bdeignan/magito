@@ -11,12 +11,17 @@ runs the worker with its working directory set, and enforces a timeout.
     python3 worker.py probe <worker>
     python3 worker.py run   <worker> <dir> <brief-file> [timeout-seconds]
     python3 worker.py reviewer <writer-family>
+    python3 worker.py thrifty
+    python3 worker.py workers
 
 probe strips approval-bypass flags (a ping needs no permissions) and checks the
 worker answers VERDICT-OK. reviewer picks a working worker whose family differs
 from the writer's, trying the top-level `reviewers` list first (or the older
 `spec_reviewer` name). Judgement (bootstrap, fallback choice) stays with the driver;
-this script only fails loudly. Exit: 0 ok, 2 config error, 3 probe fail or no
+this script only fails loudly. Thrifty mode (env MAGITO_THRIFTY=1, or `thrifty = true`
+in the roster; MAGITO_THRIFTY=0 forces it off) limits reviewer to workers whose `tier`
+is `cheap`, with no tier counting as `strong`. thrifty prints on or off. workers prints
+the roster's worker names in file order, only cheap ones when thrifty is on, no probe. Exit: 0 ok, 2 config error, 3 probe fail or no
 reviewer found, 124 timeout, otherwise the worker's own exit code. Stdlib only,
 by design.
 """
@@ -62,6 +67,22 @@ def resolve(name):
     if "cmd" not in entry:
         die(2, f"worker '{name}' declares no cmd")
     return entry
+
+
+def thrifty_on(data) -> bool:
+    env = os.environ.get("MAGITO_THRIFTY")
+    if env == "0":
+        return False
+    if env == "1":
+        return True
+    flag = data.get("thrifty", False)
+    if not isinstance(flag, bool):
+        die(2, f"thrifty in {ROSTER} must be true or false, got: {flag!r}")
+    return flag
+
+
+def is_cheap(entry) -> bool:
+    return isinstance(entry, dict) and entry.get("tier") == "cheap"
 
 
 def probe_ok(name, echo_failure=False) -> bool:
@@ -182,8 +203,12 @@ def main():
         for name in workers:
             if name not in names:
                 names.append(name)
+        thrifty = thrifty_on(data)
         for name in names:
             entry = workers[name]
+            if thrifty and not is_cheap(entry):
+                print(f"worker.py: skip {name}: thrifty mode, tier is not cheap", file=sys.stderr)
+                continue
             family = entry.get("family") if isinstance(entry, dict) else None
             if family is None:
                 print(f"worker.py: skip {name}: no family", file=sys.stderr)
@@ -204,7 +229,22 @@ def main():
                 print(name)
                 sys.exit(0)
             print(f"worker.py: skip {name}: probe failed", file=sys.stderr)
+        if thrifty:
+            die(3, f"thrifty mode: no cheap reviewer outside family '{writer_family}' passed its probe")
         die(3, f"no reviewer outside family '{writer_family}' passed its probe")
+    elif args[:1] == ["thrifty"]:
+        print("on" if thrifty_on(load_roster()) else "off")
+        sys.exit(0)
+    elif args[:1] == ["workers"]:
+        data = load_roster()
+        workers = data.get("workers", {})
+        if not isinstance(workers, dict):
+            die(2, f"'workers' in {ROSTER} must be a table of [workers.<name>] entries")
+        thrifty = thrifty_on(data)
+        for name, entry in workers.items():
+            if not thrifty or is_cheap(entry):
+                print(name)
+        sys.exit(0)
     elif len(args) >= 4 and args[0] == "run":
         name, cwd, brief_file = args[1], args[2], args[3]
         try:
@@ -227,6 +267,7 @@ def main():
     else:
         die(2, "usage: worker.py probe <worker> | "
                "worker.py reviewer <writer-family> | "
+               "worker.py thrifty | worker.py workers | "
                "worker.py run <worker> <dir> <brief-file> [timeout]")
 
 

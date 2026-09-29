@@ -21,6 +21,8 @@ inspect existing branches and PRs before starting duplicate implementation work.
 
 **Route on how many issues you were handed.** One issue takes the sequential path below — the default. Several *independent* issues fan out to a worker each: read [`references/parallel.md`](./references/parallel.md), loaded only when you actually have more than one. Keeping the parallel prose in a reference is deliberate — the single-issue path stays cheap, and fanning out is the expensive exception.
 
+**Thrifty mode.** Before you name a shell worker, run `python3 <skills>/implement/scripts/worker.py workers` and name only a worker it prints. A worker absent from that output is never launched: if the user names one, say so and stop. Run `python3 <skills>/implement/scripts/worker.py thrifty`. When it prints `on`, use the cheapest subagent model the tool offers for in-session builds and reviews (`haiku` in Claude Code). This applies to the parallel path too.
+
 ## Process (one issue)
 
 1. **Read the issue.** Perform the **fetch a ticket** operation as `docs/agents/issue-tracker.md` defines it (run `/setup-magito` if that file is missing). Read the body, acceptance criteria, and blockers — the same file's **blocking edges** section says how blockers are recorded and read back here. If a blocker is still open, stop and say so.

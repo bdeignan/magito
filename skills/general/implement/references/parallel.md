@@ -50,7 +50,7 @@ this path too. Read local ticket files from the main root before preparing worke
    fan-out work, and that mark is the only thing that makes the review gate apply (ADR 0014).
    Hand-roll the `git` command instead and this fan-out lands ungated. Launch one executor per
    worktree — `haiku-executor` by default (Claude Code only), or a shell worker the user names
-   from `~/.magito/workers.toml` ("12 and 14 via omp, 15 via haiku"). Shell workers go through
+   from `~/.magito/workers.toml` ("12 and 14 via omp, 15 via haiku"). Run `worker.py workers` first and name only a worker it prints; if the user names an absent worker, say so and stop. When `worker.py thrifty` prints `on`, use the cheapest subagent model for in-session executors (`haiku` in Claude Code). Shell workers go through
    the launcher, never a hand-built command line: probe once with `python3
    ~/.claude/skills/implement/scripts/worker.py probe <worker>` before fanning out (degrade
    loudly per the contract), then launch each with `python3
