@@ -189,8 +189,11 @@ if raw.count(start) != 1 or raw.count(end) != 1:
     raise SystemExit("worker output must contain one final-response marker pair")
 before, rest = raw.split(start, 1)
 response, after = rest.split(end, 1)
-if before.strip() or after.strip():
-    raise SystemExit("worker output contains text outside the final-response markers")
+# Some CLIs (omp) echo their answer before the markers too, so text outside the markers
+# is allowed. A question there is not: it could hide an approval request from the checks
+# below, which read only the marked response.
+if "?" in before or "?" in after:
+    raise SystemExit("worker output asks a question outside the final-response markers")
 if not response.endswith("\n"):
     raise SystemExit("final response must end with a newline before its end marker")
 open(sys.argv[2], "w").write(response)

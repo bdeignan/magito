@@ -36,6 +36,11 @@ directory, as in `SKILL.md`.
       `S compare E/before.json E/after.json`. A difference means the review failed: discard
       its verdict, revert the change, and review again.
 
+   The snapshot always covers tracked and untracked files under `<worktree>`. The second
+   argument names one extra folder to cover even though git ignores it. A linked worktree
+   has no `.scratch/`, and the script treats a missing folder as empty, so here the check
+   covers the tracked and untracked files. Those files are the code under review.
+
    When `worker.py reviewer` finds no reviewer (exit 3), review with a fresh-context
    subagent instead, and say so in the pull request body.
 6. **Fix rounds.** On FIX, fix the findings, run the check again, and review again. Run at
@@ -43,7 +48,10 @@ directory, as in `SKILL.md`.
    `git diff --name-only <red-step-commit> HEAD` and reject the round if it lists a locked
    test file. Passing that needs a locked test changed: escalate with rule 3.
 7. **Pull request.** On PASS with the check green, record the review decision in the marker
-   as `<sha> reviewed`, using the file-writing tool as step 6 of `SKILL.md` describes. Then
+   as `<sha> reviewed`. The marker is `<main-worktree-root>/.magito/review-<branch-slug>`,
+   which `gitflow.sh worktree add` created in step 1. Read the sha, the branch, and the main
+   worktree root with separate commands, then write the file with your file-writing tool,
+   as the `reviewing-changes` skill does. Then
    run `gitflow.sh push` and `gitflow.sh pr <issue> "<title>" "<body>"`. Write the body per
    [pr-body.md](./pr-body.md), including its pipeline section. Never merge.
 8. **No remote.** When `git remote -v` prints nothing, do not run step 7. Stop at the no-PR
