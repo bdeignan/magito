@@ -115,8 +115,9 @@ is a different folder.
 7. **Publish** in dependency order, blockers first. For each draft:
    1. Replace every draft file name in its "Depends on" with the identifier the tracker gave
       that blocker when it was published.
-   2. Publish it with the tracker's **publish a ticket** operation. The `# <title>` line is
-      the title. The rest of the draft is the body.
+   2. Publish it with the tracker's **publish a ticket** operation. The text after `# ` on the
+      first line is the title. The body is everything after that first line: remove the
+      `# <title>` line from the body, so that the title appears only once.
    3. Record each blocker with the tracker's **blocking edges** operation.
    4. Delete the draft file.
 
