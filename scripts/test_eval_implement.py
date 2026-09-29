@@ -63,11 +63,25 @@ if red_passes:
 else:
     if mode != "no-branch":
         git("checkout", "-b", "feat/1-hello")
-        (repo / "test_hello.py").write_text(TEST)
-        commit("test: add hello test", "test_hello.py")
-        if mode != "one-commit":
-            (repo / "hello.py").write_text(BAD_CODE if mode == "wrong-output" else CODE)
+        if mode == "code-before-test":
+            (repo / "hello.py").write_text(CODE)
             commit("feat: add hello", "hello.py")
+            (repo / "test_hello.py").write_text(TEST)
+            commit("test: add hello test", "test_hello.py")
+        elif mode == "combined-commit":
+            (repo / "test_hello.py").write_text(TEST)
+            (repo / "hello.py").write_text(CODE)
+            commit("feat: add hello with its test", "test_hello.py", "hello.py")
+        else:
+            files = ["test_hello.py"]
+            (repo / "test_hello.py").write_text(TEST)
+            if mode == "test-with-conftest":
+                (repo / "conftest.py").write_text("# shared fixtures\\n")
+                files.append("conftest.py")
+            commit("test: add hello test", *files)
+            if mode != "one-commit":
+                (repo / "hello.py").write_text(BAD_CODE if mode == "wrong-output" else CODE)
+                commit("feat: add hello", "hello.py")
     response = "Round 1: VERDICT PASS\\nBuilt hello.py.\\n"
     if mode == "no-verdict":
         response = "Built hello.py.\\n"
@@ -114,9 +128,15 @@ def main() -> None:
         imperative = run("imperative-approval", roster)
         assert "implement: PASS" in imperative.stdout, imperative.stdout
 
+        # A test commit that carries a conftest.py is still test-first.
+        conftest = run("test-with-conftest", roster)
+        assert "implement: PASS" in conftest.stdout, conftest.stdout
+
         for mode, needle in [
             ("no-branch", "no branch"),
-            ("one-commit", "fewer than two commits"),
+            ("one-commit", "code committed before its test"),
+            ("code-before-test", "code committed before its test"),
+            ("combined-commit", "code committed before its test"),
             ("wrong-output", "hello.py"),
             ("no-verdict", "VERDICT PASS"),
             ("early-question", "question before the merge checkpoint"),
@@ -125,6 +145,10 @@ def main() -> None:
             r = run(mode, roster)
             assert r.returncode == 1, (mode, r.stdout + r.stderr)
             assert "implement: FAIL" in r.stdout and needle in r.stdout, (mode, r.stdout)
+
+        # The failure message names the branch, and the check runs in every mode above.
+        r = run("code-before-test", roster)
+        assert "feat/1-hello: code committed before its test" in r.stdout, r.stdout
 
         failed = run("worker-failure", roster)
         assert failed.returncode == 73, failed.stdout + failed.stderr
