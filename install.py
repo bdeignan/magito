@@ -338,7 +338,8 @@ def main() -> None:
                     dst = hooks_dst / hook_file.name
                     status = link(hook_file, dst, args.dry_run, args.force)
                     results.append((tool_name, f"hooks/{hook_file.name}", str(dst), status))
-                    hook_dst_paths.append(str(dst))
+                    # Codex may run a command from any directory, so its registration needs an absolute path.
+                    hook_dst_paths.append(os.path.abspath(dst) if tool_config.get("hooks_config") else str(dst))
                     if not args.dry_run:
                         hook_file.chmod(0o755)
 
