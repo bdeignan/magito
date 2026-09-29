@@ -107,6 +107,10 @@ The `Blocked by:` line in the child ticket, holding the blockers' numbers within
 feature directory. A ticket is ready to start when every number it lists has `Status: done`.
 Cross-feature blockers are written as `<other-feature>/NN`.
 
+To add a blocker, add its number to the child's `Blocked by:` line, separated by a comma. If
+the child has no `Blocked by:` line yet, add one directly under `Status:`. Read the line back
+afterwards; a number already on it is left alone.
+
 ## Pull requests
 
 Tracking tickets in files says nothing about how work lands. A repo can keep its tickets here
