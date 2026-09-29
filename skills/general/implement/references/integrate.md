@@ -54,7 +54,7 @@ run from your working directory; `<skills>` is your tool's installed skills dire
    - The script appends `Closes #<first-ticket>` itself. Put one `Closes #<n>` line in the body
      for every other ticket, as [pr-body.md](./pr-body.md) says. GitHub closes every issue
      named on a `Closes` line.
-   - For a tracker that has no `Closes` lines, perform **close a ticket** for each ticket after
+   - For a tracker that has no `Closes` lines, such as the local tracker, perform **close a ticket** for each ticket after
      the merge instead.
    - Beyond the sections in pr-body.md, the body lists each ticket with its review rounds, the
      merge order, each conflict you resolved and how, and the final coverage verdict.

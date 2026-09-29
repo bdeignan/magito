@@ -76,6 +76,7 @@ by calling it.
 
 - `greet("Ada")` returns `hello, Ada`.
 - `python3 hello.py Ada` prints `hello, Ada`.
+- `python3 hello.py` with no argument prints `hello, world`.
 - Stdlib only.
 
 ## Out of scope
