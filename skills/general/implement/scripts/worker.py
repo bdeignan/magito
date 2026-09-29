@@ -152,7 +152,9 @@ def worker_env():
     return env
 
 
-def run(argv, cwd, timeout, capture):
+def run(argv, cwd, timeout, capture, keep_on_timeout=False):
+    """Run a worker. On timeout, kill its process group and die with 124 — or, with
+    keep_on_timeout, return code 124 and whatever it printed before the kill."""
     pipe = subprocess.PIPE if capture else None
     try:
         # New session = own process group, so a timeout kill reaps the worker's
@@ -167,8 +169,12 @@ def run(argv, cwd, timeout, capture):
         out, err = p.communicate(timeout=timeout)
     except subprocess.TimeoutExpired:
         os.killpg(p.pid, signal.SIGKILL)
-        p.wait()
-        die(124, f"worker timed out after {timeout}s (process group killed)")
+        out, err = p.communicate()
+        msg = f"worker timed out after {timeout}s (process group killed)"
+        if not keep_on_timeout:
+            die(124, msg)
+        print(f"worker.py: {msg}", file=sys.stderr)
+        return SimpleNamespace(returncode=124, stdout=out or "", stderr=err or "")
     return SimpleNamespace(returncode=p.returncode, stdout=out or "", stderr=err or "")
 
 
@@ -201,12 +207,9 @@ def review(name, cwd, brief_file, timeout):
         return path
 
     before = snapshot("before")
-    try:
-        r = run(argv, cwd, timeout, capture=True)
-    except SystemExit as e:
-        # A timeout still gets the file check: a reviewer that edited files and
-        # then hung must exit 4, not 124.
-        r = SimpleNamespace(returncode=e.code, stdout="", stderr="")
+    # A timeout still gets the file check: a reviewer that edited files and then
+    # hung must exit 4, not 124. Its partial output is saved like any other.
+    r = run(argv, cwd, timeout, capture=True, keep_on_timeout=True)
     output = work / "review.txt"
     output.write_text(r.stdout + r.stderr)
     print(f"review output: {output}", file=sys.stderr)
