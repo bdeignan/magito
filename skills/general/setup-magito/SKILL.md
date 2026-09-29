@@ -108,7 +108,7 @@ If missing, recommend the `contextFileName` setting over a second file: it point
 
 ### Pull request title
 
-`gitflow.sh pr` refuses a title that does not match `git config magito.prTitlePattern`, and unset means Conventional Commits (see `skills/general/implement/references/pr-body.md`). Owner mode: leave it unset. Guest mode: read the titles of the last 20 merged pull requests with `gh pr list --state merged --limit 20 --json title`. If most of them already match `type(scope): summary`, leave the pattern unset. Otherwise recommend `git config magito.prTitlePattern off`, so the agent matches the house style by eye. When the titles follow one clear house pattern, such as a ticket key prefix, offer that pattern as an extended regular expression instead.
+`gitflow.sh pr` refuses a title that does not match `git config magito.prTitlePattern`, and unset means Conventional Commits (see `skills/general/implement/references/pr-body.md`). Owner mode: leave it unset. Guest mode: read the titles of the last 20 merged pull requests with `gh pr list --state merged --limit 20 --json title`. If most of them already match `type(scope): summary`, leave the pattern unset. Otherwise recommend `git config magito.prTitlePattern off`, so the agent matches the house style by eye. When the titles follow one clear house pattern, such as a ticket key prefix, offer that pattern as an extended regular expression instead. Skip this step when the repo is not on GitHub, and say so in the report.
 
 ### Permission allowlist
 

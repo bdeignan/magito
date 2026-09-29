@@ -213,8 +213,9 @@ case "$cmd" in
     issue="${1:?issue required}"; title="${2:?title required}"; body="${3:-}"
     # The body must say something beyond Closes lines, in every mode. #206
     # opened with only its Closes line after a shell error dropped the text,
-    # and nothing noticed until after the merge (#207).
-    said="$(printf '%s\n' "$body" | grep -Ev '^[[:space:]]*Closes #[0-9]+[[:space:]]*$' | tr -d '[:space:]' || true)"
+    # and nothing noticed until after the merge (#207). A closing line is any
+    # keyword GitHub honors, in any case: close/fix/resolve and their -s/-d forms.
+    said="$(printf '%s\n' "$body" | grep -Eiv '^[[:space:]]*(close[sd]?|fix(e[sd])?|resolve[sd]?):?[[:space:]]+([[:alnum:]_.-]+/[[:alnum:]_.-]+)?#[0-9]+[[:space:]]*\.?[[:space:]]*$' | tr -d '[:space:]' || true)"
     if [ -z "$said" ]; then
       echo "gitflow.sh pr: the body is empty — write the Why and What for the reviewer (references/pr-body.md)" >&2
       exit 1
@@ -224,10 +225,17 @@ case "$cmd" in
     # style is something else (git config magito.prTitlePattern off).
     pattern="$(git config --get magito.prTitlePattern 2>/dev/null || true)"
     [ -n "$pattern" ] || pattern='^(feat|fix|docs|chore|refactor|test|perf|build|ci|style|revert)(\([^)]+\))?!?: [^[:space:]].*$'
-    if [ "$pattern" != "off" ] && ! [[ "$title" =~ $pattern ]]; then
-      echo "gitflow.sh pr: the title '$title' does not match magito.prTitlePattern: $pattern" >&2
-      echo "  e.g. 'fix(gitflow): refuse an empty pull request body' (references/pr-body.md)" >&2
-      exit 1
+    if [ "$(printf '%s' "$pattern" | tr '[:upper:]' '[:lower:]')" != "off" ]; then
+      # [[ =~ ]] returns 1 for no match and 2 for a regex it cannot compile.
+      matched=0; [[ "$title" =~ $pattern ]] || matched=$?
+      if [ "$matched" -eq 2 ]; then
+        echo "gitflow.sh pr: magito.prTitlePattern is not a valid extended regex: $pattern" >&2
+        exit 1
+      elif [ "$matched" -ne 0 ]; then
+        echo "gitflow.sh pr: the title '$title' does not match magito.prTitlePattern: $pattern" >&2
+        echo "  e.g. 'fix(gitflow): refuse an empty pull request body' (references/pr-body.md)" >&2
+        exit 1
+      fi
     fi
     pr_body="${body}"$'\n\n'"Closes #${issue}"
     # Only override gh's base when magito.baseBranch is set; otherwise omit

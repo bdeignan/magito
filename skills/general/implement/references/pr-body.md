@@ -2,7 +2,7 @@
 
 A PR body is for the human reviewer and for anyone who reads it later — a reader who did not do the work. Write it for that reader: apply the [readability standard](../../to-issues/references/readability.md) and hold its audience frame while you draft. Do not write for the commit record.
 
-`gitflow.sh pr` refuses a body that is empty or holds only `Closes` lines, in every mode. Write the body to a file with your file-writing tool, then pass it as `"$(cat <file>)"`. Do not build it with `cat > file` or a heredoc in the shell: under zsh `noclobber`, `>` onto an existing file fails, and that is how #206 opened with an empty body.
+`gitflow.sh pr` refuses a body that is empty or holds only closing lines (`Closes #N`, `Fixes #N`, and the like), in every mode. Write the body to a file with your file-writing tool, then pass it as `"$(cat <file>)"`. If you must redirect in the shell, use `>|`: under zsh `noclobber`, a plain `>` onto an existing file fails and leaves the file empty.
 
 ## Title
 
