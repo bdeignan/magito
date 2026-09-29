@@ -83,10 +83,22 @@ into arguments and placeholders are substituted per argument, so it cannot conta
 and rejects such entries loudly). `{cwd}` is the assigned directory, `{brief}`
 receives the brief file's content as one argument. An optional `model` field
 follows magi's bench convention: substituted where `cmd` contains `{model}`,
-documentation otherwise.
+documentation otherwise. An optional `family` field is a free lowercase string that
+names the model family (`openai`, `google`, `anthropic`, ...). Two workers are the
+same family when their `family` strings are equal after lowercasing. A top-level
+`spec_reviewer` key names the worker tried first when the pipeline asks for a spec
+reviewer from a different family. It must sit above the first `[workers.*]` table:
+TOML reads any key written below a table header as part of that table, so a
+`spec_reviewer` placed there silently becomes a field of that worker.
 
 ```toml
 # ~/.magito/workers.toml — machine-local, never synced
+spec_reviewer = "codex"   # top-level: above every [workers.*] table
+
+[workers.codex]
+cmd = "codex exec --sandbox workspace-write --ephemeral -C {cwd} {brief}"
+family = "openai"
+
 [workers.omp]
 cmd = "omp -p --no-session --no-skills --approval-mode yolo --max-time 600 --cwd {cwd} {brief}"
 # model comes from omp's own modelRoles (deprecation-proofing lives inside each tool)
@@ -136,6 +148,13 @@ does not need them.
   moves it back.
 - **Dies mid-run** (timeout, nonzero exit, garbage output): that issue reports
   `BLOCKED` like any executor failure. No automatic retry on another worker or model.
+
+Picking a spec reviewer is the one exception to "stop and ask." The user named no single
+worker for it, so there is no spend choice to override. `python3
+<skills>/implement/scripts/worker.py reviewer <writer-family>` tries `spec_reviewer`
+first, then every other worker in file order. It skips any worker with no `family`, a
+family equal to the writer's, or a failed probe, and says so on stderr. It prints the
+name of the first worker that passes, alone on stdout. It exits 3 when none passes.
 
 ## Nested-CLI gotchas (verified July 2026)
 

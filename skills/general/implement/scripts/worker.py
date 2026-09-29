@@ -10,11 +10,14 @@ runs the worker with its working directory set, and enforces a timeout.
 
     python3 worker.py probe <worker>
     python3 worker.py run   <worker> <dir> <brief-file> [timeout-seconds]
+    python3 worker.py reviewer <writer-family>
 
 probe strips approval-bypass flags (a ping needs no permissions) and checks the
-worker answers VERDICT-OK. Judgement (bootstrap, fallback choice) stays with the
-driver; this script only fails loudly. Exit: 0 ok, 2 config error, 3 probe fail,
-124 timeout, otherwise the worker's own exit code. Stdlib only, by design.
+worker answers VERDICT-OK. reviewer picks a working worker whose family differs
+from the writer's. Judgement (bootstrap, fallback choice) stays with the driver;
+this script only fails loudly. Exit: 0 ok, 2 config error, 3 probe fail or no
+reviewer found, 124 timeout, otherwise the worker's own exit code. Stdlib only,
+by design.
 """
 import os
 import shlex
@@ -39,14 +42,18 @@ def die(code, msg):
     sys.exit(code)
 
 
-def resolve(name):
+def load_roster():
     if not ROSTER.exists():
         die(2, f"{ROSTER} not found — bootstrap it per worker-contract.md")
     try:
         with open(ROSTER, "rb") as f:
-            data = tomllib.load(f)
+            return tomllib.load(f)
     except tomllib.TOMLDecodeError as e:
         die(2, f"{ROSTER} is not valid TOML: {e}")
+
+
+def resolve(name):
+    data = load_roster()
     entry = data.get("workers", {}).get(name)
     if entry is None:
         live = ", ".join(data.get("workers", {})) or "none"
@@ -54,6 +61,22 @@ def resolve(name):
     if "cmd" not in entry:
         die(2, f"worker '{name}' declares no cmd")
     return entry
+
+
+def probe_ok(name, echo_failure=False) -> bool:
+    """Run a probe against the named worker. Return True iff it answers VERDICT-OK.
+    echo_failure replays a failed probe's output for diagnosis — off for reviewer,
+    whose stdout must hold only the chosen worker's name."""
+    entry = resolve(name)
+    here = str(Path.cwd())
+    argv = strip_bypass(build_argv(entry, name, here, PROBE_PROMPT))
+    r = run(argv, here, 90, capture=True)
+    ok = r.returncode == 0 and "VERDICT-OK" in r.stdout
+    if not ok and echo_failure:
+        print(r.stdout, end="")
+        print(r.stderr, end="", file=sys.stderr)
+        print(f"worker.py: probe exit {r.returncode}", file=sys.stderr)
+    return ok
 
 
 def build_argv(entry, name, cwd, brief):
@@ -124,16 +147,50 @@ def main():
     args = sys.argv[1:]
     if len(args) >= 2 and args[0] == "probe":
         name = args[1]
-        entry = resolve(name)
-        here = str(Path.cwd())
-        argv = strip_bypass(build_argv(entry, name, here, PROBE_PROMPT))
-        r = run(argv, here, 90, capture=True)
-        if r.returncode == 0 and "VERDICT-OK" in r.stdout:
+        if probe_ok(name, echo_failure=True):
             print(f"PROBE OK: {name}")
             sys.exit(0)
-        print(r.stdout, end="")
-        print(r.stderr, end="", file=sys.stderr)
-        die(3, f"probe failed for '{name}' (exit {r.returncode}, no VERDICT-OK)")
+        die(3, f"probe failed for '{name}' (no VERDICT-OK)")
+    elif len(args) >= 2 and args[0] == "reviewer":
+        writer_family = args[1]
+        data = load_roster()
+        workers = data.get("workers", {})
+        if not isinstance(workers, dict):
+            die(2, f"'workers' in {ROSTER} must be a table of [workers.<name>] entries")
+        spec_name = data.get("spec_reviewer")
+        if spec_name is not None and not isinstance(spec_name, str):
+            die(2, f"spec_reviewer in {ROSTER} must be a worker name string")
+        if spec_name is not None and spec_name not in workers:
+            die(2, f"spec_reviewer '{spec_name}' is not in {ROSTER}")
+        names = []
+        if spec_name is not None:
+            names.append(spec_name)
+        for name in workers:
+            if name not in names:
+                names.append(name)
+        for name in names:
+            entry = workers[name]
+            family = entry.get("family") if isinstance(entry, dict) else None
+            if family is None:
+                print(f"worker.py: skip {name}: no family", file=sys.stderr)
+                continue
+            if not isinstance(family, str):
+                print(f"worker.py: skip {name}: family is not a string", file=sys.stderr)
+                continue
+            if family.lower() == writer_family.lower():
+                print(f"worker.py: skip {name}: same family ({family})", file=sys.stderr)
+                continue
+            # A dead candidate (missing binary, no cmd, probe timeout) makes
+            # probe_ok die(); that must skip to the next candidate, not end the search.
+            try:
+                ok = probe_ok(name)
+            except SystemExit:
+                ok = False
+            if ok:
+                print(name)
+                sys.exit(0)
+            print(f"worker.py: skip {name}: probe failed", file=sys.stderr)
+        die(3, f"no reviewer outside family '{writer_family}' passed its probe")
     elif len(args) >= 4 and args[0] == "run":
         name, cwd, brief_file = args[1], args[2], args[3]
         try:
@@ -155,6 +212,7 @@ def main():
         sys.exit(r.returncode)
     else:
         die(2, "usage: worker.py probe <worker> | "
+               "worker.py reviewer <writer-family> | "
                "worker.py run <worker> <dir> <brief-file> [timeout]")
 
 
