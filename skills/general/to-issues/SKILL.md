@@ -75,21 +75,22 @@ is a different folder.
    Reply with one VERDICT line per ticket file and one COVERAGE line for the complete set." Then:
 
    A reviewer must not change any file. Check this by file contents, since `git status`
-   cannot see the excluded drafts. `S` below means
-   `python3 <skills>/to-issues/scripts/worktree_snapshot.py`, `T` means the absolute ticket
-   directory, and `E` means a new temporary directory outside the repo, from `mktemp -d`.
-   1. Before the review: `S capture <main-root> T E/before.json`.
-   2. Run the review, saving its output to `E/review.txt`.
-   3. After the review: `S capture <main-root> T E/after.json`, then
-      `S compare E/before.json E/after.json`.
+   cannot see the excluded drafts.
 
-   If any of these commands fails, or `compare` lists a changed file, stop and escalate with
-   its output. A subagent review gets the same three steps.
-
-   - With a worker name: `python3 <skills>/implement/scripts/worker.py run <name> <main-worktree-root> <main-worktree-root>/.scratch/<NNNN>-<slug>/review-brief.md`.
+   - With a worker name, run the whole round as one command:
+     `python3 <skills>/implement/scripts/worker.py review <name> <main-worktree-root> <main-worktree-root>/.scratch/<NNNN>-<slug>/review-brief.md`.
+     It snapshots the files, runs the reviewer, snapshots again, and prints only the verdict
+     lines. It names the file holding the full output on stderr. Exit 4 means the reviewer
+     changed a file, and it lists which. Exit 5 means the reply held no verdict line. On any
+     non-zero exit, stop and escalate with its output.
    - With none: give the same brief to a fresh-context subagent, and tell the user in one line
      that the review fell back to a subagent. If your tool has no subagents, stop and escalate
-     "no spec reviewer available."
+     "no spec reviewer available." Prove the subagent changed no file by hand. `S` means
+     `python3 <skills>/to-issues/scripts/worktree_snapshot.py`, `T` the absolute ticket
+     directory, and `E` a new temporary directory outside the repo:
+     1. Before the review: `S capture <main-root> T E/before.json`.
+     2. After the review: `S capture <main-root> T E/after.json`, then
+        `S compare E/before.json E/after.json`. A changed file means stop and escalate.
 
    The checklist the reviewer applies to each ticket:
    1. "Done when" is present and another agent can verify it. A red check names a command

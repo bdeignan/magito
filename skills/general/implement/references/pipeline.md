@@ -27,23 +27,17 @@ directory, as in `SKILL.md`.
    family is the family of the model that wrote the code. Give the reviewer the ticket body
    and the output of `git diff <base>...HEAD`, plus the reply format in
    [worker-contract.md](./worker-contract.md). It answers `VERDICT PASS`, or one or more
-   `VERDICT FIX: <finding>` lines, and changes no files. Prove that it changed no files with
-   the same before-and-after snapshot that `to-issues` uses, where `S` is
-   `python3 <skills>/to-issues/scripts/worktree_snapshot.py` and `E` is a new temporary
-   directory outside the repo:
-   1. Before the review: `S capture <worktree> <worktree>/.scratch E/before.json`.
-   2. Run the review and save its output to `E/review.txt`.
-   3. After the review: `S capture <worktree> <worktree>/.scratch E/after.json`, then
-      `S compare E/before.json E/after.json`. A difference means the review failed: discard
-      its verdict, revert the change, and review again.
-
-   The snapshot always covers tracked and untracked files under `<worktree>`. The second
-   argument names one extra folder to cover even though git ignores it. A linked worktree
-   has no `.scratch/`, and the script treats a missing folder as empty, so here the check
-   covers the tracked and untracked files. Those files are the code under review.
+   `VERDICT FIX: <finding>` lines, and changes no files. Write the brief to a file outside the
+   worktree with your file-writing tool, then run the round as one command:
+   `python3 <skills>/implement/scripts/worker.py review <reviewer> <worktree> <brief-file>`.
+   It snapshots the worktree's tracked and untracked files, runs the reviewer, snapshots
+   again, and prints only the verdict lines. It names the file holding the full output on
+   stderr. Exit 4 means the reviewer changed files: discard its verdict, revert the change,
+   and review again. Exit 5 means the reply held no verdict line: review again.
 
    When `worker.py reviewer` finds no reviewer (exit 3), review with a fresh-context
-   subagent instead, and say so in the pull request body.
+   subagent instead, and say so in the pull request body. Prove it changed no files with the
+   snapshot pair from `to-issues` step 5, using `<worktree>` as the root.
 6. **Fix rounds.** On FIX, fix the findings, run the check again, and review again. Run at
    most three review rounds. Before you accept a fix round, run
    `git diff --name-only <red-step-commit> HEAD` and reject the round if it lists a locked

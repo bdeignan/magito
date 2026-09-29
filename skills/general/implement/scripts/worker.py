@@ -10,6 +10,7 @@ runs the worker with its working directory set, and enforces a timeout.
 
     python3 worker.py probe <worker>
     python3 worker.py run   <worker> <dir> <brief-file> [timeout-seconds]
+    python3 worker.py review <worker> <dir> <brief-file> [timeout-seconds]
     python3 worker.py reviewer <writer-family>
     python3 worker.py thrifty
     python3 worker.py workers
@@ -21,15 +22,21 @@ from the writer's, trying the top-level `reviewers` list first (or the older
 this script only fails loudly. Thrifty mode (env MAGITO_THRIFTY=1, or `thrifty = true`
 in the roster; MAGITO_THRIFTY=0 forces it off) limits reviewer to workers whose `tier`
 is `cheap`, with no tier counting as `strong`. thrifty prints on or off. workers prints
-the roster's worker names in file order, only cheap ones when thrifty is on, no probe. Exit: 0 ok, 2 config error, 3 probe fail or no
-reviewer found, 124 timeout, otherwise the worker's own exit code. Stdlib only,
+the roster's worker names in file order, only cheap ones when thrifty is on, no probe.
+review runs one review round: it snapshots <dir> (plus <dir>/.scratch), runs the worker,
+snapshots again, saves the full output to a file named on stderr, and prints only the
+VERDICT and COVERAGE lines. Exit: 0 ok, 2 config error, 3 probe fail or no reviewer
+found, 4 the reviewer changed files, 5 no verdict line, 124 timeout, otherwise the
+worker's own exit code. Stdlib only,
 by design.
 """
 import os
+import re
 import shlex
 import signal
 import subprocess
 import sys
+import tempfile
 import tomllib
 from pathlib import Path
 from types import SimpleNamespace
@@ -165,6 +172,61 @@ def run(argv, cwd, timeout, capture):
     return SimpleNamespace(returncode=p.returncode, stdout=out or "", stderr=err or "")
 
 
+SNAPSHOT = Path(__file__).resolve().parents[2] / "to-issues" / "scripts" / "worktree_snapshot.py"
+VERDICT_LINE = re.compile(r"^[\s>*`-]*((?:VERDICT|COVERAGE)\b[^`]*?)[`\s]*$")
+
+
+def review(name, cwd, brief_file, timeout):
+    """One review round: snapshot, run, snapshot, compare, then the verdict lines.
+
+    The snapshot covers <dir>'s tracked and untracked files plus <dir>/.scratch,
+    which git ignores but where to-issues keeps its drafts. A reviewer that
+    changed anything has no verdict worth acting on (exit 4)."""
+    if not Path(cwd).is_dir():
+        die(2, f"assigned directory does not exist: {cwd}")
+    cwd = str(Path(cwd).resolve())
+    try:
+        brief = Path(brief_file).read_text()
+    except OSError as e:
+        die(2, f"cannot read brief file: {e}")
+    argv = build_argv(resolve(name), name, cwd, brief)
+    work = Path(tempfile.mkdtemp(prefix="magito-review-"))
+
+    def snapshot(label):
+        path = work / f"{label}.json"
+        r = subprocess.run([sys.executable, str(SNAPSHOT), "capture", cwd, f"{cwd}/.scratch", str(path)],
+                           capture_output=True, text=True)
+        if r.returncode:
+            die(2, f"snapshot failed: {r.stderr.strip()}")
+        return path
+
+    before = snapshot("before")
+    r = run(argv, cwd, timeout, capture=True)
+    output = work / "review.txt"
+    output.write_text(r.stdout + r.stderr)
+    print(f"review output: {output}", file=sys.stderr)
+    after = snapshot("after")
+    cmp = subprocess.run([sys.executable, str(SNAPSHOT), "compare", str(before), str(after)],
+                         capture_output=True, text=True)
+    if cmp.returncode:
+        print(cmp.stdout.strip(), file=sys.stderr)
+        die(4, "the reviewer changed files — discard its verdict, revert, and review again")
+    # Some CLIs echo the brief, whose reply format quotes verdict lines, and print
+    # the final answer twice. Drop the echo, then keep each verdict line once.
+    answer = r.stdout.replace(brief.strip(), "", 1)
+    verdicts = []
+    for line in answer.splitlines():
+        m = VERDICT_LINE.match(line)
+        if m and m.group(1) not in verdicts:
+            verdicts.append(m.group(1))
+    if r.returncode:
+        sys.exit(r.returncode)
+    if not verdicts:
+        die(5, f"no VERDICT or COVERAGE line in the reviewer's output ({output})")
+    print("\n".join(verdicts))
+    sys.exit(0)
+
+
 def main():
     args = sys.argv[1:]
     if len(args) >= 2 and args[0] == "probe":
@@ -264,11 +326,19 @@ def main():
         argv = build_argv(entry, name, cwd, brief)
         r = run(argv, cwd, timeout, capture=False)
         sys.exit(r.returncode)
+    elif len(args) >= 4 and args[0] == "review":
+        name, cwd, brief_file = args[1], args[2], args[3]
+        try:
+            timeout = int(args[4]) if len(args) > 4 else 600
+        except ValueError:
+            die(2, f"timeout must be an integer number of seconds, got: {args[4]}")
+        review(name, cwd, brief_file, timeout)
     else:
         die(2, "usage: worker.py probe <worker> | "
                "worker.py reviewer <writer-family> | "
                "worker.py thrifty | worker.py workers | "
-               "worker.py run <worker> <dir> <brief-file> [timeout]")
+               "worker.py run <worker> <dir> <brief-file> [timeout] | "
+               "worker.py review <worker> <dir> <brief-file> [timeout]")
 
 
 if __name__ == "__main__":

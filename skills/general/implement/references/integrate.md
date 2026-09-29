@@ -38,8 +38,9 @@ run from your working directory; `<skills>` is your tool's installed skills dire
      merge with `git reset --hard HEAD^` so the integration branch stays green, keep the ticket
      branch, and stop with escalation 6 (below). Never edit a locked test to get past it.
 5. **Final review.** After the last merge, pick the reviewer as in pipeline.md step 5. Give it
-   the whole intent doc and the output of `git diff <base>...integrate/<NNNN>-<slug>`. Keep
-   the before-and-after snapshot proof that it changed no files. It answers exactly one of
+   the whole intent doc and the output of `git diff <base>...integrate/<NNNN>-<slug>`, and run
+   it with `worker.py review` against the integration worktree, as in pipeline.md step 5. It
+   answers exactly one of
    these lines, plus any `VERDICT FIX: <defect>` lines:
    - `COVERAGE PASS`
    - `COVERAGE FIX: <missing or wrong outcome>`
