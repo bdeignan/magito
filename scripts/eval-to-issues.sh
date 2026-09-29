@@ -128,17 +128,39 @@ EOF
 make_repo "$ACCEPTED_DIR" "Status: accepted · Opened: 2026-09-28 · Accepted: 2026-09-28"
 make_repo "$DRAFT_DIR" "Status: draft · Opened: 2026-09-28"
 
-ACCEPTED_LOG="$ACCEPTED_DIR/eval.log"
-DRAFT_LOG="$DRAFT_DIR/eval.log"
+# Logs sit next to the repos, not inside them, so they never land in the tree
+# the worker is running in.
+ACCEPTED_LOG="$TMP_BASE/accepted.log"
+DRAFT_LOG="$TMP_BASE/draft.log"
 
 run_worker "$ACCEPTED_DIR" "$ACCEPTED_LOG" || true
 run_worker "$DRAFT_DIR" "$DRAFT_LOG" || true
 
+# Intent 0003: the accepted run "asks no question", and the draft run "must stop
+# and ask". A question is judged by the last non-empty line of the worker's output.
+ends_with_question() {
+  local last
+  last=$(grep -v '^[[:space:]]*$' "$1" 2>/dev/null | tail -1)
+  [[ "$last" == *\?* ]]
+}
+
 ACCEPTED_OK=0
 DRAFT_OK=0
 
-check_accepted "$ACCEPTED_DIR" && ACCEPTED_OK=1 || true
-check_draft "$DRAFT_DIR" && DRAFT_OK=1 || true
+if check_accepted "$ACCEPTED_DIR"; then
+  if ends_with_question "$ACCEPTED_LOG"; then
+    echo "accepted: FAIL (output ends with a question)"
+  else
+    ACCEPTED_OK=1
+  fi
+fi
+if check_draft "$DRAFT_DIR"; then
+  if ends_with_question "$DRAFT_LOG"; then
+    DRAFT_OK=1
+  else
+    echo "draft: FAIL (published nothing, but the output does not end with a question)"
+  fi
+fi
 
 echo
 printf 'accepted: %s\n' "$([[ $ACCEPTED_OK -eq 1 ]] && echo PASS || echo FAIL)"
