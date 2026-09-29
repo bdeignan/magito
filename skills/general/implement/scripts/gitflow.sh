@@ -159,23 +159,35 @@ case "$cmd" in
     # the gate tells unsupervised work from work done by hand (ADR 0014).
     #
     # Layout is an argument, not a policy: pass a path, or set
-    # `git config magito.worktreeDir <dir>`. The default puts worktrees in a
-    # SIBLING directory for a technical reason rather than a stylistic one — a
-    # worktree nested inside the repo lands inside git's own scan and inside
-    # build-tool globs.
+    # `git config magito.worktreeDir <dir>`. The default is
+    # <main-worktree-root>/.magito/worktrees/<branch-slug>, inside the repo so an
+    # IDE opened at the root shows it (ADR 0019). `.magito/` must be ignored for
+    # that to be safe — git's own scan skips it, and so do tools that honor git's
+    # ignore files — so `add` excludes it in .git/info/exclude when nothing else
+    # ignores it yet. The same line hides the review marker written below.
     # No braces in this message: a `}` inside `${1:?...}` would close the
     # expansion early and leave the stray brace in the value.
     sub="${1:?worktree needs a subcommand — add or remove}"; shift
     case "$sub" in
       add)
         branch="${1:?branch required}"; path="${2:-}"
+        root="$(main_worktree)"
+        # Probe the real paths `add` creates. A directory-only pattern cannot match
+        # a folder that does not exist yet, so probe a path inside the worktree.
+        slug="${branch//\//-}"
+        if ! git -C "$root" check-ignore -q ".magito/worktrees/${slug}/x" \
+          || ! git -C "$root" check-ignore -q ".magito/review-${slug}"; then
+          exclude="$(git -C "$root" rev-parse --git-path info/exclude)"
+          case "$exclude" in /*) ;; *) exclude="$root/$exclude" ;; esac
+          mkdir -p "$(dirname "$exclude")"
+          # A last line with no newline would swallow the entry.
+          if [ -s "$exclude" ] && [ -n "$(tail -c 1 "$exclude")" ]; then printf '\n' >> "$exclude"; fi
+          printf '.magito/\n' >> "$exclude"
+        fi
         if [ -z "$path" ]; then
           dir="$(git config --get magito.worktreeDir 2>/dev/null || true)"
-          if [ -z "$dir" ]; then
-            root="$(main_worktree)"
-            dir="$(dirname "$root")/$(basename "$root").worktrees"
-          fi
-          path="${dir}/${branch//\//-}"
+          [ -n "$dir" ] || dir="$root/.magito/worktrees"
+          path="${dir}/${slug}"
         fi
         # `add -b` fails outright when the branch exists, so don't assume it's new.
         if git show-ref --verify --quiet "refs/heads/${branch}"; then

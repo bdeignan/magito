@@ -256,11 +256,12 @@ else
   OUT="$(cd "$CHECKOUT" && python3 hello.py "" 2>&1)" || fail "hello.py \"\" failed on $BRANCH"
   [[ "$OUT" == "hello, world" ]] || fail "hello.py \"\" printed '$OUT', expected 'hello, world'"
 
-  # A worktree nested inside the repo breaks the sibling layout gitflow.sh picks.
+  # A worktree inside the repo belongs under .magito/worktrees, where gitflow.sh puts it.
   REPO_REAL="$(cd "$REPO" && pwd -P)"
   while IFS= read -r wt; do
     [[ "$wt" == "$REPO_REAL" ]] && continue
-    [[ "$wt" == "$REPO_REAL"/* ]] && fail "worktree nested inside the repo: $wt"
+    [[ "$wt" == "$REPO_REAL/.magito/worktrees/"* ]] && continue
+    [[ "$wt" == "$REPO_REAL"/* ]] && fail "worktree inside the repo but outside .magito/worktrees: $wt"
   done < <(git -C "$REPO" worktree list --porcelain | sed -n 's/^worktree //p')
 
   grep -Eq '(^|[[:space:]`])VERDICT PASS' "$RESPONSE" || fail "final response has no VERDICT PASS line"

@@ -34,6 +34,8 @@ def file_digest(path: Path) -> dict[str, str]:
     return {
         "kind": "file",
         "value": hashlib.sha256(path.read_bytes()).hexdigest(),
+        # git tracks the executable bit, so a reviewer must not flip it either.
+        "exec": "yes" if path.stat().st_mode & 0o111 else "no",
     }
 
 

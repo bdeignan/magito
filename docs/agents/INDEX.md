@@ -33,6 +33,7 @@ currently deferred, see the file.)
 | Why every pipeline branch is reviewed automatically, by a different model family when the roster has one | `docs/adr/0018` |
 | Why skills name tracker operations instead of `gh`, including intent overrides | `docs/adr/0015`, `docs/adr/0017` |
 | Delegating a build (shell workers, worktrees) | `skills/general/implement/references/worker-contract.md` |
+| Why worktrees live in `.magito/worktrees/` inside the repo | `docs/adr/0019` |
 | The magi tribunal | `skills/claude/magi/SKILL.md` |
 | Why a past decision was made | `docs/adr/` |
 

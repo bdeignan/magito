@@ -45,8 +45,9 @@ this path too. Read local ticket files from the main root before preparing worke
 
 3. **Fan out the disjoint issues.** Create each worktree with `bash
    <skills>/implement/scripts/gitflow.sh worktree add <branch>`. It prints the path it
-   created. Use the script, not raw `git worktree add`. It picks the layout: a sibling of the
-   repo, never under `/tmp` and never nested inside the repo. It also marks the branch as
+   created. Use the script, not raw `git worktree add`. It picks the layout:
+   `.magito/worktrees/<branch>` in the main checkout, which git ignores, and never under
+   `/tmp`. It also marks the branch as
    fan-out work, and that mark is the only thing that makes the review gate apply (ADR 0014).
    Hand-roll the `git` command instead and this fan-out lands ungated. Launch one executor per
    worktree — `haiku-executor` by default (Claude Code only), or a shell worker the user names
@@ -96,8 +97,8 @@ this path too. Read local ticket files from the main root before preparing worke
    worktree remove` (never `rm -rf`) and clears the branch's marker. A dirty worktree makes it
    refuse rather than destroy an executor's uncommitted work — read what is there before
    deciding to pass `--force`. Order matters: tear down **after** the PR is open, since removal
-   clears the marker the gate reads. Once the last one is removed, the `.worktrees` sibling dir
-   should be empty or gone too. Surface any `BLOCKED` issue back to the user instead of
+   clears the marker the gate reads. Once the last one is removed, `.magito/worktrees/`
+   should be empty. Surface any `BLOCKED` issue back to the user instead of
    guessing.
 
 ## Cost honesty
