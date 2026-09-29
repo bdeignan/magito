@@ -24,7 +24,7 @@ print("workdir: .")
 print(brief)
 answer = {
     "pass": "VERDICT PASS",
-    "fix": "- VERDICT FIX: the test runs one hook\n`COVERAGE PASS`",
+    "fix": "- VERDICT FIX: `a.py:3` \u2014 the test runs one hook\n`COVERAGE PASS`",
     "none": "Looks good to me.",
     "fail": "VERDICT PASS",
 }.get(mode, "VERDICT PASS")
@@ -32,6 +32,13 @@ if mode == "tracked":
     Path("a.txt").write_text("changed\n")
 if mode == "untracked":
     Path("new.txt").write_text("new\n")
+if mode == "slow":
+    Path("a.txt").write_text("changed\n")
+    import time
+    time.sleep(30)
+if mode == "stderr":
+    print(answer, file=sys.stderr)
+    sys.exit(0)
 if mode == "scratch":
     Path(".scratch").mkdir(exist_ok=True)
     Path(".scratch/draft.md").write_text("edited\n")
@@ -52,7 +59,7 @@ def check(ok: bool, label: str) -> None:
         print(f"FAIL: {label}")
 
 
-def review(mode: str) -> subprocess.CompletedProcess:
+def review(mode: str, timeout: str | None = None) -> subprocess.CompletedProcess:
     with tempfile.TemporaryDirectory() as t:
         tmp = Path(t)
         repo = tmp / "repo"
@@ -80,7 +87,7 @@ def review(mode: str) -> subprocess.CompletedProcess:
         brief.write_text(mode + BRIEF_TAIL)
 
         result = subprocess.run(
-            [sys.executable, str(WORKER), "review", "fake", str(repo), str(brief)],
+            [sys.executable, str(WORKER), "review", "fake", str(repo), str(brief)] + ([timeout] if timeout else []),
             capture_output=True, text=True, env=env,
         )
         # The saved output must outlive the call; read it before the temp dir goes.
@@ -97,7 +104,7 @@ def main() -> None:
 
     r = review("fix")
     check(r.returncode == 0, f"fix: exits 0 (got {r.returncode})")
-    check(r.stdout == "VERDICT FIX: the test runs one hook\nCOVERAGE PASS\n",
+    check(r.stdout == "VERDICT FIX: `a.py:3` \u2014 the test runs one hook\nCOVERAGE PASS\n",
           f"fix: bullets and backticks are stripped, each line printed once (got {r.stdout!r})")
 
     for mode, path in (("tracked", "a.txt"), ("untracked", "new.txt"), ("scratch", ".scratch/draft.md")):
@@ -105,6 +112,12 @@ def main() -> None:
         check(r.returncode == 4, f"{mode}: a changed file exits 4 (got {r.returncode})")
         check(path in r.stdout + r.stderr, f"{mode}: names the changed file {path}")
         check("VERDICT" not in r.stdout, f"{mode}: prints no verdict to act on (got {r.stdout!r})")
+
+    r = review("stderr")
+    check(r.returncode == 0 and r.stdout == "VERDICT PASS\n", f"stderr: a verdict printed on stderr counts (got {r.returncode}, {r.stdout!r})")
+
+    r = review("slow", timeout="2")
+    check(r.returncode == 4, f"slow: a reviewer that edits a file and times out exits 4, not 124 (got {r.returncode})")
 
     r = review("none")
     check(r.returncode == 5, f"none: no verdict line exits 5 (got {r.returncode})")
