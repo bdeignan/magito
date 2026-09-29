@@ -7,6 +7,7 @@ no hooks. See docs/intent/0004-pilot-guardrail-gaps.md.
 Runs the real install.py against a temporary HOME. Stdlib only. Exits 0 when every
 case passes, 1 otherwise.
 """
+import importlib.util
 import json
 import os
 import shlex
@@ -16,6 +17,10 @@ import tempfile
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
+_spec = importlib.util.spec_from_file_location("install_module", REPO / "install.py")
+_install = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_install)
+fail_open_command = _install.fail_open_command
 HOOKS = ["review-gate.py", "staging-guard.py"]
 FAILURES: list[str] = []
 
@@ -96,10 +101,23 @@ def case_fresh_install_and_fail_open() -> None:
         for name in HOOKS:
             check(len(commands_for(hooks_json, name, home)) == 1, f"{name} is registered once")
 
-        # Present script: the registered command runs it and passes stdin through.
+        # Present script: each registered command runs its script and exits 0 on a harmless call.
+        for name in HOOKS:
+            cmd = commands_for(hooks_json, name, home)[0]
+            check(cmd == fail_open_command(str(home / ".codex" / "hooks" / name)),
+                  f"{name} is registered as the fail-open command")
+            ran = run_registered(cmd, payload("git status"))
+            check(ran.returncode == 0 and not ran.stdout, f"{name} registered command runs and allows 'git status'")
         cmd = commands_for(hooks_json, "staging-guard.py", home)[0]
         ran = run_registered(cmd, payload("git add -A"))
-        check("deny" in ran.stdout, "registered command runs the script with stdin")
+        check("deny" in ran.stdout, "staging-guard registered command passes stdin to its script")
+
+        # The wrapper hands stdin to the script it runs: a stub that echoes its input proves it.
+        stub = home / "echo-stdin.sh"
+        stub.write_text("#!/bin/sh\ncat\n")
+        stub.chmod(0o755)
+        echoed = run_registered(fail_open_command(str(stub)), "hello-from-stdin")
+        check(echoed.stdout == "hello-from-stdin", "the fail-open wrapper passes stdin through to the script")
 
         # Second run adds nothing.
         install(home, codex_toml(home))
