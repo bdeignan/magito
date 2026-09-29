@@ -94,8 +94,8 @@ escalation, and the merge.
 1. **`/catch-up`** starts a session. It reads the journal, the tracker, and git, then names the next move.
 2. **`/intent`** interviews you one question at a time and produces an intent doc. You act here: you accept the doc.
 3. **`to-issues`** runs on its own after you accept. It turns the intent into reviewed tickets and publishes them.
-4. **`implement`** runs on its own after that. It builds each ticket, gets a review from a different model family, and stops only for an escalation. You act here when it escalates.
-5. **The pull request** is the result. You act here: you merge it. Agents never merge.
+4. **`implement`** runs on its own after that. It builds each ticket, gets it reviewed by a model from a different family when the roster has one, and stops only for an escalation. You act here when it escalates.
+5. **The pull request** is the result. You act here: you merge it. In a repo with no remote, the agent stops and asks instead, and merges only after you approve.
 6. **`/handoff`** ends the session with one entry in `.magito/journal/`.
 
 Work with no accepted intent can still enter at `/to-issues` (a plan) or `/implement` (one clear
@@ -120,10 +120,10 @@ issue). Those tickets keep the older steps: plan approval before code and "ship 
 
 ### What magito promises
 
-1. **You own every merge.** Agents branch, commit, and open pull requests. The merge is always yours.
-2. **Nothing lands unreviewed by accident.** Work on the pipeline path gets an automatic review from a different model family. Any other pull request or merge reaches a deliberate choice first: a full review, a lightweight pass, or a knowing skip.
-3. **Delegation is explicit.** Reviews on the pipeline path go to a roster worker from a different model family, chosen by `worker.py reviewer`. Builds delegate only to a worker you name ("via omp"). Thrifty mode limits every step to cheap models.
-4. **One approval per worker launch** in the default permission mode. A dead or denied worker stops loudly. Nothing silently falls back onto your subscription.
+1. **You own every merge.** Agents branch, commit, and open pull requests. You merge a pull request yourself. In a repo with no remote, an agent merges only after your explicit approval.
+2. **Nothing lands unreviewed by accident.** Work on the pipeline path gets an automatic review, from a different model family when the roster has one. Any other pull request or merge reaches a deliberate choice first: a full review, a lightweight pass, or a knowing skip.
+3. **Delegation is explicit.** Reviews on the pipeline path go to a roster worker from a different model family, chosen by `worker.py reviewer`. When no such worker answers, a fresh-context subagent reviews instead, and the pull request says so. Builds delegate only to a worker you name ("via omp"). Thrifty mode limits every step to cheap models.
+4. **Worker failures are loud.** A named build worker that is dead or denied stops the run instead of quietly handing the work to your subscription. Your tool's own permission prompts still apply to each worker launch.
 5. **Machine-local files are yours.** `~/.magito/` is bootstrapped once with your consent and never overwritten on an agent's own initiative. `bin/` is the exception: `install.py` owns it.
 6. **Staging is always explicit.** No agent bulk-stages files. A hook blocks `git add -A` everywhere.
 7. **Costs are stated before they are incurred.** A fan-out declares its executor count and workers up front. Magi deliberate mode asks before it convenes.
