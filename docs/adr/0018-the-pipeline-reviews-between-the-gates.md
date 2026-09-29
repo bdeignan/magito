@@ -21,16 +21,25 @@ The same rule that made the fan-out the exception now covers the whole pipeline 
 pipeline branch is created with `gitflow.sh worktree add`, so it gets a review marker. That
 includes the integration branch of an integrated run, which
 `skills/general/implement/references/integrate.md` describes. The gate in `gitflow.sh pr|merge`
-applies to any branch with a marker, so it applies to every pipeline branch. This extends ADR
-0014 from the fan-out alone to every pipeline branch. The mechanism is unchanged. A branch
-with a marker is gated, and a branch without one is not.
+applies to any branch with a marker at the moment that branch lands. This extends ADR 0014 from
+the fan-out alone to the pipeline. The mechanism is unchanged. A branch with a marker is gated,
+and a branch without one is not.
 
-The review on the pipeline path is automatic. It does not wait for the human to ask. It also
-comes from a different model family than the builder. The driver runs
+In an integrated run, the gate fires once, at the integration branch. Each ticket branch is
+reviewed, but it never lands on the base branch: the driver merges it into the integration
+branch with a raw `git merge`, which the gate does not see. So a ticket branch's marker stays
+`pending`, and nothing enforces its review. What the gate enforces is the final review of the
+whole integration branch, when its pull request opens.
+
+The review on the pipeline path is automatic. It does not wait for the human to ask. It
+comes from a different model family than the builder whenever the roster has a working worker
+outside that family. The driver runs
 `python3 <skills>/implement/scripts/worker.py reviewer <builder-family>`, and the command picks a
 working worker outside the builder's family. A model reviewing its own family's code shares
 that family's blind spots, and no human is there to catch them. When no such worker exists, the
-driver reviews with a fresh-context subagent and says so in the pull request body. A `VERDICT
+driver reviews with a fresh-context subagent and says so in the pull request body. That
+fallback is the one exception: a subagent can be the builder's own family, so the
+different-family review is a strong default, not a guarantee. A `VERDICT
 PASS` and a green check are what let the driver record `<sha> reviewed` and open the pull
 request.
 
