@@ -247,7 +247,7 @@ else
     if [[ "$(git -C "$REPO" rev-list --count "main..$b")" -ge 1 ]]; then BRANCH="$b"; break; fi
   done <<< "$BRANCHES"
   [[ -n "$BRANCH" ]] || fail "no branch has commits beyond main"
-  test_first "$BRANCH" "$BASE_SHA" "$BRANCH"
+  while IFS= read -r b; do test_first "$b" "$BASE_SHA" "$b"; done < <(work_branches)
 
   CHECKOUT="$TMP_BASE/branch-checkout"
   mkdir -p "$CHECKOUT"
