@@ -6,6 +6,8 @@ argument-hint: "one issue (number, URL, or path) for the sequential path; severa
 
 # Implement
 
+**First rule. If the ticket body has an `**Intent:**` line that links an intent doc whose header line says `Status: accepted`, and it also has a `Spec review:` line, it is a pipeline ticket. Never ask the user to approve the plan, never offer the review, and never wait for "ship it". Follow [`references/pipeline.md`](./references/pipeline.md) instead of steps 2 and 6 to 8 below, and stop only for an escalation named there.** Decide from the ticket, not from who called you. Every other ticket keeps the process below exactly as written: plan approval, the review offer, and "ship it."
+
 Take an issue from spec to open PR. You own the git lifecycle; the human owns the merge. The deterministic git steps run through [`scripts/gitflow.sh`](./scripts/gitflow.sh); everything else is judgement. Tracker reads and writes go through the named operations in `docs/agents/issue-tracker.md`, which says how to perform each one in this repo — this skill never names a backend. Commands below run from your actual working directory, not the skill directory, so they address the scripts as `<skills>/implement/scripts/...` (`<skills>` is your tool's installed skills directory — `~/.claude/skills` for Claude Code, `~/.agents/skills` for most others).
 
 **Tracker handoff.** Resolve the adapter through

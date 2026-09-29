@@ -185,6 +185,16 @@ absent or empty, `spec_reviewer` counts as a list of one. It skips any worker wi
 family equal to the writer's, or a failed probe, and says so on stderr. It prints the
 name of the first worker that passes, alone on stdout. It exits 3 when none passes.
 
+### Reviewer replies on the pipeline path
+
+The pipeline path in [pipeline.md](./pipeline.md) picks its code reviewer with the same
+`worker.py reviewer <builder-family>` call. The brief carries the ticket body and
+`git diff <base>...HEAD`, and tells the reviewer to change no files and to answer with
+`VERDICT PASS` or one or more `VERDICT FIX: <finding>` lines. Reading a reply: any
+`VERDICT FIX` line means FIX, even beside a `VERDICT PASS`. A reply with neither token, or a
+nonzero exit, counts as a failed review, so run it again. You verify the no-write rule with
+`worktree_snapshot.py`, never by trusting the reviewer's word.
+
 ## Nested-CLI gotchas (verified July 2026)
 
 - **Nested claude**: spawn with `env -u CLAUDECODE claude -p ...` — Claude Code
