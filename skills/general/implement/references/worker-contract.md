@@ -83,7 +83,10 @@ into arguments and placeholders are substituted per argument, so it cannot conta
 and rejects such entries loudly). `{cwd}` is the assigned directory, `{brief}`
 receives the brief file's content as one argument. An optional `model` field
 follows magi's bench convention: substituted where `cmd` contains `{model}`,
-documentation otherwise.
+documentation otherwise. An optional `family` field names the model family
+(`openai`, `google`, `anthropic`, ...); families are compared case-insensitively.
+A top-level `spec_reviewer` key names the worker tried first when the pipeline
+asks for a spec reviewer from a different family.
 
 ```toml
 # ~/.magito/workers.toml — machine-local, never synced
@@ -129,6 +132,11 @@ sends "Reply with exactly: VERDICT-OK" and checks the token comes back. The
 launcher strips approval-bypass flags from the probe itself — a ping needs no
 permissions, and permission tooling rightly balks at bypass flags on a command that
 does not need them.
+
+To pick a spec reviewer from a different model family, use `python3 <skills>/implement/scripts/worker.py reviewer <writer-family>`.
+It tries `spec_reviewer` first, then every other worker in file order, and prints
+the first one whose `family` differs from the writer's and whose probe answers
+VERDICT-OK. It exits 3 if no such worker passes its probe.
 
 - **Dead at probe** (missing binary, auth failure, quota, timeout): stop and ask the
   user — fall back to `haiku-executor`, or abort. Never substitute silently: the user

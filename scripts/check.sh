@@ -14,6 +14,8 @@
 #      PreToolUse stdin payloads.
 #   4. No `SKILL.md` under skills/ carries `disable-model-invocation`. Every
 #      skill is model-invocable (#174), so the flag never comes back.
+#   5. `worker.py reviewer` picks a worker from a different family than the
+#      writer's, probing candidates in roster order. See issue #183.
 #
 # Collects all failures instead of stopping at the first one, prints a summary,
 # and exits 1 if anything failed, 0 otherwise. Bash and the stdlib Python
@@ -179,11 +181,22 @@ check_model_invocation() {
   fi
 }
 
+# --- 5. worker.py reviewer --------------------------------------------------
+check_worker_reviewer() {
+  if python3 "$REPO_ROOT/scripts/test_worker_reviewer.py" >/dev/null 2>&1; then
+    echo "worker-reviewer: ok"
+  else
+    echo "worker-reviewer: FAILED"
+    FAILURES+=("worker.py reviewer selection")
+  fi
+}
+
 # --- run everything, then summarize ------------------------------------------
 check_install
 check_anti_slop
 check_hooks
 check_model_invocation
+check_worker_reviewer
 
 echo
 if [[ ${#FAILURES[@]} -eq 0 ]]; then
