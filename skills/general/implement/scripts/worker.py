@@ -63,13 +63,20 @@ def resolve(name):
     return entry
 
 
-def probe_ok(name) -> bool:
-    """Run a probe against the named worker. Return True iff it answers VERDICT-OK."""
+def probe_ok(name, echo_failure=False) -> bool:
+    """Run a probe against the named worker. Return True iff it answers VERDICT-OK.
+    echo_failure replays a failed probe's output for diagnosis — off for reviewer,
+    whose stdout must hold only the chosen worker's name."""
     entry = resolve(name)
     here = str(Path.cwd())
     argv = strip_bypass(build_argv(entry, name, here, PROBE_PROMPT))
     r = run(argv, here, 90, capture=True)
-    return r.returncode == 0 and "VERDICT-OK" in r.stdout
+    ok = r.returncode == 0 and "VERDICT-OK" in r.stdout
+    if not ok and echo_failure:
+        print(r.stdout, end="")
+        print(r.stderr, end="", file=sys.stderr)
+        print(f"worker.py: probe exit {r.returncode}", file=sys.stderr)
+    return ok
 
 
 def build_argv(entry, name, cwd, brief):
@@ -140,7 +147,7 @@ def main():
     args = sys.argv[1:]
     if len(args) >= 2 and args[0] == "probe":
         name = args[1]
-        if probe_ok(name):
+        if probe_ok(name, echo_failure=True):
             print(f"PROBE OK: {name}")
             sys.exit(0)
         die(3, f"probe failed for '{name}' (no VERDICT-OK)")
