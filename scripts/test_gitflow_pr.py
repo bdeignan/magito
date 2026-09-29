@@ -96,6 +96,11 @@ def main() -> None:
     refused("whitespace body", GOOD_TITLE, "  \n\t\n", says="body")
     refused("Closes-only body", GOOD_TITLE, "Closes #205\nCloses #199\n", says="body")
     refused("empty body with the title check off", "anything", "", pattern="off", says="body")
+    # Every closing keyword GitHub honors, in any case, is still no body.
+    for kw in ("closes", "Fixes", "fixed", "RESOLVES", "resolved", "close"):
+        refused(f"{kw}-only body", GOOD_TITLE, f"{kw} #5\n", says="body")
+    refused("Closes line with a period", GOOD_TITLE, "Closes #5.", says="body")
+    refused("cross-repo Closes line", GOOD_TITLE, "Closes owner/repo#5", says="body")
 
     # The title: Conventional Commits when magito.prTitlePattern is unset.
     refused("plain-English title", "Close two guardrail gaps", GOOD_BODY, says="title")
@@ -107,6 +112,8 @@ def main() -> None:
 
     # Guest repos: off, or the house pattern.
     accepted("title check off", "Close two guardrail gaps", GOOD_BODY, pattern="off")
+    accepted("title check OFF in capitals", "Close two guardrail gaps", GOOD_BODY, pattern="OFF")
+    refused("broken pattern", GOOD_TITLE, GOOD_BODY, pattern="(", says="not a valid")
     accepted("custom pattern match", "[ABC-12] Add a thing", GOOD_BODY, pattern=r"^\[[A-Z]+-[0-9]+\] .+")
     refused("custom pattern miss", GOOD_TITLE, GOOD_BODY, pattern=r"^\[[A-Z]+-[0-9]+\] .+", says="title")
 
