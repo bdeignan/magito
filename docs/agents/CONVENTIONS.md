@@ -6,9 +6,12 @@
 
 ## Seams between skills
 
-**Skills chain at their ends, not in their middles.**
+**A skill hands off to another only where the user has no decision to make.**
 
-Where one skill needs another, ask: **does the user have a decision to make here?**
+The pipeline in `docs/intent/0001-agentic-pipeline.md` runs on invokes: an accepted intent
+calls `to-issues`, and `intent` calls `research` or `magi` in the middle of an interview when a
+question needs one. Both are fine, because in neither case is there anything for the user to
+decide. Where one skill needs another, ask: **does the user have a decision to make here?**
 
 | Answer | Seam | What it looks like |
 |---|---|---|
@@ -23,7 +26,7 @@ user never leaves the skill — and it is not a bare invoke, because the choice 
 Reach for it when handing the user back to the prompt would only make them type their way
 back in.
 
-**Invoke is the narrow case and has to earn itself.** The `implement` fan-out invokes
+**Invoke is the default inside the pipeline, and recommend is the default outside it.** The `implement` fan-out invokes
 `reviewing-changes` on every worktree and calls it non-negotiable — there is no decision to
 make, and turning it into a recommendation would make it skippable, which is the whole reason
 it is not one. `implement` reaching `verifying` is the same shape.
@@ -50,7 +53,7 @@ gets named and linked: `docs/agents/README.md` owns the two gates,
 points rather than recopies.
 
 The one exception, and its cost: when an agent must apply a rule *at the point of decision*
-mid-flow — `grilling/references/recon.md` states both gates inline because promotion is judged
+mid-flow — `intent/references/recon.md` states both gates inline because promotion is judged
 right there — a restatement is allowed, but as a synced copy, not a fork. Name the canonical
 source and flag it "change one, change the other," the way `hooks/staging-guard.py` and
 `hooks/review-gate.py` already do. The unflagged paraphrase is the failure; the flagged,
@@ -75,13 +78,14 @@ firing on the wrong one interrupts the wrong moment.
 default workflow is still four verbs, run in order:
 
 ```
-/catch-up  →  /grilling  →  /implement  →  /handoff
-   orient       decide          build             record
+/catch-up  →  /intent  →  /implement  →  /handoff
+   orient       decide        build            record
 ```
 
-`/wayfinder` sits between orient and decide when the work is too big for one session, and
-hands back to `/grilling` per ticket. The rest of the skills are off-spine: reached
-deliberately when a situation calls for them, which `/ask-magito` covers as situation → play.
+`/intent` spans multiple sessions on its own — a later session resumes an existing draft at its
+open questions — so nothing else sits between orient and decide. The rest of the skills are
+off-spine: reached deliberately when a situation calls for them, which `/ask-magito` covers as
+situation → play.
 Nothing stops the model from starting any of these on its own now; what keeps `catch-up` at
 the start of a session and `handoff` at the end is that each one's description says so.
 
