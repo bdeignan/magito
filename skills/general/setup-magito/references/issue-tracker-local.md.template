@@ -51,6 +51,11 @@ The path, or `<feature-slug>/NN` in prose. Numbers restart at `01` in each featu
 so a bare `03` means nothing on its own — always carry the feature slug with it. Reference
 the path in commit messages so `reviewing-changes` can find the spec behind a diff.
 
+When given a file path, an absolute path is used directly. A path starting with `.scratch/`
+is relative to the main worktree root. A path starting with a feature slug, such as
+`0001-hello/01-hello.md`, is relative to that root's `.scratch/` directory. Persist the
+canonical `.scratch/<feature>/<NN>-<slug>.md` path in publication records after resolving it.
+
 ## List open tickets
 
 Read every `.scratch/*/[0-9][0-9]-*.md` and keep the ones whose `Status:` is not `done`.

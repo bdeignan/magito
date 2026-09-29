@@ -29,9 +29,15 @@ if accepted:
     response = "Tickets published.\\n"
     if mode == "accepted-asks":
         response += "Should I publish remaining tickets?\\nWaiting for your approval.\\n"
+    if mode == "accepted-waits":
+        response += "Waiting for your approval.\\n"
+    if mode == "missing-ticket":
+        ticket.unlink()
 else:
     response = "Do you approve this ticket breakdown?\\nNo tickets published.\\n"
 
+if mode == "outside-response":
+    print("Should I continue?")
 print("MAGITO_FINAL_RESPONSE_BEGIN")
 print(response, end="")
 print("MAGITO_FINAL_RESPONSE_END")
@@ -65,7 +71,16 @@ def main() -> None:
 
         asks = run("accepted-asks", roster)
         assert asks.returncode == 1, asks.stdout + asks.stderr
-        assert "accepted: FAIL (final response contains a question)" in asks.stdout, asks.stdout
+        assert "accepted: FAIL (final response asks or waits for approval)" in asks.stdout, asks.stdout
+
+        waits = run("accepted-waits", roster)
+        assert waits.returncode == 1, waits.stdout + waits.stderr
+
+        outside = run("outside-response", roster)
+        assert outside.returncode != 0, outside.stdout + outside.stderr
+
+        missing = run("missing-ticket", roster)
+        assert missing.returncode == 1, missing.stdout + missing.stderr
 
         failed = run("worker-failure", roster)
         assert failed.returncode == 73, failed.stdout + failed.stderr

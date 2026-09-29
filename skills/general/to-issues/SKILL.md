@@ -37,7 +37,6 @@ is a different folder.
 1. **Read the input.** For an intent doc, read the whole file. Note the intent number and slug
    from its filename (`0003-to-issues.md` gives `0003` and `to-issues`), and whether its header
    says `Status: accepted`. For a ticket reference, fetch its body and comments.
-   Preserve the exact input as `input.md` in the ticket directory before review.
 
 2. **Resolve the tracker adapter** through
    [tracker-selection.md](../setup-magito/references/tracker-selection.md). Keep its absolute
@@ -50,8 +49,13 @@ is a different folder.
    line in `.git/info/exclude`, exactly as the "Private-state excludes" section of
    `<skills>/setup-magito/SKILL.md` does it.
 
-   If this directory already has `publication.json`, follow
-   [publication.md](./references/publication.md) before drafting or publishing again.
+   If this directory already has `publication.json`, resume through
+   [publication.md](./references/publication.md), then proceed to step 8. Reuse its passing
+   review when the reviewed input, adapter, and drafts are unchanged. Changed inputs require
+   reconciliation and fresh review of the whole set.
+
+   For a new run, preserve the exact input as `.scratch/<NNNN>-<slug>/input.md` before review.
+   Only numbered files in `drafts/` are draft tickets.
 
    Use the ticket template below. Every ticket needs at least one edge case in "Done when":
    empty input, a boundary value, a duplicate, a missing file. Happy-path-only is not ready.
@@ -86,7 +90,10 @@ is a different folder.
    Report changed paths or the execution failure. The snapshot covers tracked contents,
    unignored files, and the ignored ticket directory. Keep logs and snapshots outside that
    scope so writing evidence cannot count as a reviewer edit. A subagent review uses the
-   same before/after comparison.
+   same before/after comparison. After compare passes, copy that round's snapshots, stdout,
+   and stderr into `.scratch/<NNNN>-<slug>/review-evidence/round-<n>/`. Use those persistent
+   paths and their SHA-256 hashes in the publication record. Copy after comparison so saving
+   evidence cannot look like a reviewer edit.
 
    - With a worker name: `python3 <skills>/implement/scripts/worker.py run <name> <main-worktree-root> <main-worktree-root>/.scratch/<NNNN>-<slug>/review-brief.md`.
    - With none: give the same brief to a fresh-context subagent, and tell the user in one line
@@ -133,7 +140,9 @@ is a different folder.
    Keep reviewed drafts until every ticket and dependency is confirmed in the tracker.
 
 8. **Hand off.** For an accepted intent, call `implement` with the published ticket identifiers,
-   the selected adapter's absolute path, the main worktree root, and the publication record.
+   the publication record's absolute path, and these named fields in the invocation:
+   `tracker_adapter: <absolute-path>` and `main_root: <absolute-path>`. The record stores
+   the same values for a resumed invocation.
    `implement` must use that adapter for ticket reads, blockers, comments, and closing tickets.
    Otherwise, report the published tickets and stop. On a resumed completed publication,
    inspect the existing implementation status before handing off again.

@@ -3,7 +3,8 @@
 Keep one `publication.json` in the intent's private ticket directory. It records what the
 tracker confirmed so a resumed run can finish without creating duplicate tickets.
 Only one publisher can work on this directory at a time. Claim it by creating a
-`publication.lock` directory before reading or changing publication state. An existing lock
+`publication.lock` directory with `mkdir <ticket-directory>/publication.lock` before
+reading or changing publication state. Use plain `mkdir`, so an existing lock is an error. An existing lock
 stops the run; after an interruption, establish that the previous publisher has stopped
 before removing its lock. Remove the lock when the run finishes or stops cleanly.
 
@@ -15,7 +16,8 @@ copy. A change requires fresh review. Save a JSON object with:
 - `run_id`: a generated UUID, kept across retries;
 - `input_sha256`: SHA-256 of the reviewed `input.md` copy;
 - `adapter_path`, `adapter_sha256`, and `main_root`;
-- `review`: reviewer name, family, round, complete verdicts, and evidence paths;
+- `review`: reviewer name, family, round, complete verdicts, and persistent evidence paths
+  with their SHA-256 hashes;
 - `tickets`: one entry keyed by draft filename, holding `draft_sha256`, `publication_id`,
   `identifier` (initially null), `phase` (initially `ready`), and `edges_done` (initially false).
 
@@ -26,7 +28,7 @@ atomically. Keep snapshots and captured review output outside the protected work
 its content comparison passes.
 
 On resume, validate this record and compare the current input, adapter, and retained draft
-hashes. Missing or changed evidence stops publication. Re-review changed drafts as a complete
+hashes. Verify the recorded evidence hashes too. Missing or changed evidence stops publication. Re-review changed drafts as a complete
 set before accepting new hashes. If any ticket was already published, reconcile its content
 with the changed plan before proceeding; a new UUID is not a way to bypass that reconciliation.
 Do not recreate missing reviewed drafts by guessing.
@@ -48,7 +50,8 @@ For each draft:
    confirmed tracker identifiers. Add the review line and
    `Publication-ID: <publication_id>` to the body.
 4. Persist phase `publishing` before **publish a ticket**. When it succeeds, persist the
-   returned identifier and phase `published` immediately. If the call fails or its result
+   returned identifier and phase `published` immediately. The selected adapter owns title,
+   body, and header serialization, including local status, blocker, and date headers. If the call fails or its result
    is uncertain, keep phase `publishing`; resolve it through step 2 before another attempt.
 5. Fetch the ticket and verify its identity and expected body. Read its existing blockers,
    add only missing edges with **blocking edges**, and read them back. Mark `edges_done`

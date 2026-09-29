@@ -20,6 +20,7 @@ TRACKER_TEMPLATE="$MAGITO/skills/general/setup-magito/references/issue-tracker-l
 
 TMP_BASE="$(mktemp -d)"
 echo "eval evidence: $TMP_BASE"
+trap 'eval_status=$?; if [[ $eval_status -ne 0 ]]; then echo "eval failed ($eval_status); evidence: $TMP_BASE" >&2; fi' EXIT
 ACCEPTED_DIR="$TMP_BASE/accepted"
 DRAFT_DIR="$TMP_BASE/draft"
 BRIEF="$TMP_BASE/brief.txt"
@@ -146,7 +147,7 @@ check_response() {
   local response="$1" expected="$2"
   if [[ "$expected" == "accepted" ]]; then
     if grep -Eiq '\?|waiting for (your )?(approval|confirmation)|please (approve|confirm)' "$response"; then
-      echo "accepted: FAIL (final response contains a question)"
+      echo "accepted: FAIL (final response asks or waits for approval)"
       return 1
     fi
   elif ! grep -q '?' "$response"; then
