@@ -28,7 +28,14 @@ Create `<intent_dir>/NNNN-<slug>.md` immediately, with status `draft`. `intent_d
 number: scan `<intent_dir>` for the highest existing number and add one, zero-padded to four
 digits.
 
-Header line: `Status: draft · Opened: <today's date>`. Sections, in this order:
+Header line: `Status: draft · Opened: <today's date>`.
+
+The header line can also carry an optional `Tracker:` field, for example
+`Status: draft · Opened: 2026-09-28 · Tracker: local`. It overrides the repo's default tracker
+for this intent's issues. The value is `github`, `local`, or `other`. Write it only when the
+user asks for a different tracker. Never raise the topic on your own.
+
+Sections, in this order:
 
 - Problem
 - Proposed outcome

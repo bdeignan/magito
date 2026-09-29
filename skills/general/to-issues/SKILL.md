@@ -1,90 +1,149 @@
 ---
 name: to-issues
-description: Break a plan, spec, or conversation into independently-grabbable issues using vertical slices, and publish them to the project's issue tracker. Use once a plan is settled and ready to become tracked work.
+description: Turn an accepted intent doc into reviewed, buildable issues and publish them to the tracker, then hand off to implement. Also breaks a plan or conversation into issues when there is no intent doc. Use once the decisions are made. Do not use it to decide what to build — that is intent.
 ---
 
 # To Issues
 
-Break a plan into independently-grabbable issues, each a **tracer bullet**: a thin vertical slice that cuts end-to-end through every layer it touches, not a horizontal slice of one. This skill never names a tracker backend: it names operations, and `docs/agents/issue-tracker.md` says how to perform each one in this repo — run `/setup-magito` if that file is missing.
+**First rule. If the input is an intent doc whose header line says `Status: accepted`, never
+ask the user to approve the breakdown. Go from drafting to publishing without stopping. Stop
+only for the escalations in step 6.** Any other input (a plan, a conversation, a draft intent)
+gets the approval step in step 4, because no human signed it off yet.
+
+Each issue is a thin slice that works end to end and can be built alone. The agent that
+builds it is weaker than you and remembers nothing of this conversation, so the body carries
+everything.
 
 ## Write for a less-capable implementer
 
-Assume the agent that picks up each issue is weaker than the one writing it — less taste, less judgement, no memory of this conversation. The issue body must carry everything:
-
-- Spell out the full deliverable in the body. If the issue asks for a document, config, or skill, include the complete text to write (or an exact copy-from path) — never "write something like X".
-- Links are background only. Everything needed to build must be in the body; a link may corroborate a decision, never substitute for its content.
+- Spell out the full deliverable. If the issue asks for a document, config, or skill, include
+  the complete text to write, or an exact path to copy from.
+- Links are background only. Everything needed to build is in the body.
 - Exact commands over descriptions: "run `python install.py`", not "reinstall".
-- Decisions are made here, not downstream. If a choice is still open, resolve it with the user before publishing — an issue containing an open question is not ready.
-- Acceptance criteria must be checkable by a weak agent: observable behavior, file contents, command output — never "code is clean" or "works well".
-- Keep the whole body in plain words. The [readability standard](./references/readability.md) governs word choice for every section; it keeps the labeled headings and the checkbox acceptance criteria, and keeps identifiers exact.
-
-## Lead with a summary for the human
-
-An issue serves two readers. The body above is for the weaker agent that implements it. The **summary is for the human** — the teammate who opens the issue a week later, or a reviewer who never saw this conversation.
-
-Every issue and every spec opens with a plain-language summary written for a reader who did not do this work: what it delivers, why it matters, and for user-facing changes the before/after. Hold that audience frame while you draft it, and before you publish, run the six-item self-check from the [readability standard](./references/readability.md) over the summary. Keep file paths and symbols out of it — they belong in "What to build" below. This is what stops issues reading as fluent-looking prose a human still has to decode.
+- Decisions are made here, not downstream. An issue that holds an open question is not ready.
+- "Done when" must be checkable by a weak agent: command output, file contents, observable
+  behavior. Never "code is clean" or "works well."
+- Plain words throughout. The [readability standard](./references/readability.md) governs
+  word choice and gives the six-item self-check for the summary.
 
 ## Process
 
-1. **Gather context.** Work from the conversation. If the user passes an issue reference, fetch its body and comments.
+1. **Read the input.** For an intent doc, read the whole file. Note the intent number and slug
+   from its filename (`0003-to-issues.md` gives `0003` and `to-issues`), and whether its header
+   says `Status: accepted`. For an issue reference, fetch its body and comments.
 
-2. **Explore (optional).** If you have not, read the code to ground titles and descriptions in the project's domain glossary; respect ADRs in the area. Look for prefactoring that makes the change easy — "make the change easy, then make the easy change."
+2. **Pick the tracker.** Use the first one found:
+   1. A `Tracker:` field in the intent doc's header line.
+   2. `tracker` in `.magito/config.toml` at the main worktree root.
+   3. `docs/agents/issue-tracker.md`.
 
-3. **Draft vertical slices.** Each slice delivers a narrow but COMPLETE path through every layer it touches and is verifiable on its own. For data/ML work the layers are typically **ingest → transform → feature → model → eval → artifact**, not schema/API/UI — slice through those end-to-end (e.g. "one feature computed, validated, and surfaced in the eval report"), never "build all the transforms." Prefactoring goes first. **Every slice needs at least one invariant or edge-case AC** grounded in the data/behavior it touches — data boundaries (schema: columns/dtypes/nullability; value ranges; NaN/inf policy; row counts / key uniqueness; train-test leakage) or behavioral edges (empty input, boundary values at every bin/threshold edge, duplicates). Happy-path-only ACs are incomplete — flag it now, do not publish it. Before finalizing each AC, check it against the repo's domain contract — the invariants and definitions written down in `docs/agents/GLOSSARY.md` or an equivalent glossary. If an AC asks to re-validate an invariant the contract already guarantees downstream, do not write it. Cite the contract line instead. That is the **redundant re-validation** anti-pattern: an AC that checks something already proven true elsewhere, splitting the same guarantee across spec and review without adding safety. If the repo has no domain contract, say so in the draft — "no contract found — ACs unverified against domain" — and never invent one.
+   Then read the operations for that tracker. For `local`, read
+   `<skills>/setup-magito/references/issue-tracker-local.md.template`. For `github`, read
+   `<skills>/setup-magito/references/issue-tracker-github.md.template`. For `other`, or when
+   the tracker came from step 2.3, read `docs/agents/issue-tracker.md`. `<skills>` is your
+   tool's installed skills directory: `~/.claude/skills` for Claude Code, `~/.agents/skills`
+   for most others.
 
-4. **Quiz the user.** Present the breakdown as a numbered list — for each slice: **Title**, **Blocked by**, and **Covers** (which goals or user stories). Ask: is the granularity right (too coarse / too fine)? Are the dependencies correct? Should any be merged or split? Iterate until approved.
+3. **Draft the issues** as files in `.scratch/<NNNN>-<slug>/drafts/`, one file per issue,
+   named `01-<slug>.md`, `02-<slug>.md`, in dependency order. With no intent doc, use a short
+   free slug for the directory. Before writing the first file, make sure `.scratch/` is a
+   line in `.git/info/exclude`:
 
-5. **Publish.** In dependency order (blockers first, so you can cite real identifiers), create each issue with the **publish a ticket** operation from `docs/agents/issue-tracker.md`, using the template below. Each issue and the parent spec lead with the plain-language Summary; run the readability self-check over that summary before you create the issue. Record the dependencies you just relied on with that file's **blocking edges** operation, so a later `implement` run can see them. Mark the issues ready for an agent unless told otherwise. **Parent spec (optional).** If the breakdown produced 4+ slices, or the user asks for an epic, offer to publish the spec as a parent ticket first, using the template below. Create the parent, then each slice, then attach every slice with the **link a sub-ticket** operation. The chain stays optional — small work skips the spec entirely, and nothing downstream requires one to exist.
+   ```
+   e="$(git rev-parse --git-common-dir)/info/exclude"
+   grep -qxF .scratch/ "$e" 2>/dev/null || echo .scratch/ >> "$e"
+   ```
+
+   Use the issue template below. Every issue needs at least one edge case in "Done when":
+   empty input, a boundary value, a duplicate, a missing file. Happy-path-only is not ready.
+   Label each issue **small** (one area, roughly under 100 changed lines) or **large**.
+
+4. **Approval, only when the input is not an accepted intent.** Show a numbered list: title,
+   depends on, size. Ask whether the granularity and order are right. Revise until the user
+   approves. For an accepted intent, skip this step entirely.
+
+5. **Spec review by a different model family.** Your family is the family of the model you
+   run as: `anthropic` for Claude, `google` for Gemini, `openai` for GPT and Codex models.
+   Run:
+
+   ```
+   python3 <skills>/implement/scripts/worker.py reviewer <your-family>
+   ```
+
+   It prints a worker name, or exits non-zero when no worker from another family works.
+   Write a brief file holding: the full intent doc (or the plan you worked from), every draft
+   file in full, the checklist below, and this instruction: "Reply with one VERDICT line per
+   issue file and nothing else." Then:
+
+   - With a worker name: `python3 <skills>/implement/scripts/worker.py run <name> <repo-root> <brief-file>`.
+   - With none: give the same brief to a fresh-context subagent, and tell the user in one line
+     that the review fell back to a subagent. If your tool has no subagents, stop and escalate
+     "no spec reviewer available."
+
+   The checklist the reviewer applies to each issue:
+   1. "Done when" is present and another agent can verify it. A red check names a command
+      that fails today. A reviewable check names specific things to look for.
+   2. It is faithful to the intent. It adds nothing outside the intent or under its
+      "Out of scope."
+   3. It is a thin end-to-end slice that can be built alone.
+   4. "Depends on" is correct and has no cycles.
+   5. The small or large label fits the work.
+
+   The reply format, one line per issue:
+
+   ```
+   VERDICT 01-slug.md PASS
+   VERDICT 02-slug.md FIX: <what is wrong>
+   VERDICT 03-slug.md AMBIGUOUS: <what the intent does not settle>
+   ```
+
+6. **Act on the verdicts.**
+   - **AMBIGUOUS** on any issue: stop and escalate to the user at once, quoting the line. Do
+     not guess.
+   - **FIX** on any issue: revise those drafts and run step 5 again. After two FIX rounds,
+     stop and escalate with the remaining FIX lines.
+   - **PASS** on every issue: add a last line to each draft,
+     `Spec review: <worker or "subagent"> (<family>), round <n>`, then publish.
+
+7. **Publish** in dependency order, blockers first, with the tracker's **publish a ticket**
+   operation. For each "Depends on," also run the tracker's **blocking edges** operation. For
+   `local`, publishing means moving the draft out of `drafts/` into its directory, adding the
+   `Status:`, `Blocked by:`, `Made:`, and `Use by:` header lines. For any other tracker,
+   delete the drafts once every issue is published.
+
+8. **Hand off.** For an accepted intent, call the `implement` skill with the published
+   tickets. Otherwise, report the published tickets and stop.
 
 <issue-template>
-## Summary
+<one plain paragraph for a reader who did not do this work: what this issue delivers and why
+it matters. No file paths or symbols here.>
 
-One plain paragraph for someone who did not do this work: what this slice delivers and why it matters. For a user-facing change, name the before and after. No file paths or symbols here — save those for "What to build."
+**Intent:** <link to the intent doc>, <which decisions this issue carries>
 
-## What to build
+**Size:** small | large
 
-The end-to-end behavior of this slice — not a layer-by-layer plan. Avoid file paths and code snippets; they go stale. (Exception: a small schema, type, or state-machine snippet that pins a decision more precisely than prose can.)
+## Behavior
 
-## Acceptance criteria
+<the end-to-end behavior, with every text, config, or command the builder needs, in full>
 
-- [ ] ...
+## Done when
 
-**Invariants / edge cases** (at least one)
-- [ ] ...
+**Red check:** <a command that fails before the work and passes after it>
+**Reviewable check:** <numbered, specific things a reviewer verifies>
 
-## Blocked by
+(One or both. At least one edge case.)
 
-The blocking issue, or "None — can start immediately."
-</issue-template>
+## Touches
 
-<spec-template>
-## Summary
+<files or areas likely to change: a hint for merge order, not a lock>
 
-One or two plain sentences for someone who did not do this work: what this effort delivers and the outcome it produces. A reader who stops here still knows what it is and why it exists.
+## Depends on
 
-## Problem
-
-The problem being solved, from the user's perspective — a paragraph, not user stories.
-
-## Approach
-
-The chosen solution in a few sentences, plus alternatives rejected and why (one line each).
-
-## Decisions
-
-Implementation decisions already made while shaping: modules touched, interfaces, schema changes, contracts. Same snippet rule as slices: no file paths or code, unless a small snippet pins a decision more precisely than prose.
-
-## Testing
-
-What makes a good test for this work; which seams get tested; prior art in the codebase.
+<the blocking issues, or "None. It can start immediately.">
 
 ## Out of scope
 
-Explicit non-goals.
-
-## Slices
-
-Tracked as sub-issues — GitHub renders progress on the parent automatically.
-</spec-template>
+<what this issue does not do, and where that work belongs>
+</issue-template>
 
 Do not close or modify any parent issue.
