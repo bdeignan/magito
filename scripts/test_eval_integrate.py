@@ -72,6 +72,8 @@ if mode == "worker-failure":
 
 TICKET1 = [("test: greet", {"test_greet.py": TEST_GREET}), ("feat: greet", {"greet.py": GREET})]
 TICKET2 = [("test: hello", {"test_hello.py": TEST_HELLO}), ("feat: hello", {"hello.py": HELLO_BAD if mode == "red-final" else HELLO})]
+if mode == "code-before-test":
+    TICKET2.reverse()
 
 if variant == "semantic-conflict":
     git("checkout", "-b", INT, "main")
@@ -104,6 +106,9 @@ else:
             git("commit", "-m", "feat: greet again")
             merge("feat/0001-01-greet-again")
         flag = "--ff-only" if mode == "fast-forward" else "--no-ff"
+        if mode == "unmerged-code-first":
+            build("feat/0001-03-extra", INT, [("feat: extra", {"extra.py": "X = 1\\n"}), ("test: extra", {"test_extra.py": "import unittest\\n"})])
+            git("checkout", INT)
         if mode == "wrong-order":
             build("feat/0001-01-greet", INT, TICKET1)
             build("feat/0001-02-hello", INT, TICKET2)
@@ -177,12 +182,16 @@ def main() -> None:
             ("red-final", "check is red"),
             ("no-coverage", "COVERAGE PASS"),
             ("early-question", "question before the merge checkpoint"),
+            # A merged ticket branch is still checked: its own commits, not an empty range.
+            ("code-before-test", "feat/0001-02-hello: code committed before its test"),
+            ("unmerged-code-first", "feat/0001-03-extra: code committed before its test"),
         ]:
             expect_fail("integrate", mode, needle, run(mode, roster))
 
         # Resume: the integration branch already holds ticket 01, so only 02 is built.
         expect_pass("integrate (resume)", run("green", roster, "resume"))
         expect_fail("integrate (resume)", "rebuild", "rebuilt", run("rebuild", roster, "resume"))
+        expect_fail("integrate (resume)", "code-before-test", "code committed before its test", run("code-before-test", roster, "resume"))
 
         # Closing rule: one pull request, first ticket closed once, every other ticket closed.
         expect_pass("integrate (pr)", run("green", roster, "pr"))
