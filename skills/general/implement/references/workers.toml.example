@@ -2,7 +2,7 @@
 # Uncomment the entries for the tools installed on this machine, then run
 # `python3 <skills>/implement/scripts/worker.py probe <name>` for each one.
 # Each entry pins one model. A different model means a separate entry with its own name.
-# Put the top-level keys below above the first [workers.*] table.
+# Keep every top-level key, such as `reviewers`, above the first [workers.*] table.
 
 # Ranked reviewers: tried in this order, then every other worker in file order.
 # A reviewer must pass a different family than the writer and answer its probe.

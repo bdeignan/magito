@@ -179,8 +179,9 @@ does not need them.
 
 Picking a spec reviewer is the one exception to "stop and ask." The user named no single
 worker for it, so there is no spend choice to override. `python3
-<skills>/implement/scripts/worker.py reviewer <writer-family>` tries `spec_reviewer`
-first, then every other worker in file order. It skips any worker with no `family`, a
+<skills>/implement/scripts/worker.py reviewer <writer-family>` tries the workers named in
+`reviewers`, in that order, then every other worker in file order. When `reviewers` is
+absent or empty, `spec_reviewer` counts as a list of one. It skips any worker with no `family`, a
 family equal to the writer's, or a failed probe, and says so on stderr. It prints the
 name of the first worker that passes, alone on stdout. It exits 3 when none passes.
 
