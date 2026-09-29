@@ -8,9 +8,10 @@ directory, as in `SKILL.md`.
 
 ## Steps
 
-1. **Worktree.** Run `bash <skills>/implement/scripts/gitflow.sh worktree add <branch>`. Never
-   run raw `git worktree add`: only `gitflow.sh` gives the branch a review marker
-   (`docs/adr/0014`).
+1. **Worktree.** Run `bash <skills>/implement/scripts/gitflow.sh worktree add <branch>`, with
+   the branch name only. Never pass a path: the script picks a folder beside the repo, and
+   a path inside the repo nests the worktree in the main checkout. Never run raw
+   `git worktree add`: only `gitflow.sh` gives the branch a review marker (`docs/adr/0014`).
 2. **Red run.** Before any code change, run the ticket's red check if it has one. Save the
    command and its failing output. If it passes before any change, escalate with rule 4. Make
    no commits: the check proves nothing.

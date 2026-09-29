@@ -165,7 +165,6 @@ cat > "$BRIEF" <<EOF
 Read $MAGITO/skills/general/implement/SKILL.md and follow it on the ticket
 .scratch/0001-hello/01-hello.md. Where it says <skills>, use $MAGITO/skills/general.
 Your own model family is "$FAMILY"; use it as the builder family when you pick a reviewer.
-Do not merge.
 
 When finished, print your complete final response for this task only between these markers:
 
@@ -233,7 +232,14 @@ else
   OUT="$(cd "$CHECKOUT" && python3 hello.py "" 2>&1)" || fail "hello.py \"\" failed on $BRANCH"
   [[ "$OUT" == "hello, world" ]] || fail "hello.py \"\" printed '$OUT', expected 'hello, world'"
 
-  grep -Eq '(^|[[:space:]])VERDICT PASS' "$RESPONSE" || fail "final response has no VERDICT PASS line"
+  # A worktree nested inside the repo breaks the sibling layout gitflow.sh picks.
+  REPO_REAL="$(cd "$REPO" && pwd -P)"
+  while IFS= read -r wt; do
+    [[ "$wt" == "$REPO_REAL" ]] && continue
+    [[ "$wt" == "$REPO_REAL"/* ]] && fail "worktree nested inside the repo: $wt"
+  done < <(git -C "$REPO" worktree list --porcelain | sed -n 's/^worktree //p')
+
+  grep -Eq '(^|[[:space:]`])VERDICT PASS' "$RESPONSE" || fail "final response has no VERDICT PASS line"
 
   # The only question in the response is the last non-empty line, and it asks to merge.
   LAST="$(grep -v '^[[:space:]]*$' "$RESPONSE" | tail -1)"
