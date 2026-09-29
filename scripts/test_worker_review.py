@@ -32,8 +32,11 @@ if mode == "tracked":
     Path("a.txt").write_text("changed\n")
 if mode == "untracked":
     Path("new.txt").write_text("new\n")
+if mode == "chmod":
+    Path("a.txt").chmod(0o755)
 if mode == "slow":
     Path("a.txt").write_text("changed\n")
+    print("partial answer", flush=True)
     import time
     time.sleep(30)
 if mode == "stderr":
@@ -107,7 +110,7 @@ def main() -> None:
     check(r.stdout == "VERDICT FIX: `a.py:3` \u2014 the test runs one hook\nCOVERAGE PASS\n",
           f"fix: bullets and backticks are stripped, each line printed once (got {r.stdout!r})")
 
-    for mode, path in (("tracked", "a.txt"), ("untracked", "new.txt"), ("scratch", ".scratch/draft.md")):
+    for mode, path in (("tracked", "a.txt"), ("chmod", "a.txt"), ("untracked", "new.txt"), ("scratch", ".scratch/draft.md")):
         r = review(mode)
         check(r.returncode == 4, f"{mode}: a changed file exits 4 (got {r.returncode})")
         check(path in r.stdout + r.stderr, f"{mode}: names the changed file {path}")
@@ -118,6 +121,7 @@ def main() -> None:
 
     r = review("slow", timeout="2")
     check(r.returncode == 4, f"slow: a reviewer that edits a file and times out exits 4, not 124 (got {r.returncode})")
+    check(r.saved_text is not None and "partial answer" in r.saved_text, "slow: the output before the timeout is saved")
 
     r = review("none")
     check(r.returncode == 5, f"none: no verdict line exits 5 (got {r.returncode})")
