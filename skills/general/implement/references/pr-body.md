@@ -21,6 +21,18 @@ Example:
 >
 > **How it was verified:** `grep` found no repo-dependent merge framing in `skills/`; `python install.py --dry-run` completed cleanly.
 
+## Pipeline tickets
+
+A PR for a pipeline ticket (see the first rule of `SKILL.md`) has no human approval in front
+of it, so the body carries the record the reviewer did not watch happen. In
+addition to the sections above, list:
+
+- The red run: the command and its failing output.
+- Every review round: the verdict lines, and the check result after each fix.
+- The reviewer's name and model family. When you used a fresh-context subagent because no
+  reviewer from another family was available, say so.
+- Every decision you made alone, one line each, so the human can overrule it at the merge.
+
 ## Closing issues
 
 `gitflow.sh pr <issue>` appends `Closes #<issue>` automatically. Do not add that line to the body for the primary issue. Add `Closes #M` lines only for extra issues the same PR resolves.

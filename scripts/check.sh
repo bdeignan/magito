@@ -20,6 +20,7 @@
 #      cannot see, including ignored drafts and already-dirty tracked files.
 #   7. The paid to-issues evaluator checks its complete final response and
 #      preserves a worker failure.
+#   8. The paid implement evaluator passes and fails as its fake workers dictate.
 #
 # Collects all failures instead of stopping at the first one, prints a summary,
 # and exits 1 if anything failed, 0 otherwise. Bash and the stdlib Python
@@ -220,6 +221,17 @@ check_eval_to_issues() {
   fi
 }
 
+check_eval_implement() {
+  local out
+  if out=$(python3 "$REPO_ROOT/scripts/test_eval_implement.py" 2>&1); then
+    echo "eval-implement: ok"
+  else
+    echo "eval-implement: FAILED"
+    echo "$out" | sed 's/^/    /'
+    FAILURES+=("eval-implement pass/fail logic")
+  fi
+}
+
 # --- run everything, then summarize ------------------------------------------
 check_install
 check_anti_slop
@@ -228,6 +240,7 @@ check_model_invocation
 check_worker_reviewer
 check_to_issues_contract
 check_eval_to_issues
+check_eval_implement
 
 echo
 if [[ ${#FAILURES[@]} -eq 0 ]]; then
