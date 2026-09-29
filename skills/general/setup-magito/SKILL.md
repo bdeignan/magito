@@ -30,6 +30,7 @@ Read the starting state and classify each item. **Configured** = present and cur
 | Audit version | `audited` matches the current magito commit. If older, newer checklist rows can be unchecked — re-run them | `.magito/config.toml` |
 | Issue tracker | `docs/agents/issue-tracker.md` present? | `docs/agents/issue-tracker.md` (see #112) |
 | Review gate + base branch | `git config magito.reviewGate`, `git config magito.baseBranch` | git config |
+| Pull request title | Guest mode only: `git config magito.prTitlePattern` is set when the repo's merged pull requests do not use Conventional Commits titles | git config |
 | Agent docs | `docs/agents/` files + the `@docs/agents/INDEX.md` import | `docs/agents/`, `CLAUDE.md`/`AGENTS.md` |
 | Permission allowlist | `.claude/settings.json` — has `allow`, has **no** `hooks` key | `.claude/settings.json` |
 | Private-state excludes | `.magito/` and `.scratch/` in `.git/info/exclude` | `.git/info/exclude` |
@@ -104,6 +105,10 @@ If missing, recommend the `contextFileName` setting over a second file: it point
 
 - Run `git config magito.reviewGate true` — opts the repo into the merge/PR review gate. The gate applies only to branches the `/implement` fan-out created, since those alone carry a review-decision marker (ADR 0014); work done by hand lands with no gate. On a marked branch, landing is blocked until a fresh decision is recorded — a completed review, or a deliberate skip with a reason.
 - If this repo merges into a trunk other than its GitHub default branch (e.g. a `develop`-based migration workflow), also run `git config magito.baseBranch <branch>` — do NOT set this by default.
+
+### Pull request title
+
+`gitflow.sh pr` refuses a title that does not match `git config magito.prTitlePattern`, and unset means Conventional Commits (see `skills/general/implement/references/pr-body.md`). Owner mode: leave it unset. Guest mode: read the titles of the last 20 merged pull requests with `gh pr list --state merged --limit 20 --json title`. If most of them already match `type(scope): summary`, leave the pattern unset. Otherwise recommend `git config magito.prTitlePattern off`, so the agent matches the house style by eye. When the titles follow one clear house pattern, such as a ticket key prefix, offer that pattern as an extended regular expression instead. Skip this step when the repo is not on GitHub, and say so in the report.
 
 ### Permission allowlist
 

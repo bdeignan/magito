@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Deterministic gh-tracker spine, sibling to gitflow.sh. Wraps the issue verbs
 # weaker agents retry freehand: create/list/view/comment/close. PR creation
-# stays in gitflow.sh's `pr <issue> <title>` — that's the only PR-creation
+# stays in gitflow.sh's `pr <issue> <title> <body>` — that's the only PR-creation
 # path review-gate.py's hook recognizes (it pattern-matches the literal Bash
 # command string), so a second wrapper here would silently bypass the gate.
 # Mandatory args only — missing arg or missing auth fails loudly, never opens

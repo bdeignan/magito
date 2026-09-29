@@ -139,7 +139,7 @@ The ticket is ready when the result is `0`.
 ## Pull requests
 
 **PR creation does not route through this file.** It stays on
-`bash <skills>/implement/scripts/gitflow.sh pr <issue> <title>`, which checks for a review
+`bash <skills>/implement/scripts/gitflow.sh pr <issue> <title> <body>`, which checks for a review
 decision before it opens anything. Whoever later notices that `gh pr create` is missing here
 and decides to "unify" it weakens the review gate on fan-out branches. Leave it where it is;
 `docs/adr/0015` is the canonical reason and the place to argue with it.
