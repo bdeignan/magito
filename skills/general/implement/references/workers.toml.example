@@ -6,7 +6,7 @@
 
 # Ranked reviewers: tried in this order, then every other worker in file order.
 # A reviewer must pass a different family than the writer and answer its probe.
-# reviewers = ["codex", "cursor-openai", "gemini", "omp"]
+# reviewers = ["codex", "cursor-grok", "gemini", "omp"]
 
 # Thrifty mode: when true, builds and reviews use only workers whose tier is "cheap".
 # The environment variable MAGITO_THRIFTY set to 1 or 0 overrides this line for one session.
@@ -24,10 +24,12 @@
 # tier = "strong"
 
 # Checked 2026-09-29: `claude --help` (2.1.284) lists `opus` as a model alias and shows
-# --model and --permission-mode. The `fable` alias names Anthropic's higher, costlier tier;
-# copy this entry as `claude-fable` and set its model to the `fable` alias to use it.
+# --model, --permission-mode, and --effort (low, medium, high, xhigh, max). A probe with
+# `--model opus --effort medium` answered. Change `medium` to raise or lower the effort.
+# The `fable` alias names Anthropic's higher, costlier tier; copy this entry as
+# `claude-fable` and set its model to the `fable` alias to use it.
 # [workers.claude]
-# cmd = "env -u CLAUDECODE claude -p --permission-mode bypassPermissions --model {model} {brief}"
+# cmd = "env -u CLAUDECODE claude -p --permission-mode bypassPermissions --model {model} --effort medium {brief}"
 # model = "opus"
 # family = "anthropic"
 # tier = "strong"
@@ -43,22 +45,40 @@
 # tier = "strong"
 
 # Cursor entries take their family from the pinned model, not from the tool.
-# Both Cursor entries are review-only: `--mode ask` keeps the agent read-only, so they
+# All Cursor entries are review-only: `--mode ask` keeps the agent read-only, so they
 # cannot build. For a build worker, copy an entry under a new name and replace
 # `--mode ask` with `--force`.
-# unverified: check with `agent models`. Cursor's `agent` CLI is not installed on the
-# machine that wrote this file, so the whole cmd line follows https://cursor.com/docs/cli
-# (`agent -p --model <id> <prompt>`, and https://cursor.com/docs/cli/using#ask-mode for
-# `--mode ask`). Confirm the flags with `agent --help`.
+# Cursor's CLI has no effort flag. The effort is part of the model id, as a suffix such as
+# `-medium`, `-high`, `-thinking-high`, or `-extra-high`. `agent --list-models` prints the
+# exact ids. Before 2026-08-27 the CLI ignored that suffix, so update the CLI first.
+# unverified: Cursor's `agent` CLI is not installed on the machine that wrote this file.
+# The flags follow https://cursor.com/docs/cli/reference/parameters. Confirm them with
+# `agent --help`.
+
+# OpenAI stops providing models to Cursor on 2026-11-12, after SpaceX acquired Cursor, and
+# ships no new models there before then:
+# https://openai.com/index/our-decision-on-cursor-following-its-acquisition-by-spacex/
+# So GPT-6 never reaches Cursor, and this entry stops working on that date. Prefer
+# `cursor-grok` below for a non-Anthropic reviewer on a Cursor-only machine.
 # [workers.cursor-openai]
 # cmd = "agent -p --mode ask --model {model} {brief}"
 # model = "gpt-5.6-sol-medium"
 # family = "openai"
 # tier = "strong"
 
-# unverified: check with `agent models`. Cursor lists Claude Opus 5.5 and Fable 5.1, but its
-# docs give no CLI id. The model value below is a deliberate placeholder, not an id:
-# replace it with the Opus 5.5 id that `agent models` prints before uncommenting.
+# unverified: xAI's Grok models stay in Cursor after the OpenAI cutoff. The model value
+# below is a deliberate placeholder: replace it with the Grok id at the effort you want,
+# as `agent --list-models` prints it, before uncommenting.
+# [workers.cursor-grok]
+# cmd = "agent -p --mode ask --model {model} {brief}"
+# model = "REPLACE-with-grok-id-from-agent-list-models"
+# family = "xai"
+# tier = "strong"
+
+# unverified: Cursor lists Claude Opus 5.5 and Fable 5.1, but its docs give no CLI id. The
+# model value below is a deliberate placeholder: replace it with the Opus 5.5 id at the
+# effort you want, as `agent --list-models` prints it, before uncommenting. This entry is
+# the same family as Claude Code, so it cannot review work that Claude built.
 # [workers.cursor-anthropic]
 # cmd = "agent -p --mode ask --model {model} {brief}"
 # model = "REPLACE-with-opus-5.5-id-from-agent-models"
