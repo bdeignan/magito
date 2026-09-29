@@ -25,6 +25,8 @@
 #      conflict) passes and fails as its fake workers dictate.
 #  10. `install.py` links and registers the Codex hooks with a fail-open command, and
 #      installs clean when a stanza has no hooks keys.
+#  11. `gitflow.sh pr` refuses an empty body and a title that does not match
+#      magito.prTitlePattern (Conventional Commits when unset). See issue #207.
 #
 # Collects all failures instead of stopping at the first one, prints a summary,
 # and exits 1 if anything failed, 0 otherwise. Bash and the stdlib Python
@@ -258,6 +260,17 @@ check_install_codex_hooks() {
   fi
 }
 
+check_gitflow_pr() {
+  local out
+  if out=$(python3 "$REPO_ROOT/scripts/test_gitflow_pr.py" 2>&1); then
+    echo "gitflow-pr: ok"
+  else
+    echo "gitflow-pr: FAILED"
+    echo "$out" | sed 's/^/    /'
+    FAILURES+=("gitflow.sh pr body and title checks")
+  fi
+}
+
 # --- run everything, then summarize ------------------------------------------
 check_install
 check_anti_slop
@@ -269,6 +282,7 @@ check_eval_to_issues
 check_eval_implement
 check_eval_integrate
 check_install_codex_hooks
+check_gitflow_pr
 
 echo
 if [[ ${#FAILURES[@]} -eq 0 ]]; then

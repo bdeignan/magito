@@ -2,6 +2,21 @@
 
 A PR body is for the human reviewer and for anyone who reads it later — a reader who did not do the work. Write it for that reader: apply the [readability standard](../../to-issues/references/readability.md) and hold its audience frame while you draft. Do not write for the commit record.
 
+`gitflow.sh pr` refuses a body that is empty or holds only `Closes` lines, in every mode. Write the body to a file with your file-writing tool, then pass it as `"$(cat <file>)"`. Do not build it with `cat > file` or a heredoc in the shell: under zsh `noclobber`, `>` onto an existing file fails, and that is how #206 opened with an empty body.
+
+## Title
+
+The title uses [Conventional Commits](https://www.conventionalcommits.org/): `type(scope): summary`, for example `fix(gitflow): refuse an empty pull request body`. The type is one of `feat`, `fix`, `docs`, `chore`, `refactor`, `test`, `perf`, `build`, `ci`, `style`, or `revert`. The scope is optional, and a `!` before the colon marks a breaking change. Write the summary as plain words a reader understands without the diff. When the forge squash-merges, the title becomes the commit message on the base branch.
+
+`gitflow.sh pr` checks the title against `git config magito.prTitlePattern`, an extended regular expression. Unset means the Conventional Commits pattern above. `off` turns the check off.
+
+## Guest repos
+
+In guest mode (`mode = "guest"` in `.magito/config.toml`), the repo belongs to a team, and its house style wins:
+
+- **Body:** when the repo has `.github/pull_request_template.md`, fill in that template instead of the skeleton below. Keep the pipeline record from §Pipeline tickets, under the template's closest heading.
+- **Title:** follow `magito.prTitlePattern`. When it is `off`, match the titles of the repo's recent merged pull requests. `setup-magito` sets the pattern in guest mode.
+
 ## Right-sized structure
 
 Match the structure to the size of the change. A trivial PR can be one or two sentences. Reach for headings only when the change is large enough or crosses enough concerns that a scan needs landmarks.

@@ -207,16 +207,29 @@ case "$cmd" in
     esac
     ;;
   pr)
-    # pr <issue> "<title>" ["<body>"]   body is optional; when given it precedes the Closes line
+    # pr <issue> "<title>" "<body>"   the body precedes the Closes line
     guard_not_base
     require_review_decision "$(current_branch)"
     issue="${1:?issue required}"; title="${2:?title required}"; body="${3:-}"
-    # Build the PR body once (a given body precedes the Closes line).
-    if [ -n "$body" ]; then
-      pr_body="${body}"$'\n\n'"Closes #${issue}"
-    else
-      pr_body="Closes #${issue}"
+    # The body must say something beyond Closes lines, in every mode. #206
+    # opened with only its Closes line after a shell error dropped the text,
+    # and nothing noticed until after the merge (#207).
+    said="$(printf '%s\n' "$body" | grep -Ev '^[[:space:]]*Closes #[0-9]+[[:space:]]*$' | tr -d '[:space:]' || true)"
+    if [ -z "$said" ]; then
+      echo "gitflow.sh pr: the body is empty — write the Why and What for the reviewer (references/pr-body.md)" >&2
+      exit 1
     fi
+    # The title must match magito.prTitlePattern, an extended regex. Unset means
+    # Conventional Commits; `off` skips the check, for a guest repo whose house
+    # style is something else (git config magito.prTitlePattern off).
+    pattern="$(git config --get magito.prTitlePattern 2>/dev/null || true)"
+    [ -n "$pattern" ] || pattern='^(feat|fix|docs|chore|refactor|test|perf|build|ci|style|revert)(\([^)]+\))?!?: [^[:space:]].*$'
+    if [ "$pattern" != "off" ] && ! [[ "$title" =~ $pattern ]]; then
+      echo "gitflow.sh pr: the title '$title' does not match magito.prTitlePattern: $pattern" >&2
+      echo "  e.g. 'fix(gitflow): refuse an empty pull request body' (references/pr-body.md)" >&2
+      exit 1
+    fi
+    pr_body="${body}"$'\n\n'"Closes #${issue}"
     # Only override gh's base when magito.baseBranch is set; otherwise omit
     # --base so gh targets the repo's real GitHub default branch, rather than
     # force a possibly-stale local origin/HEAD (default_branch's detection).
@@ -273,7 +286,7 @@ case "$cmd" in
     esac
     ;;
   *)
-    echo "usage: gitflow.sh {branch <issue> <slug> [kind]|commit <msg> <file>...|push|pr <issue> <title> [body]|merge|worktree add <branch> [path]|worktree remove <path> [--force]}" >&2
+    echo "usage: gitflow.sh {branch <issue> <slug> [kind]|commit <msg> <file>...|push|pr <issue> <title> <body>|merge|worktree add <branch> [path]|worktree remove <path> [--force]}" >&2
     exit 1
     ;;
 esac

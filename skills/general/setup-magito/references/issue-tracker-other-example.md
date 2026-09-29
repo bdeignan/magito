@@ -90,7 +90,7 @@ ready when every ticket it names is `Done`. Write both when you record a new edg
 ## Pull requests
 
 Jira is not the review surface. Work lands through GitHub pull requests, and PR creation
-stays on `bash <skills>/implement/scripts/gitflow.sh pr <issue> <title>` — never through
+stays on `bash <skills>/implement/scripts/gitflow.sh pr <issue> <title> <body>` — never through
 this file.
 
 ---
