@@ -90,9 +90,8 @@ a reinstall.
 2. Add `name:` and `description:` frontmatter fields. Write the description to the rule in
    `docs/agents/CONVENTIONS.md`, "Skill invocation."
 3. Run `python install.py` to symlink and regenerate INDEX.md
-4. If the skill is user-facing, update `skills/general/ask-magito/SKILL.md` so the router
-   places it. A new skill the router never mentions, or a renamed one it still points at, is
-   a router that lies — the same reason a stale `docs/agents/` entry is worse than none.
+4. If the skill is user-facing, add a one-line entry to the "Which skill when" section of
+   `README.md`. A stale entry, or a skill the section never mentions, misleads the reader.
 
 ## Adding a New Agent
 
