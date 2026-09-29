@@ -23,6 +23,8 @@
 #   8. The paid implement evaluator passes and fails as its fake workers dictate.
 #   9. The paid integrate evaluator (two tickets, resume, closing rule, semantic
 #      conflict) passes and fails as its fake workers dictate.
+#  10. `install.py` links and registers the Codex hooks with a fail-open command, and
+#      installs clean when a stanza has no hooks keys.
 #
 # Collects all failures instead of stopping at the first one, prints a summary,
 # and exits 1 if anything failed, 0 otherwise. Bash and the stdlib Python
@@ -245,6 +247,17 @@ check_eval_integrate() {
   fi
 }
 
+check_install_codex_hooks() {
+  local out
+  if out=$(python3 "$REPO_ROOT/scripts/test_install_codex_hooks.py" 2>&1); then
+    echo "install-codex-hooks: ok"
+  else
+    echo "install-codex-hooks: FAILED"
+    echo "$out" | sed 's/^/    /'
+    FAILURES+=("install.py Codex hook registration")
+  fi
+}
+
 # --- run everything, then summarize ------------------------------------------
 check_install
 check_anti_slop
@@ -255,6 +268,7 @@ check_to_issues_contract
 check_eval_to_issues
 check_eval_implement
 check_eval_integrate
+check_install_codex_hooks
 
 echo
 if [[ ${#FAILURES[@]} -eq 0 ]]; then

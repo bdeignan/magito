@@ -120,7 +120,7 @@ a reinstall.
 | Tool       | Instruction file         | Skills dir              | Agents dir          | Hooks dir           |
 |------------|--------------------------|-------------------------|---------------------|---------------------|
 | Claude      | `~/.claude/CLAUDE.md`   | `~/.claude/skills/`       | `~/.claude/agents/` | `~/.claude/hooks/`  |
-| Codex       | `~/.codex/AGENTS.md`    | `~/.agents/skills/`       | —                   | —                   |
+| Codex       | `~/.codex/AGENTS.md`    | `~/.agents/skills/`       | —                   | `~/.codex/hooks/`   |
 | Gemini CLI  | `~/.gemini/GEMINI.md`   | `~/.agents/skills/`       | —                   | —                   |
 | Antigravity | `~/.gemini/GEMINI.md`   | `~/.gemini/config/skills/`| —                   | —                   |
 | omp (Oh My Pi) | `~/.omp/agent/AGENTS.md` | `~/.agents/skills/`  | —                   | —                   |
@@ -211,7 +211,7 @@ attestation nobody reads is ceremony. The exception is the work no one watches. 
 intent and merging a pull request, so every pipeline branch gets a marker and an automatic
 review from a different model family. The manual path keeps the rule of no gate.
 
-**Hooks** (Claude Code only), as they stand today:
+**Hooks** (Claude Code and Codex; Gemini CLI and omp run none), as they stand today:
 - `staging-guard.py` — denies `git add -A`/`--all`/`.` and `git commit -a` in every repo.
 - `review-gate.py` — denies landing unreviewed **fan-out and pipeline** work (ADR 0018): `gitflow.sh merge|pr`
   always; raw `git merge` (on the base branch) and `gh pr create` only in repos opted in
@@ -234,10 +234,16 @@ review from a different model family. The manual path keeps the rule of no gate.
   files. A shared helper module cannot live in `hooks/`: `install.py` registers every
   `hooks/*.py` as a PreToolUse hook, so the helper would fire on every Bash call. Change
   one copy, change the other.
-- Cross-tool floor: hooks only exist in Claude Code, and under ADR 0012 that is why they are
-  not the floor. The staging rule and the review rule are both restated in
+- Cross-tool floor: hooks exist in Claude Code and Codex only, and under ADR 0012 that is why
+  they are not the floor. No workflow needs a hook to work: a machine that cannot run hooks
+  leaves the `hooks` keys out of its `install.toml` and works normally. The staging rule and the review rule are both restated in
   `shared/SYSTEM-INSTRUCTIONS.md` (every tool's instruction file) so Codex/Gemini/omp keep
   the prose version, and `gitflow.sh` carries the checks that can live in a script.
+- Codex reads its registrations from `~/.codex/hooks.json`, so its stanza sets `hooks_config`
+  beside `hooks`. `install.py` registers each hook there as a fail-open command: it exits 0
+  without output when the script is missing, so a broken link never prints an error on every
+  command. An existing hand-made entry for the same script is rewritten to that form, not
+  duplicated. Claude Code's plain-path registration in `settings.json` is unchanged.
 - Caveat: a project-level `Bash` matcher in `.claude/settings.json` **overrides**
   user-level hooks entirely for that project — ours silently stop firing there.
 
