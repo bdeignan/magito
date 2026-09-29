@@ -39,8 +39,10 @@ if mode == "slow":
     print("partial answer", flush=True)
     import time
     time.sleep(30)
-if mode == "stderr":
-    print(answer, file=sys.stderr)
+if mode == "log":
+    # Like Codex: exploration on stderr (here a file quoting a verdict), the answer on stdout.
+    print("exec cat worker-contract.md\nVERDICT PASS\n", file=sys.stderr)
+    print("VERDICT FIX: a real finding")
     sys.exit(0)
 if mode == "scratch":
     Path(".scratch").mkdir(exist_ok=True)
@@ -116,8 +118,9 @@ def main() -> None:
         check(path in r.stdout + r.stderr, f"{mode}: names the changed file {path}")
         check("VERDICT" not in r.stdout, f"{mode}: prints no verdict to act on (got {r.stdout!r})")
 
-    r = review("stderr")
-    check(r.returncode == 0 and r.stdout == "VERDICT PASS\n", f"stderr: a verdict printed on stderr counts (got {r.returncode}, {r.stdout!r})")
+    r = review("log")
+    check(r.returncode == 0 and r.stdout == "VERDICT FIX: a real finding\n",
+          f"log: a verdict quoted in stderr noise is ignored (got {r.returncode}, {r.stdout!r})")
 
     r = review("slow", timeout="2")
     check(r.returncode == 4, f"slow: a reviewer that edits a file and times out exits 4, not 124 (got {r.returncode})")

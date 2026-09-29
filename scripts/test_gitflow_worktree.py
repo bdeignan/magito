@@ -93,6 +93,15 @@ def main() -> None:
 
     with tempfile.TemporaryDirectory() as t:
         repo = Repo(Path(t))
+        (repo.root / ".gitignore").write_text("probe\nreview-probe\n")
+        repo.git("add", ".gitignore")
+        repo.git("commit", "-q", "-m", "ignore probe names")
+        r = repo.add("feat/7-t")
+        check(r.returncode == 0 and repo.git("status", "--short") == "",
+              f"unrelated ignore rules: still excluded (got {repo.git('status', '--short')!r})")
+
+    with tempfile.TemporaryDirectory() as t:
+        repo = Repo(Path(t))
         repo.exclude.write_text("*.log")  # no final newline
         r = repo.add("feat/5-v")
         lines = repo.exclude.read_text().splitlines()
