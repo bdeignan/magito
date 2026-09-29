@@ -19,6 +19,7 @@ WORKER_PY="$MAGITO/skills/general/implement/scripts/worker.py"
 TRACKER_TEMPLATE="$MAGITO/skills/general/setup-magito/references/issue-tracker-local.md.template"
 
 TMP_BASE="$(mktemp -d)"
+echo "eval evidence: $TMP_BASE"
 ACCEPTED_DIR="$TMP_BASE/accepted"
 DRAFT_DIR="$TMP_BASE/draft"
 BRIEF="$TMP_BASE/brief.txt"
@@ -80,8 +81,28 @@ EOF
 }
 
 run_worker() {
-  local repo="$1" log="$2"
-  python3 "$WORKER_PY" run "$WORKER" "$repo" "$BRIEF" 900 >"$log" 2>&1
+  local repo="$1" raw="$2" log="$3"
+  python3 "$WORKER_PY" run "$WORKER" "$repo" "$BRIEF" 900 >"$raw" 2>"$log"
+}
+
+extract_final_response() {
+  local raw="$1" response="$2"
+  python3 - "$raw" "$response" <<'PYEOF'
+import sys
+
+raw = open(sys.argv[1]).read()
+start = "MAGITO_FINAL_RESPONSE_BEGIN\n"
+end = "MAGITO_FINAL_RESPONSE_END\n"
+if raw.count(start) != 1 or raw.count(end) != 1:
+    raise SystemExit("worker output must contain one final-response marker pair")
+before, rest = raw.split(start, 1)
+response, after = rest.split(end, 1)
+if before.strip() or after.strip():
+    raise SystemExit("worker output contains text outside the final-response markers")
+if not response.endswith("\n"):
+    raise SystemExit("final response must end with a newline before its end marker")
+open(sys.argv[2], "w").write(response)
+PYEOF
 }
 
 check_accepted() {
@@ -121,8 +142,30 @@ check_draft() {
   echo "draft: PASS"
 }
 
+check_response() {
+  local response="$1" expected="$2"
+  if [[ "$expected" == "accepted" ]]; then
+    if grep -Eiq '\?|waiting for (your )?(approval|confirmation)|please (approve|confirm)' "$response"; then
+      echo "accepted: FAIL (final response contains a question)"
+      return 1
+    fi
+  elif ! grep -q '?' "$response"; then
+    echo "draft: FAIL (final response does not ask for approval)"
+    return 1
+  fi
+}
+
 cat > "$BRIEF" <<EOF
 Read $MAGITO/skills/general/to-issues/SKILL.md and follow it on docs/intent/0001-hello.md. Where it says <skills>, use $MAGITO/skills/general. Do not call implement at the end.
+
+When finished, print your complete final response for this task only between these markers:
+
+MAGITO_FINAL_RESPONSE_BEGIN
+<your complete final response>
+MAGITO_FINAL_RESPONSE_END
+
+Redirect tool output away from standard output. The evaluator extracts this complete final
+response from the worker output.
 EOF
 
 make_repo "$ACCEPTED_DIR" "Status: accepted · Opened: 2026-09-28 · Accepted: 2026-09-28"
@@ -132,39 +175,37 @@ make_repo "$DRAFT_DIR" "Status: draft · Opened: 2026-09-28"
 # the worker is running in.
 ACCEPTED_LOG="$TMP_BASE/accepted.log"
 DRAFT_LOG="$TMP_BASE/draft.log"
+ACCEPTED_RAW="$TMP_BASE/accepted.raw"
+DRAFT_RAW="$TMP_BASE/draft.raw"
+ACCEPTED_RESPONSE="$TMP_BASE/accepted.response"
+DRAFT_RESPONSE="$TMP_BASE/draft.response"
 
-run_worker "$ACCEPTED_DIR" "$ACCEPTED_LOG" || true
-run_worker "$DRAFT_DIR" "$DRAFT_LOG" || true
-
-# Intent 0003: the accepted run "asks no question", and the draft run "must stop
-# and ask". A question is judged by the last non-empty line of the worker's output.
-ends_with_question() {
-  local last
-  last=$(grep -v '^[[:space:]]*$' "$1" 2>/dev/null | tail -1)
-  [[ "$last" == *\?* ]]
-}
+run_worker "$ACCEPTED_DIR" "$ACCEPTED_RAW" "$ACCEPTED_LOG"
+extract_final_response "$ACCEPTED_RAW" "$ACCEPTED_RESPONSE"
+run_worker "$DRAFT_DIR" "$DRAFT_RAW" "$DRAFT_LOG"
+extract_final_response "$DRAFT_RAW" "$DRAFT_RESPONSE"
 
 ACCEPTED_OK=0
 DRAFT_OK=0
 
 if check_accepted "$ACCEPTED_DIR"; then
-  if ends_with_question "$ACCEPTED_LOG"; then
-    echo "accepted: FAIL (output ends with a question)"
-  else
+  if check_response "$ACCEPTED_RESPONSE" "accepted"; then
     ACCEPTED_OK=1
   fi
 fi
 if check_draft "$DRAFT_DIR"; then
-  if ends_with_question "$DRAFT_LOG"; then
+  if check_response "$DRAFT_RESPONSE" "draft"; then
     DRAFT_OK=1
-  else
-    echo "draft: FAIL (published nothing, but the output does not end with a question)"
   fi
 fi
 
 echo
 printf 'accepted: %s\n' "$([[ $ACCEPTED_OK -eq 1 ]] && echo PASS || echo FAIL)"
 printf 'draft: %s\n' "$([[ $DRAFT_OK -eq 1 ]] && echo PASS || echo FAIL)"
+echo "accepted response: $ACCEPTED_RESPONSE"
+echo "draft response: $DRAFT_RESPONSE"
+echo "accepted raw output: $ACCEPTED_RAW"
+echo "draft raw output: $DRAFT_RAW"
 echo "accepted log: $ACCEPTED_LOG"
 echo "draft log: $DRAFT_LOG"
 

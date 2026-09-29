@@ -48,6 +48,13 @@ _One ticket in full: body, acceptance criteria, comments, and its blockers. Used
 
 {{command or steps}}
 
+## Find a published ticket
+
+Describe how to find every ticket, including closed tickets, whose body contains the exact
+`Publication-ID: <identity>` line. Return all matches and distinguish lookup failure from
+zero matches. If exhaustive lookup is unavailable, write **not supported here**. A run with
+an uncertain earlier publish then stops for reconciliation instead of publishing again.
+
 ## Publish a ticket
 
 _Create a new ticket from a title and a body. Used by `to-issues`._

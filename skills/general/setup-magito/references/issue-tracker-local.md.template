@@ -5,9 +5,11 @@
 
 # Issue tracker: local markdown
 
+All `.scratch/` paths below resolve against the main worktree root.
+
 Work for this repo is tracked as markdown files under `.scratch/`, one directory per feature.
 There is no service and no CLI — every operation below is a file read or a file write, which
-is the point: it works in a repo with no remote, and the tickets travel with the branch.
+is the point: it works in a repo with no remote, and the tickets stay in the main worktree across implementation branches.
 
 Skills never name a backend. They name one of the operations below and read this file to find
 out how to perform it here.
@@ -61,6 +63,12 @@ the title of any open ticket whose `Use by:` date has passed.
 Read the file. The user normally passes the path or the feature and number directly; if only
 a number is given and more than one feature directory exists, ask which feature rather than
 guessing.
+
+## Find a published ticket
+
+Read all `.scratch/*/[0-9][0-9]-*.md` under the main worktree root, including done tickets.
+Match the exact `Publication-ID: <identity>` line in the body. Return all matching paths.
+The glob excludes draft tickets. A read error is an uncertain result, never an empty result.
 
 ## Publish a ticket
 

@@ -1,26 +1,27 @@
 ---
 name: to-issues
-description: Turn an accepted intent doc into reviewed, buildable issues and publish them to the tracker, then hand off to implement. Also breaks a plan or conversation into issues when there is no intent doc. Use once the decisions are made. Do not use it to decide what to build — that is intent.
+description: Turn an accepted intent doc into reviewed, buildable tickets and publish them to the tracker, then hand off to implement. Also breaks a plan or conversation into tickets when there is no intent doc. Use once the decisions are made. Do not use it to decide what to build — that is intent.
 ---
 
 # To Issues
 
 **First rule. If the input is an intent doc whose header line says `Status: accepted`, never
 ask the user to approve the breakdown. Go from drafting to publishing without stopping. Stop
-only for an escalation named in step 5 or step 6.** Any other input (a plan, a conversation, a
+only for unresolved intent, unavailable review or tracker operations, failed review, or
+uncertain publication state.** Any other input (a plan, a conversation, a
 draft intent) gets the approval step in step 4, because no human signed it off yet.
 
-Each issue is a thin slice that works end to end and can be built alone. The agent that
+Each ticket is a thin slice that works end to end and can be built alone. The agent that
 builds it is weaker than you and remembers nothing of this conversation, so the body carries
 everything.
 
 ## Write for a less-capable implementer
 
-- Spell out the full deliverable. If the issue asks for a document, config, or skill, include
-  the complete text to write, or an exact path to copy from.
+- Describe required behavior and observable acceptance criteria. Supply exact text only when
+  wording itself is the deliverable; otherwise let the builder choose the implementation.
 - Links are background only. Everything needed to build is in the body.
 - Exact commands over descriptions: "run `python install.py`", not "reinstall".
-- Decisions are made here, not downstream. An issue that holds an open question is not ready.
+- Decisions are made here, not downstream. A ticket that holds an open question is not ready.
 - "Done when" must be checkable by a weak agent: command output, file contents, observable
   behavior. Never "code is clean" or "works well."
 - Plain words throughout. The [readability standard](./references/readability.md) governs
@@ -35,28 +36,26 @@ is a different folder.
 
 1. **Read the input.** For an intent doc, read the whole file. Note the intent number and slug
    from its filename (`0003-to-issues.md` gives `0003` and `to-issues`), and whether its header
-   says `Status: accepted`. For an issue reference, fetch its body and comments.
+   says `Status: accepted`. For a ticket reference, fetch its body and comments.
+   Preserve the exact input as `input.md` in the ticket directory before review.
 
-2. **Pick the tracker.** The repo default is `tracker` in `.magito/config.toml`, or, when
-   that file is absent, the tracker `docs/agents/issue-tracker.md` describes. The operations
-   for the repo default are always in `docs/agents/issue-tracker.md`.
+2. **Resolve the tracker adapter** through
+   [tracker-selection.md](../setup-magito/references/tracker-selection.md). Keep its absolute
+   path and the absolute main worktree root with the tickets throughout this run. Read that
+   adapter for every tracker operation below. `<skills>` means the installed skills directory.
 
-   An intent doc can override the default with a `Tracker:` field in its header line. Only
-   when that field names a tracker different from the default, read the operations from the
-   matching template instead: `<skills>/setup-magito/references/issue-tracker-<value>.md.template`
-   for `github` or `local`. An override to `other` cannot work, because only the repo's own
-   file can describe that tracker: escalate. `<skills>` is your tool's installed skills
-   directory: `~/.claude/skills` for Claude Code, `~/.agents/skills` for most others.
-
-3. **Draft the issues** as files in `.scratch/<NNNN>-<slug>/drafts/`, one file per issue,
+3. **Draft the tickets** as files in `.scratch/<NNNN>-<slug>/drafts/`, one file per ticket,
    named `01-<slug>.md`, `02-<slug>.md`, in dependency order. With no intent doc, use a short
    free slug for the directory. Before writing the first file, make sure `.scratch/` is a
    line in `.git/info/exclude`, exactly as the "Private-state excludes" section of
    `<skills>/setup-magito/SKILL.md` does it.
 
-   Use the issue template below. Every issue needs at least one edge case in "Done when":
+   If this directory already has `publication.json`, follow
+   [publication.md](./references/publication.md) before drafting or publishing again.
+
+   Use the ticket template below. Every ticket needs at least one edge case in "Done when":
    empty input, a boundary value, a duplicate, a missing file. Happy-path-only is not ready.
-   Label each issue **small** (one area, roughly under 100 changed lines) or **large**. In
+   Label each ticket **small** (one area, roughly under 100 changed lines) or **large**. In
    "Depends on", name other drafts by their file name (`01-<slug>.md`).
 
 4. **Approval, only when the input is not an accepted intent.** Show a numbered list: title,
@@ -75,18 +74,26 @@ is a different folder.
    Write the brief to `.scratch/<NNNN>-<slug>/review-brief.md`. It holds the full intent doc
    (or the plan you worked from), every draft file in full, the checklist below, and this
    instruction: "You are reviewing, not building. Do not create, edit, or delete any file.
-   Reply with one VERDICT line per issue file and nothing else." Then:
+   Reply with one VERDICT line per ticket file and one COVERAGE line for the complete set." Then:
 
-   - With a worker name: `python3 <skills>/implement/scripts/worker.py run <name> <main-worktree-root> .scratch/<NNNN>-<slug>/review-brief.md`.
+   Protect the reviewed contents with `scripts/worktree_snapshot.py` from this skill.
+   Create a temporary evidence directory outside the main worktree. After writing the brief,
+   run `capture <main-root> <absolute-ticket-directory> <evidence>/before.json`. Run the
+   reviewer with stdout and stderr redirected into that evidence directory. Then run
+   `capture <main-root> <absolute-ticket-directory> <evidence>/after.json` and
+   `compare <evidence>/before.json <evidence>/after.json`, using `python3 <skills>/to-issues/scripts/worktree_snapshot.py`
+   for each command. Any nonzero exit from capture, review, or compare stops publication.
+   Report changed paths or the execution failure. The snapshot covers tracked contents,
+   unignored files, and the ignored ticket directory. Keep logs and snapshots outside that
+   scope so writing evidence cannot count as a reviewer edit. A subagent review uses the
+   same before/after comparison.
+
+   - With a worker name: `python3 <skills>/implement/scripts/worker.py run <name> <main-worktree-root> <main-worktree-root>/.scratch/<NNNN>-<slug>/review-brief.md`.
    - With none: give the same brief to a fresh-context subagent, and tell the user in one line
      that the review fell back to a subagent. If your tool has no subagents, stop and escalate
      "no spec reviewer available."
 
-   Run `git status --short` at the main worktree root just before and just after the review.
-   If the two outputs differ, the reviewer changed a file: stop and escalate, because a
-   reviewer that writes is not a review.
-
-   The checklist the reviewer applies to each issue:
+   The checklist the reviewer applies to each ticket:
    1. "Done when" is present and another agent can verify it. A red check names a command
       that fails before the work and passes after it. A reviewable check names specific
       things to look for.
@@ -96,51 +103,56 @@ is a different folder.
    4. "Depends on" is correct and has no cycles.
    5. The small or large label fits the work.
 
-   The reply format, one line per issue:
+   Also check the complete set against every required intent outcome. Report missing
+   coverage, duplicated scope, and dependencies that prevent the set delivering the intent.
+   All individual tickets passing is insufficient when an outcome is absent.
+
+   The reply format:
 
    ```
    VERDICT 01-slug.md PASS
    VERDICT 02-slug.md FIX: <what is wrong>
    VERDICT 03-slug.md AMBIGUOUS: <what the intent does not settle>
+   COVERAGE PASS
+   # Or: COVERAGE FIX: <missing outcome> / COVERAGE AMBIGUOUS: <unsettled intent>
    ```
 
-6. **Act on the verdicts.**
-   - **AMBIGUOUS** on any issue: stop and escalate to the user at once, quoting the line. Do
+6. **Act on the verdicts.** Require exactly one verdict for each draft filename and exactly
+   one COVERAGE verdict. Missing, duplicate, unknown, or malformed verdicts are a failed
+   review; stop and report them. Apply the following rules to both ticket and coverage verdicts:
+   - **AMBIGUOUS** on any ticket: stop and escalate to the user at once, quoting the line. Do
      not guess.
-   - **FIX** on any issue: revise those drafts and run step 5 again. After two FIX rounds,
+   - **FIX** on any ticket: revise those drafts and run step 5 again. After two FIX rounds,
      stop and escalate with the remaining FIX lines.
-   - **PASS** on every issue: add a last line to each draft,
-     `Spec review: <worker or "subagent"> (<family>), round <n>`, then publish.
+   - **PASS** on every ticket and COVERAGE: record the worker, family, round, and verdicts
+     in the publication record described below, then publish. Add
+     `Spec review: <worker or "subagent"> (<family>), round <n>` to each published body.
 
-7. **Publish** in dependency order, blockers first. For each draft:
-   1. Replace every draft file name in its "Depends on" with the identifier the tracker gave
-      that blocker when it was published.
-   2. Publish it with the tracker's **publish a ticket** operation. The text after `# ` on the
-      first line is the title. The body is everything after that first line: remove the
-      `# <title>` line from the body, so that the title appears only once.
-   3. Record each blocker with the tracker's **blocking edges** operation.
-   4. Delete the draft file.
+7. **Publish and resume** through [publication.md](./references/publication.md). It owns
+   the publication record, stable ticket identities, dependency conversion, and recovery.
+   Keep reviewed drafts until every ticket and dependency is confirmed in the tracker.
 
-   Then delete `review-brief.md` and the empty `drafts/` folder.
-
-8. **Hand off.** For an accepted intent, call the `implement` skill with the published
-   tickets. Otherwise, report the published tickets and stop.
+8. **Hand off.** For an accepted intent, call `implement` with the published ticket identifiers,
+   the selected adapter's absolute path, the main worktree root, and the publication record.
+   `implement` must use that adapter for ticket reads, blockers, comments, and closing tickets.
+   Otherwise, report the published tickets and stop. On a resumed completed publication,
+   inspect the existing implementation status before handing off again.
 
 <issue-template>
-# <short title: what this issue delivers>
+# <short title: what this ticket delivers>
 
 ## Summary
 
-<one plain paragraph for a reader who did not do this work: what this issue delivers and why
+<one plain paragraph for a reader who did not do this work: what this ticket delivers and why
 it matters. No file paths or symbols here.>
 
-**Intent:** <link to the intent doc>, <which decisions this issue carries>
+**Intent:** <link to the intent doc>, <which decisions this ticket carries>
 
 **Size:** small | large
 
 ## Behavior
 
-<the end-to-end behavior, with every text, config, or command the builder needs, in full>
+<required behavior, constraints, and commands needed to verify it>
 
 ## Done when
 
@@ -155,11 +167,11 @@ it matters. No file paths or symbols here.>
 
 ## Depends on
 
-<the blocking issues, or "None. It can start immediately.">
+<the blocking tickets, or "None. It can start immediately.">
 
 ## Out of scope
 
-<what this issue does not do, and where that work belongs>
+<what this ticket does not do, and where that work belongs>
 </issue-template>
 
 Never edit the intent doc. Once accepted, it is a signed-off record.

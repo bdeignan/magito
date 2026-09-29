@@ -21,6 +21,10 @@ only the built-in executor is Claude-specific. That is why the parallel path liv
 reference under the general `implement` skill instead of splitting back into a Claude-only
 skill of its own.
 
+Carry the caller's selected tracker adapter and main worktree root through every ticket
+operation below. The adapter-selection contract in [SKILL.md](../SKILL.md) applies to
+this path too. Read local ticket files from the main root before preparing worker briefs.
+
 ## Process
 
 1. **Collect the issues.** From the identifiers given, or with the **list open tickets**

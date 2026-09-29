@@ -48,6 +48,11 @@ jira issue list -p PLAT -s~Done --plain
 jira issue view PLAT-<n> --comments 20
 ```
 
+## Find a published ticket
+
+**Not supported here.** If a publish result is uncertain, stop and reconcile the matching
+`Publication-ID:` with the user before retrying. Never treat missing lookup as zero matches.
+
 ## Publish a ticket
 
 ```

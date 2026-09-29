@@ -141,6 +141,11 @@ If something is found, offer to bring it into the session journal as entries. **
 
 `~/.magito/workers.toml` (the `/implement` delegation roster) and `~/.magito/bench.toml` (the magi seat roster) are **the user's machine-local files**. Report each as present or missing. Never write or overwrite either without explicit confirmation (the convention is in `CLAUDE.md`). If one is missing, say so and point at where it bootstraps — `bench.toml` self-creates on the first `/magi` run and is repaired by `/magi config`; `workers.toml` self-creates the first time a worker is named during `/implement`. Offer to seed a missing file only if the user asks; do not fill it silently.
 
+When seeding an authorized roster, include the disabled Cursor reviewer block from the
+[worker contract](../implement/references/worker-contract.md#optional-cursor-reviewer).
+That section owns activation and model verification. On an existing roster, a request to
+prepare Cursor authorizes adding the commented block once, preserving active settings.
+
 ### Python toolchain
 
 The conventions `implement` and `verifying` build to. Defaults, overridable per project:
