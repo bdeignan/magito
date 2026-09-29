@@ -89,8 +89,8 @@ follows magi's bench convention: substituted where `cmd` contains `{model}`,
 documentation otherwise. An optional `family` field is a free lowercase string that
 names the model family (`openai`, `google`, `anthropic`, ...). Two workers are the
 same family when their `family` strings are equal after lowercasing. An optional `tier` field
-labels how strong the pinned model is; the example roster uses `strong`, and thrifty mode
-will read it later. A top-level `reviewers` key is a list of worker names, ranked: the
+labels how strong the pinned model is; a worker with no `tier` counts as
+`strong`. A top-level `reviewers` key is a list of worker names, ranked: the
 pipeline tries them in that order when it asks for a spec reviewer from a different family,
 then every other worker in file order. Each candidate must pass the family rule and its
 probe, so when the first reviewer is out of quota the next one takes over. The older
@@ -100,7 +100,19 @@ value that is not a list of strings, or that names a worker the roster lacks, ex
 Top-level keys must sit above the first `[workers.*]` table: TOML reads any key written
 below a table header as part of that table, so a `reviewers` placed there silently becomes
 a field of that worker. [`workers.toml.example`](./workers.toml.example) is a ready roster
-with one commented entry per popular tool, each pinned to that tool's strongest model.
+with one commented entry per popular tool, each pinned to that tool's strongest model, plus
+one cheap entry per tool for thrifty mode.
+
+**Thrifty mode** restricts every step to cheap models. It is on when the environment
+variable `MAGITO_THRIFTY` is `1` (one session), or when the roster has the top-level key
+`thrifty = true` (the whole machine). `MAGITO_THRIFTY=0` turns it off for a session even when
+the roster says `true`. A `thrifty` value that is not `true` or `false` exits 2. While it is
+on, `worker.py reviewer` considers only workers whose `tier` is `cheap`, and exits 3 with
+`thrifty mode: no cheap reviewer outside family '<family>' passed its probe` when none
+passes. `worker.py thrifty` prints `on` or `off`. `worker.py workers` prints the worker
+names, one per line in file order, and only the cheap ones while thrifty mode is on. It does
+not probe, and an empty result exits 0 with no output. Skills call these two commands
+instead of reading the environment and the roster themselves. magito does not track spend.
 
 ```toml
 # ~/.magito/workers.toml — machine-local, never synced

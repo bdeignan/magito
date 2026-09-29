@@ -8,6 +8,10 @@
 # A reviewer must pass a different family than the writer and answer its probe.
 # reviewers = ["codex", "cursor-openai", "gemini", "omp"]
 
+# Thrifty mode: when true, builds and reviews use only workers whose tier is "cheap".
+# The environment variable MAGITO_THRIFTY set to 1 or 0 overrides this line for one session.
+# thrifty = true
+
 # Checked 2026-09-29: gpt-6-astra is in ~/.codex/models_cache.json (codex 0.158).
 # [workers.codex]
 # cmd = "codex exec --sandbox workspace-write --ephemeral -m {model} -C {cwd} {brief}"
@@ -64,3 +68,45 @@
 # model = "openrouter/moonshotai/kimi-k3"
 # family = "moonshot"
 # tier = "strong"
+
+# Cheap entries for thrifty mode. Each one pins a low-cost model of the same tool.
+
+# Checked 2026-09-29: gpt-6-luna is in ~/.codex/models_cache.json (codex 0.158).
+# [workers.codex-cheap]
+# cmd = "codex exec --sandbox workspace-write --ephemeral -m {model} -C {cwd} {brief}"
+# model = "gpt-6-luna"
+# family = "openai"
+# tier = "cheap"
+
+# Checked 2026-09-29: `claude -p --model haiku` answered a probe. `haiku` is Claude's
+# cheapest alias; `claude --help` does not list it among its examples.
+# [workers.claude-cheap]
+# cmd = "env -u CLAUDECODE claude -p --permission-mode bypassPermissions --model {model} {brief}"
+# model = "haiku"
+# family = "anthropic"
+# tier = "cheap"
+
+# Checked 2026-09-29: `omp models find deepseek-v4-flash` lists deepseek/deepseek-v4-flash under openrouter.
+# [workers.omp-cheap]
+# cmd = "omp -p --no-session --no-skills --approval-mode yolo --max-time 900 --cwd {cwd} --model {model} {brief}"
+# model = "openrouter/deepseek/deepseek-v4-flash"
+# family = "deepseek"
+# tier = "cheap"
+
+# unverified: Gemini CLI has no model list command. gemini-3.5-flash is named in the
+# 0.46.0 bundle. Check with `gemini -m <id> -p "Reply OK"`.
+# [workers.gemini-cheap]
+# cmd = "gemini --skip-trust --approval-mode yolo --model {model} --include-directories {cwd} -p {brief}"
+# model = "gemini-3.5-flash"
+# family = "google"
+# tier = "cheap"
+
+# unverified: check with `agent models`. Cursor's `agent` CLI is not installed on the
+# machine that wrote this file, so no cheap model id is known. The model value below is a
+# deliberate placeholder, not an id. Replace it before uncommenting. This entry is
+# review-only, like the other Cursor entries.
+# [workers.cursor-cheap]
+# cmd = "agent -p --mode ask --model {model} {brief}"
+# model = "REPLACE-with-cheap-id-from-agent-models"
+# family = "REPLACE-with-the-family-of-that-model"
+# tier = "cheap"
