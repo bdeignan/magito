@@ -28,8 +28,9 @@ currently deferred, see the file.)
 | The session journal (per-entry files, reading and writing) | `bin/journal`, `skills/general/catch-up/references/adopting-the-journal.md` |
 | Designing or changing a skill — seams, invocation, the spine | [CONVENTIONS.md](./CONVENTIONS.md) |
 | Skill, hook, and agent design conventions | `CLAUDE.md` — "Skill and Agent Design Notes" |
-| Why hooks are optional and what enforces rules instead | `docs/adr/0012`, `docs/adr/0013` |
-| Why the review gate fires on a fan-out but not on your own work | `docs/adr/0014` |
+| Why hooks are optional and what enforces rules instead | `docs/adr/0012`, `docs/adr/0013`, `docs/adr/0018` |
+| Why the review gate fires on a fan-out and the pipeline but not on your own work | `docs/adr/0014`, `docs/adr/0018` |
+| Why every pipeline branch is reviewed automatically, by a different model family when the roster has one | `docs/adr/0018` |
 | Why skills name tracker operations instead of `gh`, including intent overrides | `docs/adr/0015`, `docs/adr/0017` |
 | Delegating a build (shell workers, worktrees) | `skills/general/implement/references/worker-contract.md` |
 | The magi tribunal | `skills/claude/magi/SKILL.md` |
