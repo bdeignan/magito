@@ -69,8 +69,11 @@ make it, and list it in the pull request body.
 3. Passing needs a locked test changed, or work outside the ticket.
 4. The red check passes before any change.
 5. No check command exists.
+6. In an integrated run ([integrate.md](./integrate.md)), a merge applies cleanly but the
+   check is red on the integration branch: a semantic conflict.
 
 Each escalation message names the rule number and quotes the evidence: the ambiguous
 sentence, the last verdicts and check output, the changed locked file, the red check output,
-or the places you looked for a check command. Apart from these five, the only stop is the
+or the places you looked for a check command, or the merge and the failing check. Apart
+from these six, the only stop is the
 no-remote merge checkpoint in step 8.

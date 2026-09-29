@@ -36,3 +36,5 @@ addition to the sections above, list:
 ## Closing issues
 
 `gitflow.sh pr <issue>` appends `Closes #<issue>` automatically. Do not add that line to the body for the primary issue. Add `Closes #M` lines only for extra issues the same PR resolves.
+
+For an integrated run (see [integrate.md](./integrate.md)), the script still appends `Closes #<first-ticket>` for the ticket you pass it. Put a `Closes #<n>` line in the body for every other ticket in the run, each on its own line. Never write the first ticket's line yourself: the body would name it twice.

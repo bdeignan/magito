@@ -21,6 +21,8 @@
 #   7. The paid to-issues evaluator checks its complete final response and
 #      preserves a worker failure.
 #   8. The paid implement evaluator passes and fails as its fake workers dictate.
+#   9. The paid integrate evaluator (two tickets, resume, closing rule, semantic
+#      conflict) passes and fails as its fake workers dictate.
 #
 # Collects all failures instead of stopping at the first one, prints a summary,
 # and exits 1 if anything failed, 0 otherwise. Bash and the stdlib Python
@@ -232,6 +234,17 @@ check_eval_implement() {
   fi
 }
 
+check_eval_integrate() {
+  local out
+  if out=$(python3 "$REPO_ROOT/scripts/test_eval_integrate.py" 2>&1); then
+    echo "eval-integrate: ok"
+  else
+    echo "eval-integrate: FAILED"
+    echo "$out" | sed 's/^/    /'
+    FAILURES+=("eval-integrate pass/fail logic")
+  fi
+}
+
 # --- run everything, then summarize ------------------------------------------
 check_install
 check_anti_slop
@@ -241,6 +254,7 @@ check_worker_reviewer
 check_to_issues_contract
 check_eval_to_issues
 check_eval_implement
+check_eval_integrate
 
 echo
 if [[ ${#FAILURES[@]} -eq 0 ]]; then
