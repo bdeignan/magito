@@ -173,7 +173,7 @@ def run(argv, cwd, timeout, capture):
 
 
 SNAPSHOT = Path(__file__).resolve().parents[2] / "to-issues" / "scripts" / "worktree_snapshot.py"
-VERDICT_LINE = re.compile(r"^[\s>*`-]*((?:VERDICT|COVERAGE)\b[^`]*?)[`\s]*$")
+VERDICT_LINE = re.compile(r"^[\s>*`-]*((?:VERDICT|COVERAGE)\b.*?)[`\s]*$")
 
 
 def review(name, cwd, brief_file, timeout):
@@ -201,7 +201,12 @@ def review(name, cwd, brief_file, timeout):
         return path
 
     before = snapshot("before")
-    r = run(argv, cwd, timeout, capture=True)
+    try:
+        r = run(argv, cwd, timeout, capture=True)
+    except SystemExit as e:
+        # A timeout still gets the file check: a reviewer that edited files and
+        # then hung must exit 4, not 124.
+        r = SimpleNamespace(returncode=e.code, stdout="", stderr="")
     output = work / "review.txt"
     output.write_text(r.stdout + r.stderr)
     print(f"review output: {output}", file=sys.stderr)
@@ -211,9 +216,10 @@ def review(name, cwd, brief_file, timeout):
     if cmp.returncode:
         print(cmp.stdout.strip(), file=sys.stderr)
         die(4, "the reviewer changed files — discard its verdict, revert, and review again")
-    # Some CLIs echo the brief, whose reply format quotes verdict lines, and print
-    # the final answer twice. Drop the echo, then keep each verdict line once.
-    answer = r.stdout.replace(brief.strip(), "", 1)
+    # Some CLIs echo the brief, whose reply format quotes verdict lines, print the
+    # final answer twice, or print it on stderr. Read both streams, drop the echo,
+    # then keep each verdict line once.
+    answer = (r.stdout + "\n" + r.stderr).replace(brief.strip(), "", 1)
     verdicts = []
     for line in answer.splitlines():
         m = VERDICT_LINE.match(line)

@@ -172,7 +172,10 @@ case "$cmd" in
       add)
         branch="${1:?branch required}"; path="${2:-}"
         root="$(main_worktree)"
-        if ! git -C "$root" check-ignore -q .magito/worktrees; then
+        # Probe a path inside each thing `add` creates: a directory-only pattern
+        # cannot match a folder that does not exist yet, but it does match a path below it.
+        if ! git -C "$root" check-ignore -q .magito/worktrees/probe \
+          || ! git -C "$root" check-ignore -q .magito/review-probe; then
           exclude="$(git -C "$root" rev-parse --git-path info/exclude)"
           case "$exclude" in /*) ;; *) exclude="$root/$exclude" ;; esac
           mkdir -p "$(dirname "$exclude")"
