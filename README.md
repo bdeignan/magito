@@ -49,9 +49,8 @@ whatever CLIs it actually has. It also keeps a session journal — one file per
 session recording what happened and what is unfinished — so a fresh session can
 pick up where the last one left off.
 
-Learning to drive it? Run **`/ask-magito`** — it maps every skill to the situation it
-fits, shows where you stay in the loop, and states the behavior promises magito keeps
-while the internals evolve.
+Learning to drive it? Read [Which skill when](#which-skill-when): the main path, one line for
+every other skill, and the promises magito keeps.
 
 ## How it works
 
@@ -81,6 +80,57 @@ python install.py                      # apply
 ```
 
 That is it — your CLIs now read this repo.
+
+## Which skill when
+
+Skills are the source of truth. If this section disagrees with a skill, the skill is right and
+this section needs a fix.
+
+### The main path
+
+Most work follows one path. You act at three points: accepting the intent, answering an
+escalation, and the merge.
+
+1. **`/catch-up`** starts a session. It reads the journal, the tracker, and git, then names the next move.
+2. **`/intent`** interviews you one question at a time and produces an intent doc. You act here: you accept the doc.
+3. **`to-issues`** runs on its own after you accept. It turns the intent into reviewed tickets and publishes them.
+4. **`implement`** runs on its own after that. It builds each ticket, gets a review from a different model family, and stops only for an escalation. You act here when it escalates.
+5. **The pull request** is the result. You act here: you merge it. Agents never merge.
+6. **`/handoff`** ends the session with one entry in `.magito/journal/`.
+
+Work with no accepted intent can still enter at `/to-issues` (a plan) or `/implement` (one clear
+issue). Those tickets keep the older steps: plan approval before code and "ship it" before the pull request.
+
+### Every other skill
+
+- **`/magi`**: a three-seat tribunal for a question no test can settle. Poll is cheap; `deliberate` asks for cost consent first.
+- **`/decruft`**: a harsh structural review for the cruft that agents leave behind. It proposes cuts; you approve them.
+- **`/challenging-assumptions`**: an adversarial pre-mortem of a plan before you commit, ending in a verdict.
+- **`/research`**: an evidence-backed report on an open question, with options and a recommendation.
+- **`/finding-lacunae`**: a hunt for the essential element that a topic or design is missing.
+- **`/reviewing-changes`**: the two-axis review (Standards and Spec) of any diff, on its own.
+- **`/speaking-plainly`**: reset your writing voice, or rewrite dense text plainly.
+- **`/teach`**: learn a concept over several sessions, using the current directory as the workspace.
+- **`/to-questionnaire`**: turn a decision you cannot make alone into a questionnaire for one person.
+- **`/wait-what`**: re-pitch the last message when it did not land.
+- **`/domain-modeling`**: sharpen the project vocabulary and record decisions in the glossary and ADRs.
+- **`/verifying`**: the testing discipline for Python work: real seams, red-green, and data checks.
+- **`/writing-for-agents`**: write skills, `AGENTS.md`, `CLAUDE.md`, issues, and prompts that agents read well.
+- **`/setup-magito`**: audit and repair one repo's magito configuration. Run it once per new project; it is safe to re-run.
+
+### What magito promises
+
+1. **You own every merge.** Agents branch, commit, and open pull requests. The merge is always yours.
+2. **Nothing lands unreviewed by accident.** Work on the pipeline path gets an automatic review from a different model family. Any other pull request or merge reaches a deliberate choice first: a full review, a lightweight pass, or a knowing skip.
+3. **Delegation is explicit.** Reviews on the pipeline path go to a roster worker from a different model family, chosen by `worker.py reviewer`. Builds delegate only to a worker you name ("via omp"). Thrifty mode limits every step to cheap models.
+4. **One approval per worker launch** in the default permission mode. A dead or denied worker stops loudly. Nothing silently falls back onto your subscription.
+5. **Machine-local files are yours.** `~/.magito/` is bootstrapped once with your consent and never overwritten on an agent's own initiative. `bin/` is the exception: `install.py` owns it.
+6. **Staging is always explicit.** No agent bulk-stages files. A hook blocks `git add -A` everywhere.
+7. **Costs are stated before they are incurred.** A fan-out declares its executor count and workers up front. Magi deliberate mode asks before it convenes.
+
+You stay in the loop at these moments only: accepting an intent, answering an escalation, the
+one-time roster bootstrap, magi deliberate cost consent, and every merge. Everything else runs
+without you and stops loudly when it cannot continue.
 
 ---
 

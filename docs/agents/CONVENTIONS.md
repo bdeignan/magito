@@ -84,8 +84,7 @@ default workflow is still four verbs, run in order:
 
 `/intent` spans multiple sessions on its own — a later session resumes an existing draft at its
 open questions — so nothing else sits between orient and decide. The rest of the skills are
-off-spine: reached deliberately when a situation calls for them, which `/ask-magito` covers as
-situation → play.
+off-spine: reached deliberately when a situation calls for them, which the README section "Which skill when" lists in one line each.
 Nothing stops the model from starting any of these on its own now; what keeps `catch-up` at
 the start of a session and `handoff` at the end is that each one's description says so.
 
