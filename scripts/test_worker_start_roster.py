@@ -54,6 +54,27 @@ def main() -> int:
         check(r.returncode == 2 and "Traceback" not in r.stderr,
               "ready with a directory at the roster path exits 2 with a message", r)
 
+        # A roster whose bytes are not UTF-8, and one this user cannot read.
+        bad = Path(tmp).resolve() / "not-utf8.toml"
+        bad.write_bytes(b'[workers.a]\ncmd = "echo \xff\xfe {brief}"\nfamily = "openai"\n')
+        locked = Path(tmp).resolve() / "no-permission.toml"
+        locked.write_text('[workers.a]\ncmd = "echo {brief}"\nfamily = "openai"\n')
+        locked.chmod(0)
+        for what, path in (("bytes that are not UTF-8", bad), ("no read permission", locked)):
+            if path is locked and os.access(path, os.R_OK):
+                continue  # running as a user that can read any file; the case cannot be made
+            r = run(path, ["start", "--family", "anthropic"])
+            check(r.returncode == 0 and r.stdout.count("\n") == 1 and f" · {NONE} · " in r.stdout
+                  and "cannot be read" in r.stderr and "Traceback" not in r.stderr,
+                  f"start with a roster with {what} prints the fallback and exits 0", r)
+            for args in (["reviewer", "anthropic"], ["ready"], ["workers"], ["thrifty"], ["probe", "a"],
+                         ["start", "--builder", "a"]):
+                r = run(path, args)
+                check(r.returncode == 2 and r.stdout == "" and "cannot be read" in r.stderr
+                      and "Traceback" not in r.stderr,
+                      f"`{' '.join(args)}` with a roster with {what} exits 2 with a message", r)
+        locked.chmod(0o600)
+
         # stdout is exactly one line, whatever a value or the roster holds.
         roster = Path(tmp).resolve() / "roster.toml"
         roster.write_text('[workers.a]\ncmd = "echo {brief}"\nfamily = "open\\nai"\n')
