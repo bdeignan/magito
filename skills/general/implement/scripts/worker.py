@@ -147,8 +147,11 @@ def entry_fault(name, entry):
     for bad in SHELL_OPS:
         if bad in tokens:
             return f"cmd contains shell operator '{bad}'"
-    if any("{model}" in tok for tok in tokens) and not entry.get("model"):
-        return "cmd uses {model} but declares no model"
+    if any("{model}" in tok for tok in tokens):
+        if not entry.get("model"):
+            return "cmd uses {model} but declares no model"
+        if not isinstance(entry["model"], str):
+            return "model is not a string"
     if program_of(tokens) is None:
         return "cmd names no program"
     return None
@@ -173,7 +176,7 @@ def workers_table(data):
     return workers
 
 
-def reviewer_order(data, workers):
+def reviewer_order(data, workers, quiet=False):
     """Candidate names in pick order: the `reviewers` list (or the older
     `spec_reviewer`), then every other worker in file order."""
     ranked = data.get("reviewers")
@@ -187,7 +190,7 @@ def reviewer_order(data, workers):
             if n not in workers:
                 raise Fault(f"reviewers names '{n}', which is not in {ROSTER}")
     if ranked:
-        if spec_name is not None:
+        if spec_name is not None and not quiet:
             print("worker.py: spec_reviewer ignored; reviewers is set", file=sys.stderr)
         names = list(dict.fromkeys(ranked))
     else:
@@ -230,10 +233,11 @@ def skip_reason(name, entry, writer_family, thrifty, skip):
 
 def live_probe(name) -> bool:
     # A dead candidate (missing binary, probe timeout) makes probe_ok die(); for
-    # a pick or a report that is a failed probe, not the end of the search.
+    # a pick or a report that is a failed probe, not the end of the search. The
+    # same holds for any error one entry can raise while its command is built.
     try:
         return probe_ok(name)
-    except SystemExit:
+    except (Exception, SystemExit):
         return False
 
 
@@ -241,7 +245,7 @@ def pick_reviewer(data, writer_family, skip=(), probe=live_probe, quiet=False):
     """The first candidate from another family that answers its probe, or None.
     Raises Fault for a roster setting it cannot use. The one pick every caller shares."""
     workers = workers_table(data)
-    names = reviewer_order(data, workers)
+    names = reviewer_order(data, workers, quiet)
     thrifty = thrifty_state(data)
     for name in names:
         reason = skip_reason(name, workers[name], writer_family, thrifty, skip)
@@ -303,11 +307,21 @@ def ready_line(name, entry):
 def ready(family):
     """Report every roster worker. Exits 0 whenever the roster parsed as TOML."""
     data = load_roster()
+    # A fault in a top-level setting is reported with or without --family, and
+    # never ends the report.
+    settings_ok = True
     try:
-        workers, table_ok = workers_table(data), True
+        workers = workers_table(data)
     except Fault as e:
         print(f"worker.py: {e}", file=sys.stderr)
-        workers, table_ok = {}, False
+        workers, settings_ok = {}, False
+    if settings_ok:
+        try:
+            reviewer_order(data, workers)
+            thrifty_state(data)
+        except Fault as e:
+            print(f"worker.py: {e}", file=sys.stderr)
+            settings_ok = False
     answered = {}
     for name, entry in workers.items():
         # One entry's fault must never end the report.
@@ -319,12 +333,9 @@ def ready(family):
     print(f"launcher allow rule: {'present' if allow_rule_present() else 'absent'}")
     if family is not None:
         name = None
-        if table_ok:
-            try:
-                # Reuse the probe results gathered above; never probe a second time.
-                name = pick_reviewer(data, family, probe=lambda n: answered.get(n, False), quiet=True)
-            except Fault as e:
-                print(f"worker.py: {e}", file=sys.stderr)
+        if settings_ok:
+            # Reuse the probe results gathered above; never probe a second time.
+            name = pick_reviewer(data, family, probe=lambda n: answered.get(n, False), quiet=True)
         print(f"reviewer for {family}: {name or 'none'}")
     sys.exit(0)
 
