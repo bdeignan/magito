@@ -43,6 +43,7 @@
 # model = "gemini-3.1-pro-preview"
 # family = "google"
 # tier = "strong"
+# requires_env = ["GOOGLE_CLOUD_PROJECT"]
 
 # Cursor entries take their family from the pinned model, not from the tool.
 # All Cursor entries are review-only: `--mode ask` keeps the agent read-only, so they
@@ -124,6 +125,7 @@
 # model = "gemini-3.5-flash"
 # family = "google"
 # tier = "cheap"
+# requires_env = ["GOOGLE_CLOUD_PROJECT"]
 
 # unverified: check with `agent models`. Cursor's `agent` CLI is not installed on the
 # machine that wrote this file, so no cheap model id is known. The model value below is a
