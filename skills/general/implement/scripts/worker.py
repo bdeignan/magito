@@ -84,6 +84,9 @@ def read_roster():
             return tomllib.load(f), None
     except tomllib.TOMLDecodeError as e:
         return None, f"{ROSTER} is not valid TOML: {e}"
+    except OSError as e:
+        # A directory at the roster path, or a file this user cannot read.
+        return None, f"{ROSTER} cannot be read: {e}"
 
 
 def load_roster():
