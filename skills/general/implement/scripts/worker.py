@@ -414,7 +414,8 @@ def start(args):
         if flag == "--small" and not small:
             small = True
         elif flag in ("--family", "--label", "--builder", "--intent") and flag not in opts \
-                and rest and not rest[0].startswith("--"):
+                and rest and rest[0] and not rest[0].startswith("--") and len(rest[0].splitlines()) == 1:
+            # A value is one non-empty line: the output is one line, whatever it is given.
             opts[flag] = rest.pop(0)
         else:
             die(2, START_USAGE)
@@ -423,8 +424,10 @@ def start(args):
         die(2, START_USAGE)
     if builder is not None:
         # A person named this worker, so the run must not go on without it.
-        entry = load_roster().get("workers")
-        entry = entry.get(builder) if isinstance(entry, dict) else None
+        try:
+            entry = workers_table(load_roster()).get(builder)
+        except Fault as e:
+            die(2, str(e))
         if entry is None:
             die(2, f"no worker '{builder}' in {ROSTER}")
         family = entry.get("family") if isinstance(entry, dict) else None
@@ -433,7 +436,9 @@ def start(args):
         who = f"builder: {builder} ({family})"
     else:
         who = f"builder: {label or 'this session'} ({family})"
-    print(" · ".join([who, start_reviewer(family), start_plan(opts.get("--intent"), small)]))
+    line = " · ".join([who, start_reviewer(family), start_plan(opts.get("--intent"), small)])
+    # Exactly one line on stdout, even when a roster family or a file name holds a line break.
+    print(" ".join(line.splitlines()))
     sys.exit(0)
 
 
