@@ -487,6 +487,8 @@ def review(name, cwd, brief_file, timeout):
 
 def main():
     args = sys.argv[1:]
+    if "--skip" in args and args[:1] != ["reviewer"]:
+        die(2, "--skip is an option of `worker.py reviewer` only")
     if len(args) >= 2 and args[0] == "probe":
         name = args[1]
         if probe_ok(name, echo_failure=True):
@@ -496,7 +498,8 @@ def main():
     elif len(args) >= 2 and args[0] == "reviewer":
         writer_family, rest, skip = args[1], args[2:], []
         while rest:
-            if rest[0] != "--skip" or len(rest) < 2:
+            # A name is required after each --skip, and another option is not a name.
+            if rest[0] != "--skip" or len(rest) < 2 or rest[1].startswith("--"):
                 die(2, "usage: worker.py reviewer <writer-family> [--skip <worker>]...")
             skip.append(rest[1])
             rest = rest[2:]

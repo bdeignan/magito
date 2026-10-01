@@ -21,6 +21,13 @@ def check(ok: bool, label: str, detail: str = "") -> None:
     RESULTS.append(ok)
 
 
+def roster_path(home: Path) -> Path:
+    """The roster lives away from the default path and is named through
+    MAGITO_WORKERS_FILE. The default path holds a decoy, so a test passes only
+    when the variable selects the roster."""
+    return home / "elsewhere" / "roster.toml"
+
+
 def setup(home: Path, top: list[str], workers: list[tuple[str, str, list[str]]]) -> Path:
     """Write a roster of logging fake workers. Returns the log path."""
     log = home / "starts.log"
@@ -32,16 +39,19 @@ def setup(home: Path, top: list[str], workers: list[tuple[str, str, list[str]]])
     for name, family, extra in workers:
         lines += [f"[workers.{name}]", f'cmd = "{sys.executable} {fake} {name} {{brief}}"',
                   f'family = "{family}"', *extra]
+    roster_path(home).parent.mkdir(parents=True, exist_ok=True)
+    roster_path(home).write_text("\n".join(lines) + "\n")
     (home / ".magito").mkdir(parents=True, exist_ok=True)
-    (home / ".magito" / "workers.toml").write_text("\n".join(lines) + "\n")
+    (home / ".magito" / "workers.toml").write_text(
+        f'[workers.decoy]\ncmd = "{sys.executable} {fake} decoy {{brief}}"\nfamily = "decoyfamily"\n')
     return log
 
 
 def run(home: Path, args: list[str]) -> subprocess.CompletedProcess:
     env = dict(os.environ)
-    for k in ("MAGITO_THRIFTY", "MAGITO_WORKERS_FILE"):
-        env.pop(k, None)
+    env.pop("MAGITO_THRIFTY", None)
     env["HOME"] = str(home)
+    env["MAGITO_WORKERS_FILE"] = str(roster_path(home))
     return subprocess.run([sys.executable, str(WORKER), *args], capture_output=True, text=True,
                           env=env, cwd=str(home))
 
@@ -90,7 +100,7 @@ def main() -> int:
         home = base / "model"
         home.mkdir()
         log = setup(home, [], [("b", "google", [])])
-        roster = home / ".magito" / "workers.toml"
+        roster = roster_path(home)
         roster.write_text('[workers.a]\ncmd = "echo {model} {brief}"\nmodel = 3\nfamily = "openai"\n'
                           + roster.read_text())
         r = run(home, ["reviewer", "anthropic"])
@@ -100,6 +110,34 @@ def main() -> int:
         r = run(home, ["ready"])
         check(r.returncode == 0 and r.stdout.splitlines()[0] == "a: invalid entry (model is not a string)",
               "ready reports an entry whose model is not a string", r.stdout + r.stderr)
+
+        # MAGITO_WORKERS_FILE selects the roster: the decoy at the default path never shows.
+        home = base / "selected"
+        home.mkdir()
+        log = setup(home, [], abc)
+        r = run(home, ["ready", "--family", "anthropic"])
+        check(r.returncode == 0 and "decoy" not in r.stdout and "decoy" not in starts(log)
+              and r.stdout.splitlines()[0].startswith("a: family=openai"),
+              "ready reads the roster that MAGITO_WORKERS_FILE names, not the default path",
+              r.stdout + r.stderr)
+        r = run(home, ["workers"])
+        check(r.stdout == "a\nb\nc\n", "workers reads the roster that MAGITO_WORKERS_FILE names", r.stdout)
+
+        # --skip needs a name, and only reviewer takes it.
+        home = base / "usage"
+        home.mkdir()
+        log = setup(home, [], abc)
+        for args in (["reviewer", "anthropic", "--skip", "--skip"],
+                     ["reviewer", "anthropic", "--skip", "a", "--skip"],
+                     ["reviewer", "anthropic", "a"],
+                     ["probe", "a", "--skip", "a"],
+                     ["workers", "--skip", "a"],
+                     ["thrifty", "--skip", "a"],
+                     ["ready", "--skip", "a"]):
+            r = run(home, args)
+            check(r.returncode == 2 and r.stdout == "", f"`{' '.join(args)}` exits 2 and prints nothing",
+                  f"code={r.returncode} stdout={r.stdout!r} stderr={r.stderr!r}")
+        check(starts(log) == [], "a rejected command line starts no worker", f"starts={starts(log)}")
 
         # A fault in a top-level setting is reported with and without --family.
         for setting, word in (('reviewers = "a"', "reviewers"), ("thrifty = 3", "thrifty"),
