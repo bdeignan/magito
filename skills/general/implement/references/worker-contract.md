@@ -72,7 +72,14 @@ through the launcher script, never a hand-built command line:
 ```bash
 python3 <skills>/implement/scripts/worker.py probe <worker>
 python3 <skills>/implement/scripts/worker.py run <worker> <dir> <brief-file> [timeout]
+python3 <skills>/implement/scripts/worker.py ready [--family <family>]
 ```
+
+`ready` reports every roster worker on one line each: its family, whether its program is
+installed, whether its required variables are set, and whether its probe answers. A last line
+says whether an allow rule for this launcher exists in the Claude Code settings. With
+`--family`, it also names the worker that `reviewer` would pick for that family. It exits 0
+whenever the roster parses, whatever is wrong with one entry.
 
 (`<skills>` is your tool's installed skills directory — `~/.claude/skills` for Claude
 Code, `~/.agents/skills` for most others.)
@@ -90,7 +97,10 @@ documentation otherwise. An optional `family` field is a free lowercase string t
 names the model family (`openai`, `google`, `anthropic`, ...). Two workers are the
 same family when their `family` strings are equal after lowercasing. An optional `tier` field
 labels how strong the pinned model is; a worker with no `tier` counts as
-`strong`. A top-level `reviewers` key is a list of worker names, ranked: the
+`strong`. An optional `requires_env` field is a list of environment variable names the tool
+needs, such as `requires_env = ["GOOGLE_CLOUD_PROJECT"]`. When one is unset or empty, `ready`
+names it and the reviewer pick passes over that worker without probing it. A worker cannot
+be named `subagent`: the review record keeps that word for a fresh-context subagent. A top-level `reviewers` key is a list of worker names, ranked: the
 pipeline tries them in that order when it asks for a spec reviewer from a different family,
 then every other worker in file order. Each candidate must pass the family rule and its
 probe, so when the first reviewer is out of quota the next one takes over. The older
@@ -194,7 +204,9 @@ worker for it, so there is no spend choice to override. `python3
 <skills>/implement/scripts/worker.py reviewer <writer-family>` tries the workers named in
 `reviewers`, in that order, then every other worker in file order. When `reviewers` is
 absent or empty, `spec_reviewer` counts as a list of one. It skips any worker with no `family`, a
-family equal to the writer's, or a failed probe, and says so on stderr. It prints the
+family equal to the writer's, a missing required variable, an entry it cannot use, or a failed
+probe, and says so on stderr. `--skip <worker>`, which can be repeated, passes over a named
+candidate: use it to reach another reviewer after one failed in the middle of a review. It prints the
 name of the first worker that passes, alone on stdout. It exits 3 when none passes.
 
 ### Reviewer replies on the pipeline path

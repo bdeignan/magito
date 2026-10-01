@@ -31,6 +31,11 @@
 #      file, and prints only the verdict lines. See issue #209.
 #  13. `gitflow.sh worktree add` puts worktrees in .magito/worktrees and keeps
 #      them out of git status. See issue #209 and ADR 0019.
+#  14. `worker.py ready` reports each roster worker without ending on a bad
+#      entry, `requires_env` is honored, and `reviewer --skip` passes over a
+#      named worker. A second script counts worker starts: a passed-over
+#      worker is never started, and `ready` probes each worker once. See
+#      issue #213.
 #
 # Collects all failures instead of stopping at the first one, prints a summary,
 # and exits 1 if anything failed, 0 otherwise. Bash and the stdlib Python
@@ -297,6 +302,18 @@ check_gitflow_worktree() {
   fi
 }
 
+check_worker_ready() {
+  local out
+  if out=$(python3 "$REPO_ROOT/scripts/test_worker_ready.py" 2>&1 \
+      && python3 "$REPO_ROOT/scripts/test_worker_probe_count.py" 2>&1); then
+    echo "worker-ready: ok"
+  else
+    echo "worker-ready: FAILED"
+    echo "$out" | sed 's/^/    /'
+    FAILURES+=("worker.py ready report and reviewer --skip")
+  fi
+}
+
 # --- run everything, then summarize ------------------------------------------
 check_install
 check_anti_slop
@@ -311,6 +328,7 @@ check_install_codex_hooks
 check_gitflow_pr
 check_worker_review
 check_gitflow_worktree
+check_worker_ready
 
 echo
 if [[ ${#FAILURES[@]} -eq 0 ]]; then
