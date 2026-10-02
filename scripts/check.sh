@@ -20,7 +20,9 @@
 #      cannot see, including ignored drafts and already-dirty tracked files.
 #   7. The paid to-issues evaluator checks its complete final response and
 #      preserves a worker failure.
-#   8. The paid implement evaluator passes and fails as its fake workers dictate.
+#   8. The paid implement evaluator passes and fails as its fake workers dictate,
+#      in its default case and in the red-passes, no-intent, and no-intent-small
+#      variants. It proves a review by the record on disk, not by the response.
 #   9. The paid integrate evaluator (two tickets, resume, closing rule, semantic
 #      conflict) passes and fails as its fake workers dictate.
 #  10. `install.py` links and registers the Codex hooks with a fail-open command, and
@@ -250,7 +252,8 @@ check_eval_to_issues() {
 
 check_eval_implement() {
   local out
-  if out=$(python3 "$REPO_ROOT/scripts/test_eval_implement.py" 2>&1); then
+  if out=$(python3 "$REPO_ROOT/scripts/test_eval_implement.py" 2>&1 \
+      && python3 "$REPO_ROOT/scripts/test_eval_implement_more.py" 2>&1); then
     echo "eval-implement: ok"
   else
     echo "eval-implement: FAILED"

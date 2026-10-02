@@ -1,11 +1,18 @@
 #!/usr/bin/env bash
-# eval-implement.sh — headless check that `implement` takes a pipeline ticket from
-# build to a reviewed branch without stopping for plan approval, and stops only at
-# the merge checkpoint. Run as:
+# eval-implement.sh — headless check that `implement` takes a ticket from an accepted
+# intent from build to a reviewed branch without stopping for plan approval, and
+# stops only at the merge checkpoint. The branch must be built in a worktree under
+# .magito/worktrees and carry a review record at its tip. Run as:
 #   bash scripts/eval-implement.sh <worker>
 # where <worker> names a roster worker. Not part of scripts/check.sh: it calls a
-# paid model. Set MAGITO_EVAL_VARIANT=red-passes to run the edge case where the red
-# check already passes: the run must escalate with rule 4 and make no commits.
+# paid model. Set MAGITO_EVAL_VARIANT to run another case:
+#   red-passes       the red check already passes; the run must escalate with rule 4
+#                    and make no commits
+#   no-intent        the ticket links no intent and has several criteria; the run must
+#                    stop at the plan, change nothing, and ask for approval
+#   no-intent-small  a one-file text fix with no intent; the run must skip the plan,
+#                    build in a worktree, record a review, and stop at the merge
+#                    checkpoint
 set -euo pipefail
 
 if [[ $# -ne 1 ]]; then
@@ -16,7 +23,7 @@ fi
 WORKER="$1"
 VARIANT="${MAGITO_EVAL_VARIANT:-}"
 case "$VARIANT" in
-  ""|red-passes) ;;
+  ""|red-passes|no-intent|no-intent-small) ;;
   *) echo "unknown MAGITO_EVAL_VARIANT: $VARIANT" >&2; exit 2 ;;
 esac
 LABEL="implement"
@@ -123,6 +130,65 @@ Spec review: eval fixture, round 1
 Publication-ID: 0001-hello/01-hello.md
 MD
 
+if [[ "$VARIANT" == "no-intent" ]]; then
+  # The same ticket with no accepted intent behind it. It keeps its several criteria,
+  # so it is not a small change, and the run must stop at the plan.
+  python3 - "$REPO/.scratch/0001-hello/01-hello.md" <<'PY'
+import sys
+from pathlib import Path
+p = Path(sys.argv[1])
+lines = [ln for ln in p.read_text().splitlines() if not ln.startswith("**Intent:**")]
+p.write_text("\n".join(lines) + "\n")
+PY
+fi
+
+if [[ "$VARIANT" == "no-intent-small" ]]; then
+  # A one-file text fix with no intent, one criterion, and no red check. The fixture
+  # carries a passing test, so the check command exits 0 before and after the change:
+  # with no test at all, `python3 -m unittest -q` exits non-zero on recent Pythons.
+  cat > "$REPO/.scratch/0001-hello/01-hello.md" <<MD
+# Fix the greeting in NOTES.md
+
+Status: open
+Made: $MADE
+Use by: $USE_BY
+
+## Summary
+
+The notes file spells the greeting wrong.
+
+## Behavior
+
+In \`NOTES.md\`, change \`helo\` to \`hello\`. Change nothing else.
+
+## Done when
+
+**Reviewable check:**
+1. \`NOTES.md\` holds the line \`greeting: hello\`.
+
+## Depends on
+
+None.
+
+## Out of scope
+
+Any other file.
+
+Spec review: eval fixture, round 1
+Publication-ID: 0001-hello/01-hello.md
+MD
+  printf 'greeting: helo\n' > "$REPO/NOTES.md"
+  cat > "$REPO/test_notes.py" <<'PY'
+import unittest
+from pathlib import Path
+
+
+class NotesTest(unittest.TestCase):
+    def test_notes_has_a_greeting(self):
+        self.assertTrue(Path("NOTES.md").read_text().startswith("greeting:"))
+PY
+fi
+
 if [[ "$VARIANT" == "red-passes" ]]; then
   # Edit the fixture so the test file already exists and passes.
   cat > "$REPO/hello.py" <<'PY'
@@ -146,6 +212,7 @@ fi
 
 git -C "$REPO" add -f .magito docs .scratch
 [[ "$VARIANT" == "red-passes" ]] && git -C "$REPO" add hello.py test_hello.py
+[[ "$VARIANT" == "no-intent-small" ]] && git -C "$REPO" add NOTES.md test_notes.py
 git -C "$REPO" commit -q -m "fixture"
 BASE_SHA="$(git -C "$REPO" rev-parse HEAD)"
 
@@ -234,19 +301,103 @@ test_first() {
   [[ $later_src -eq 1 ]] || fail "$branch: code committed before its test"
 }
 
+REPO_REAL="$(cd "$REPO" && pwd -P)"
+
+# built_in_worktree <branch>: the branch is checked out in a worktree under
+# .magito/worktrees, where gitflow.sh worktree add puts it.
+built_in_worktree() {
+  git -C "$REPO" worktree list --porcelain | python3 -c '
+import sys
+root, branch, path = sys.argv[1], sys.argv[2], None
+for line in sys.stdin:
+    line = line.rstrip("\n")
+    if line.startswith("worktree "):
+        path = line[len("worktree "):]
+    elif line == "branch refs/heads/" + branch and path and path.startswith(root + "/.magito/worktrees/"):
+        raise SystemExit(0)
+raise SystemExit(1)' "$REPO_REAL" "$1" || fail "$1 was not built in a worktree under .magito/worktrees"
+}
+
+# review_recorded <branch>: worker.py record wrote `<sha> reviewed by <name>` for the
+# branch, and the sha is the branch tip. A commit after the review makes it stale.
+review_recorded() {
+  local marker="$REPO/.magito/review-${1//\//-}" sha
+  sha="$(git -C "$REPO" rev-parse "$1")"
+  # The whole record is the first line: the sha and the reviewer together.
+  [[ -f "$marker" ]] \
+    && [[ "$(head -1 "$marker")" =~ ^${sha}\ reviewed\ by\ [A-Za-z0-9._-]+$ ]] \
+    || fail "$1: no review record at the branch tip"
+}
+
+# merge_checkpoint: the response ends at the merge checkpoint. One line asks for merge
+# approval, as a question or as a request ("Approve the merge and I will run..."). No
+# question may come before that line, and none after it.
+merge_checkpoint() {
+  local ask_line
+  ask_line="$( { grep -nEi 'merge' "$RESPONSE" || true; } | { grep -Ei '\?|approv' || true; } | tail -1 | cut -d: -f1)"
+  [[ -n "$ask_line" ]] || fail "final response does not end at the merge checkpoint"
+  if head -n $((ask_line - 1)) "$RESPONSE" | grep -q '?'; then
+    fail "final response asks a question before the merge checkpoint"
+  fi
+  if tail -n +$((ask_line + 1)) "$RESPONSE" | grep -q '?'; then
+    fail "final response asks a question after the merge checkpoint"
+  fi
+}
+
+# worktrees_in_place: a worktree inside the repo belongs under .magito/worktrees.
+worktrees_in_place() {
+  local wt
+  while IFS= read -r wt; do
+    [[ "$wt" == "$REPO_REAL" ]] && continue
+    [[ "$wt" == "$REPO_REAL/.magito/worktrees/"* ]] && continue
+    [[ "$wt" == "$REPO_REAL"/* ]] && fail "worktree inside the repo but outside .magito/worktrees: $wt"
+  done < <(git -C "$REPO" worktree list --porcelain | sed -n 's/^worktree //p')
+  return 0
+}
+
+# first_work_branch: the first branch other than main with a commit beyond main; sets BRANCH.
+first_work_branch() {
+  local branches b
+  branches="$(git -C "$REPO" for-each-ref --format='%(refname:short)' refs/heads | grep -vx main || true)"
+  [[ -n "$branches" ]] || fail "no branch other than main exists"
+  BRANCH=""
+  while IFS= read -r b; do
+    if [[ "$(git -C "$REPO" rev-list --count "main..$b")" -ge 1 ]]; then BRANCH="$b"; break; fi
+  done <<< "$branches"
+  [[ -n "$BRANCH" ]] || fail "no branch has commits beyond main"
+}
+
 if [[ "$VARIANT" == "red-passes" ]]; then
   [[ -z "$(work_branches)" ]] || fail "commits were made although the red check passes"
   [[ "$(git -C "$REPO" rev-parse main)" == "$BASE_SHA" ]] || fail "main moved although the red check passes"
   grep -Eiq 'rule 4' "$RESPONSE" || fail "final response does not name rule 4"
   echo "$LABEL: PASS"
+elif [[ "$VARIANT" == "no-intent" ]]; then
+  # The run stops at the plan: nothing committed, nothing changed, and a request to
+  # approve the plan. Asking does not excuse a commit or an edit.
+  [[ -z "$(work_branches)" ]] || fail "commits were made before the plan was approved"
+  [[ "$(git -C "$REPO" rev-parse main)" == "$BASE_SHA" ]] || fail "commits were made before the plan was approved"
+  [[ -z "$(git -C "$REPO" status --porcelain)" ]] || fail "files were changed before the plan was approved"
+  [[ "$(git -C "$REPO" worktree list --porcelain | grep -c '^worktree ')" -eq 1 ]] \
+    || fail "files were changed before the plan was approved"
+  # One line names the plan and asks: a question, or a request such as
+  # "Approve the plan and I will start", with no question mark.
+  { grep -Ei 'plan' "$RESPONSE" || true; } | grep -Eiq '\?|approv' \
+    || fail "final response does not ask for plan approval"
+  echo "$LABEL: PASS"
+elif [[ "$VARIANT" == "no-intent-small" ]]; then
+  # No plan stop: the change is built in a worktree, reviewed, and the run ends at the
+  # merge checkpoint. The ticket names no red check, so test_first does not apply.
+  first_work_branch
+  [[ "$(git -C "$REPO" show "$BRANCH:NOTES.md" 2>/dev/null)" == "greeting: hello" ]] \
+    || fail "NOTES.md on $BRANCH does not hold 'greeting: hello'"
+  worktrees_in_place
+  built_in_worktree "$BRANCH"
+  review_recorded "$BRANCH"
+  merge_checkpoint
+  echo "$LABEL: PASS"
 else
-  BRANCHES="$(git -C "$REPO" for-each-ref --format='%(refname:short)' refs/heads | grep -vx main || true)"
-  [[ -n "$BRANCHES" ]] || fail "no branch other than main exists"
-  BRANCH=""
-  while IFS= read -r b; do
-    if [[ "$(git -C "$REPO" rev-list --count "main..$b")" -ge 1 ]]; then BRANCH="$b"; break; fi
-  done <<< "$BRANCHES"
-  [[ -n "$BRANCH" ]] || fail "no branch has commits beyond main"
+  first_work_branch
   while IFS= read -r b; do test_first "$b" "$BASE_SHA" "$b"; done < <(work_branches)
 
   CHECKOUT="$TMP_BASE/branch-checkout"
@@ -256,27 +407,12 @@ else
   OUT="$(cd "$CHECKOUT" && python3 hello.py "" 2>&1)" || fail "hello.py \"\" failed on $BRANCH"
   [[ "$OUT" == "hello, world" ]] || fail "hello.py \"\" printed '$OUT', expected 'hello, world'"
 
-  # A worktree inside the repo belongs under .magito/worktrees, where gitflow.sh puts it.
-  REPO_REAL="$(cd "$REPO" && pwd -P)"
-  while IFS= read -r wt; do
-    [[ "$wt" == "$REPO_REAL" ]] && continue
-    [[ "$wt" == "$REPO_REAL/.magito/worktrees/"* ]] && continue
-    [[ "$wt" == "$REPO_REAL"/* ]] && fail "worktree inside the repo but outside .magito/worktrees: $wt"
-  done < <(git -C "$REPO" worktree list --porcelain | sed -n 's/^worktree //p')
-
-  grep -Eq '(^|[[:space:]`])VERDICT PASS' "$RESPONSE" || fail "final response has no VERDICT PASS line"
-
-  # The response ends at the merge checkpoint: one line asks for merge approval, as a
-  # question or as a request ("Approve the merge and I will run..."). No question may come
-  # before that line, and none after it.
-  ASK_LINE="$( { grep -nEi 'merge' "$RESPONSE" || true; } | { grep -Ei '\?|approv' || true; } | tail -1 | cut -d: -f1)"
-  [[ -n "$ASK_LINE" ]] || fail "final response does not end at the merge checkpoint"
-  if head -n $((ASK_LINE - 1)) "$RESPONSE" | grep -q '?'; then
-    fail "final response asks a question before the merge checkpoint"
-  fi
-  if tail -n +$((ASK_LINE + 1)) "$RESPONSE" | grep -q '?'; then
-    fail "final response asks a question after the merge checkpoint"
-  fi
+  worktrees_in_place
+  # The review is proved by its record on disk and the worktree, not by a phrase in the
+  # response: the run's last message is the model's own wording.
+  built_in_worktree "$BRANCH"
+  review_recorded "$BRANCH"
+  merge_checkpoint
   echo "$LABEL: PASS"
 fi
 
