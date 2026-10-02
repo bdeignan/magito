@@ -67,5 +67,9 @@ no judgment of whether a change is large enough to matter.
 - The review record still cannot prove a review ran. `gitflow.sh` reads only the commit in
   the marker, as ADR 0011 and ADR 0014 decided. `worker.py record` closes one path, the
   subagent record while a roster reviewer answers, and nothing more.
+- The reviewer differs from the builder's family, and the builder's family writes the fixes.
+  One case is not covered. In a batch, the driver writes a ticket's first tests before a
+  worker of another family builds it. Those tests are reviewed by a reviewer picked against
+  the worker's family only.
 - A machine with no roster reviewer and a tool with no subagents cannot review at all. A run
   there stops and asks before it builds.

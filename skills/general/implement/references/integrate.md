@@ -57,6 +57,9 @@ run from your working directory; `<skills>` is your tool's installed skills dire
      message, remove that ticket's worktree with `gitflow.sh worktree remove <path>`, and go
      on to the next ticket. When the findings show that a ticket it blocks cannot be built as
      written, stop with escalation 1 and quote the findings.
+   - In pipeline.md step 6, the diff in a ticket's review brief is
+     `git diff integrate/<NNNN>-<slug>...HEAD`, not the diff against the base branch. The
+     reviewer then sees this ticket's change alone, without the tickets merged before it.
    - Stop a ticket after a `VERDICT PASS` with a green check. Skip pipeline.md steps 8 to 10
      for the ticket: no record and no pull request per ticket.
 4. **Merge.** In the integration worktree, run `git merge --no-ff <ticket-branch>`, then run

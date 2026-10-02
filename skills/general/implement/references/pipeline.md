@@ -86,6 +86,12 @@ directory, as in `SKILL.md`.
    - **Neither is possible.** When no roster worker is available and the tool you run in
      cannot start a fresh-context subagent, stop with escalation 7.
 7. **Fix rounds.** A review round is one run of step 6, by a roster worker or by a subagent.
+   The builder's family writes the fixes. The reviewer was picked to differ from the
+   builder's family, and that pick covers nothing another family writes. So fix the
+   findings yourself only when you built, or when your family equals the builder's. When a
+   worker of another family built, send the findings back to that worker with a new brief
+   per [worker-contract.md](./worker-contract.md), and commit what it stages. Write no fix
+   yourself on that branch.
    On a FIX verdict, do these in order: fix the findings, commit the fix with
    `gitflow.sh commit`, run the check again as in step 4, and only when the check is green
    run the next review round on that commit. Never carry a check result across a fix: the
