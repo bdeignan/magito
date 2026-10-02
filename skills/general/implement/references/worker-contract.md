@@ -171,34 +171,25 @@ no `{cwd}` at all — the launcher sets the working directory itself.
 
 ## Bootstrap
 
-### Example roster
+The `workers` skill creates and checks the roster. It reports which workers on the machine
+are ready, and when `~/.magito/workers.toml` does not exist it offers to copy
+[`workers.toml.example`](./workers.toml.example) there. Never write that file from here, and
+never overwrite an existing one: it is the user's file. Expect the driver's permission system
+to ask once before the file is written: the entries are templates that launch agents with
+approval prompts bypassed, so a flag on persisting them is correct behavior, not an error.
 
-When seeding a roster, start from [`workers.toml.example`](./workers.toml.example). Every
-entry there is commented out. Uncomment the entries for the tools installed on the machine,
-then run `python3 <skills>/implement/scripts/worker.py probe <name>` for each one. Existing
-rosters receive an entry only when the user asks; keep their active settings and avoid
-duplicates.
-
-Each comment above an entry records the date its model id was checked, or says
+Every entry in the example is commented out, and the user turns on the ones for the tools
+they have. Each comment above an entry records the date its model id was checked, or says
 `unverified: check with <command>`. Treat an unverified id as a guess until that command
 confirms it. A newer model elsewhere does not establish availability in a given tool. The
 Cursor entries need `agent login` first, and `agent models` is the authority for the exact
 ids on the installed CLI and account. The Cursor and omp entries take their family from the
 pinned model, not from the tool. A different model means a separate entry with its own name.
 
-### First roster
-
-First time a worker is named and `~/.magito/workers.toml` does not exist: create it.
-Probe the installed candidates — omp, codex, claude, gemini; **never agy**. It earns
-its magi seat behind a pty wrapper, but a worker needs what it lacks: reliable
-non-TTY output (open stdout-drop bug, google-antigravity/antigravity-cli#76),
-structured completion, and session isolation — its `-c` resumes globally and
-cross-contaminates concurrent workers. Write live
-candidates as entries, comment out the dead, tell the user what you wrote, proceed.
-Never overwrite an existing `workers.toml` — it is the user's file. Expect the
-driver's permission system to ask once before the file is written: the entries are
-templates that launch agents with approval prompts bypassed, so a flag on persisting
-them is correct behavior, not an error.
+**agy is never a worker candidate.** It earns its magi seat behind a pty wrapper, but a
+worker needs what it lacks: reliable non-TTY output (open stdout-drop bug,
+google-antigravity/antigravity-cli#76), structured completion, and session isolation — its
+`-c` resumes globally and cross-contaminates concurrent workers.
 
 ## Probe and fallback
 

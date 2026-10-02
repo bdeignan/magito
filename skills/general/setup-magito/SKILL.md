@@ -144,15 +144,10 @@ If something is found, offer to bring it into the session journal as entries. **
 
 ### Delegation workers and magi seats
 
-`~/.magito/workers.toml` (the `/implement` delegation roster) and `~/.magito/bench.toml` (the magi seat roster) are **the user's machine-local files**. Report each as present or missing. Never write or overwrite either without explicit confirmation (the convention is in `CLAUDE.md`). If one is missing, say so and point at where it bootstraps — `bench.toml` self-creates on the first `/magi` run and is repaired by `/magi config`; `workers.toml` self-creates the first time a worker is named during `/implement`. Offer to seed a missing `bench.toml` only if the user asks; do not fill it silently.
+`~/.magito/workers.toml` (the `/implement` delegation roster) and `~/.magito/bench.toml` (the magi seat roster) are **the user's machine-local files**. Report each as present or missing. Never write or overwrite either without explicit confirmation (the convention is in `CLAUDE.md`). If one is missing, say so and point at where it bootstraps — `bench.toml` self-creates on the first `/magi` run and is repaired by `/magi config`; `workers.toml` is created and checked by the `workers` skill (`/workers`). Offer to seed a missing `bench.toml` only if the user asks; do not fill it silently.
 
-For `workers.toml`: when the file is missing, offer to copy
-[`workers.toml.example`](../implement/references/workers.toml.example) to `~/.magito/workers.toml`,
-and copy it only after the user says yes. Never overwrite an existing roster. When one exists,
-list the example's entries that it lacks (by `[workers.<name>]` name, whether the entry is
-commented or not) so the user can copy any they want. The
-[worker contract](../implement/references/worker-contract.md#example-roster) owns activation
-and model verification.
+For `workers.toml`, report present or missing and stop there. The `workers` skill creates a
+missing roster and checks an existing one: send the user to `/workers`.
 
 ### Python toolchain
 
