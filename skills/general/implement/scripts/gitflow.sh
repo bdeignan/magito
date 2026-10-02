@@ -159,10 +159,29 @@ case "$cmd" in
     #                          the index held: " D", "MD", "AD")
     #   gone, only in HEAD  -> already staged as deleted; nothing to do
     #   none of these       -> the path matches nothing; fail loudly
+    #
+    # A file already staged but not named would ride along, since `git commit`
+    # takes the whole index. So before staging anything, refuse when one is
+    # there: a refusal leaves the index as it was. Git matches the names itself,
+    # so a name relative to a subdirectory, `./x`, or an absolute path all count.
     guard_not_base
     msg="${1:?message required}"; shift
     [ "$#" -gt 0 ] || { echo "commit needs explicit files — never git add -A" >&2; exit 1; }
     export GIT_LITERAL_PATHSPECS=1
+    named_staged=$'\n'
+    while IFS= read -r -d '' p; do
+      named_staged+="$p"$'\n'
+    done < <(git diff --cached --name-only --no-renames -z -- "$@")
+    unnamed=()
+    while IFS= read -r -d '' p; do
+      case "$named_staged" in *$'\n'"$p"$'\n'*) ;; *) unnamed+=("$p") ;; esac
+    done < <(git diff --cached --name-only --no-renames -z)
+    if [ "${#unnamed[@]}" -gt 0 ]; then
+      echo "gitflow.sh commit: these files are staged but were not named:" >&2
+      printf '  %s\n' "${unnamed[@]}" >&2
+      echo 'Name each one in the command to commit it, or run `git restore --staged <path>` to leave it out.' >&2
+      exit 1
+    fi
     for f in "$@"; do
       if [ -e "$f" ] || [ -L "$f" ]; then
         git add -- "$f"
