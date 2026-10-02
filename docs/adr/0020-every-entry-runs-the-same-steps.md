@@ -24,7 +24,9 @@ belong there.
 ## Decision
 
 **No entry point to the workflow gets a route of its own.** `implement` has one set of steps:
-a worktree, the check, a review from another model family, and a pull request. A ticket
+a worktree, the check, and then, when the branch has a commit ahead of its base, a review and
+a pull request. The review comes from another model family when the roster has a reviewer
+that answers, and from a fresh-context subagent when it has none. A ticket
 without an accepted intent enters the usual route partway and runs the steps from there. A
 batch runs the same steps for several tickets at once. Later work on any skill must fit a new
 case into these steps, and must not add a second set beside them.

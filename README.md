@@ -104,9 +104,9 @@ merge the pull request on GitHub
 /handoff             end: one short journal entry
 ```
 
-- **Already know exactly what to build?** Skip `/intent`. Run `/to-issues` with your plan, which asks you to approve the breakdown. Or run `/implement 42` on one clear issue: it stops once for you to approve its plan, unless the change is small, then builds, reviews, and opens the pull request on its own.
+- **Already know exactly what to build?** Skip `/intent`. Run `/to-issues` with your plan, which asks you to approve the breakdown. Or run `/implement 42` on one clear issue: it stops once for you to approve its plan, unless the change is small, and then builds on its own. When the branch has a commit ahead of its base, it reviews the change and opens the pull request. When it has none, it posts its findings on the ticket and opens nothing.
 - **A quick fix?** Ask the agent directly and call no skill. That work gets no worktree and no paid review, and you decide yourself whether to review it.
-- **Several unrelated issues at once?** `/implement 12 13 14` builds each in its own worktree and opens one pull request each. It stops once for the whole batch when a ticket needs a plan.
+- **Several unrelated issues at once?** `/implement 12 13 14` builds each in its own worktree and opens one pull request for each ticket whose branch has a commit ahead of its base. It stops once for the whole batch when a ticket needs a plan.
 - **Interrupted?** Start a new session and run the same `/implement <tickets>` again. For tickets from one intent, it skips any ticket already merged into the run's integration branch and carries on.
 
 ### What stops for you
@@ -161,7 +161,7 @@ escalation, and the merge.
 1. **`/catch-up`** starts a session. It reads the journal, the tracker, and git, then names the next move.
 2. **`/intent`** interviews you one question at a time and produces an intent doc. You act here: you accept the doc.
 3. **`to-issues`** runs on its own after you accept. It turns the intent into reviewed tickets and publishes them.
-4. **`implement`** runs on its own after that. It builds each ticket, gets it reviewed by a model from a different family when the roster has one, and stops only for an escalation. You act here when it escalates.
+4. **`implement`** runs on its own after that. It builds each ticket, gets each change reviewed by a model from a different family when the roster has one, and stops only for an escalation. You act here when it escalates.
 5. **The pull request** is the result. You act here: you merge it. In a repo with no remote, the agent stops and asks instead, and merges only after you approve.
 6. **`/handoff`** ends the session with one entry in `.magito/journal/`.
 

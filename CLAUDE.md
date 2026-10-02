@@ -218,7 +218,8 @@ attestation nobody reads is ceremony. The exception is the work no one watches. 
 intent and merging a pull request, so every pipeline branch gets a marker and an automatic
 review from a different model family. ADR 0020 extends the gate to a ticket a person starts
 by hand: after its plan is approved nobody watches that build either, so every branch
-`implement` builds gets the marker and the review. Work done outside `implement` keeps the
+`implement` builds gets the marker, and every change on it is reviewed before it lands. A
+branch with no commit ahead of its base holds no change, so it gets no review. Work done outside `implement` keeps the
 rule of no gate.
 
 **Hooks** (Claude Code and Codex; Gemini CLI and omp run none), as they stand today:

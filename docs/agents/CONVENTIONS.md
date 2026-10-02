@@ -27,10 +27,11 @@ because the choice was surfaced.
 Reach for it when handing the user back to the prompt would only make them type their way
 back in.
 
-**Invoke is the default inside any `implement` run, as it is inside the pipeline, and recommend stays the default between skills that the user starts by hand.** `implement` runs
-its review step on every ticket with no question, whether or not an accepted intent covers
-the ticket — there is no decision to make, and turning the review into a recommendation
-makes it skippable, which is the whole reason it is not one (ADR 0020). `implement` reaching
+**Invoke is the default inside any `implement` run, as it is inside the pipeline, and recommend stays the default between skills that the user starts by hand.** `implement` reviews
+every change it makes with no question, whether or not an accepted intent covers the ticket
+— there is no decision to make, and turning the review into a recommendation makes it
+skippable, which is the whole reason it is not one (ADR 0020). The one branch it does not
+review is a branch with no commit ahead of its base, which holds no change. `implement` reaching
 `verifying` is the same shape.
 
 **The failure mode Invoke has to guard against** is the seam that is none of the three: an
