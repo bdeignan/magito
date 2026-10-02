@@ -54,6 +54,11 @@ def make_repo(tmp: Path) -> tuple[Path, dict]:
     git("add", "a.txt")
     git("commit", "-q", "-m", "chore: init")
     git("checkout", "-q", "-b", "feat/1-x")
+    # `pr` refuses a branch with no commit ahead of the base (#216), so the
+    # fixture branch carries one, on a clean tree.
+    (repo / "b.txt").write_text("b\n")
+    git("add", "b.txt")
+    git("commit", "-q", "-m", "feat: b")
     return repo, env
 
 

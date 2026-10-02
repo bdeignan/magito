@@ -45,6 +45,9 @@
 #      and refuses a subagent record exactly when `worker.py reviewer` names a
 #      worker. A second script covers worker names that are not one word, which
 #      no command may pick or record. See issue #215.
+#  17. `gitflow.sh ahead` counts the commits a branch has that its base lacks,
+#      and `ahead`, `push`, and `pr` refuse a tree with uncommitted changes;
+#      `pr` refuses a branch with no commit ahead. See issue #216.
 #
 # Collects all failures instead of stopping at the first one, prints a summary,
 # and exits 1 if anything failed, 0 otherwise. Bash and the stdlib Python
@@ -348,6 +351,17 @@ check_worker_record() {
   fi
 }
 
+check_gitflow_ahead() {
+  local out
+  if out=$(python3 "$REPO_ROOT/scripts/test_gitflow_ahead.py" 2>&1); then
+    echo "gitflow-ahead: ok"
+  else
+    echo "gitflow-ahead: FAILED"
+    echo "$out" | sed 's/^/    /'
+    FAILURES+=("gitflow.sh commit test and clean-tree check")
+  fi
+}
+
 # --- run everything, then summarize ------------------------------------------
 check_install
 check_anti_slop
@@ -365,6 +379,7 @@ check_gitflow_worktree
 check_worker_ready
 check_worker_start
 check_worker_record
+check_gitflow_ahead
 
 echo
 if [[ ${#FAILURES[@]} -eq 0 ]]; then
