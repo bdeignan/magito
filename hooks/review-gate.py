@@ -345,8 +345,9 @@ def gate(branch, sha, cwd):
     reason = (
         f"magito review gate: branch '{branch}' was created for an unsupervised "
         f"executor, and has no review decision at the current commit (marker {path} "
-        "is stale — a new commit invalidates it). Run the reviewing-changes skill "
-        "against this worktree, which records the decision. "
+        "is stale — a new commit invalidates it). Review the branch, then record it: "
+        "python3 <skills>/implement/scripts/worker.py record <worktree> <builder-family> "
+        "<reviewer|subagent>. "
         "Do not record 'reviewed' unless a review actually ran."
     )
     print(json.dumps({

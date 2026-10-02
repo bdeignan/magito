@@ -75,7 +75,38 @@ main_worktree() { git worktree list --porcelain | awk 'NR==1{sub(/^worktree /,""
 
 marker_path() { local slug="${1//\//-}"; echo "$(main_worktree)/.magito/review-${slug}"; }
 
-# require_review_decision: the fan-out gate (ADR 0014).
+# require_clean_tree <verb>: refuse a working tree with uncommitted changes.
+# <verb> is the subcommand that asked (ahead, push, pr) and ends the message.
+# An untracked file that git does not ignore counts. The commit test below
+# rests on this: a run that built a change and never committed it has no commit
+# ahead of the base, and would otherwise read as "nothing to merge".
+require_clean_tree() {
+  local dirty
+  dirty="$(git status --porcelain)"
+  [ -z "$dirty" ] && return 0
+  echo "working tree dirty — commit or discard every change before $1" >&2
+  printf '%s\n' "$dirty" >&2
+  exit 1
+}
+
+# commits_ahead [base]: how many commits HEAD has that the base lacks. The base
+# is the local branch when it exists, else origin/<base>. Echoes "<count> <base>".
+commits_ahead() {
+  local base="${1:-}" ref
+  [ -n "$base" ] || base="$(default_branch)"
+  if git show-ref --verify --quiet "refs/heads/$base"; then
+    ref="refs/heads/$base"
+  elif git show-ref --verify --quiet "refs/remotes/origin/$base"; then
+    ref="refs/remotes/origin/$base"
+  else
+    echo "base branch '$base' not found" >&2
+    exit 1
+  fi
+  echo "$(git rev-list --count "$ref..HEAD") $base"
+}
+
+# require_review_decision: the review gate (ADR 0014). It applies to every
+# branch that `worktree add` created.
 #
 # A marker's PRESENCE is what makes a branch gated. `worktree add` writes one
 # when it creates a branch for an unsupervised executor, so only those branches
@@ -94,7 +125,7 @@ require_review_decision() {
   [ "$recorded" = "$sha" ] && return 0
   echo "magito review gate: branch '$branch' was created for an unsupervised executor," >&2
   echo "and has no review decision at the current commit ($marker)." >&2
-  echo "Run the reviewing-changes skill against this worktree, which records the decision." >&2
+  echo "Review the branch, then record it: python3 <skills>/implement/scripts/worker.py record <worktree> <builder-family> <reviewer|subagent>" >&2
   echo "Do not record 'reviewed' unless a review actually ran." >&2
   exit 1
 }
@@ -146,8 +177,18 @@ case "$cmd" in
     done
     git commit -m "$msg"
     ;;
+  ahead)
+    # ahead [base]   the commit test: print how many commits this branch has that
+    # the base lacks. 0 means the run made no change to merge. Exits 0 either way;
+    # refuses the base branch itself and a tree with uncommitted changes.
+    guard_not_base
+    require_clean_tree ahead
+    counted="$(commits_ahead "${1:-}")"
+    echo "${counted%% *}"
+    ;;
   push)
     guard_not_base
+    require_clean_tree push
     git push -u origin "$(current_branch)"
     ;;
   worktree)
@@ -221,6 +262,14 @@ case "$cmd" in
   pr)
     # pr <issue> "<title>" "<body>"   the body precedes the Closes line
     guard_not_base
+    require_clean_tree pr
+    # A branch with no commit ahead of the base holds no change: the run reports
+    # its findings on the ticket instead. Same base as `ahead` with no argument.
+    counted="$(commits_ahead)"
+    if [ "${counted%% *}" -eq 0 ]; then
+      echo "gitflow.sh pr: no commit ahead of '${counted#* }' — nothing to open; report the findings instead" >&2
+      exit 1
+    fi
     require_review_decision "$(current_branch)"
     issue="${1:?issue required}"; title="${2:?title required}"; body="${3:-}"
     # The body must say something beyond Closes lines, in every mode. #206
@@ -306,7 +355,7 @@ case "$cmd" in
     esac
     ;;
   *)
-    echo "usage: gitflow.sh {branch <issue> <slug> [kind]|commit <msg> <file>...|push|pr <issue> <title> <body>|merge|worktree add <branch> [path]|worktree remove <path> [--force]}" >&2
+    echo "usage: gitflow.sh {branch <issue> <slug> [kind]|commit <msg> <file>...|ahead [base]|push|pr <issue> <title> <body>|merge|worktree add <branch> [path]|worktree remove <path> [--force]}" >&2
     exit 1
     ;;
 esac
