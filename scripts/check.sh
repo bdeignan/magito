@@ -252,7 +252,8 @@ check_eval_to_issues() {
 
 check_eval_implement() {
   local out
-  if out=$(python3 "$REPO_ROOT/scripts/test_eval_implement.py" 2>&1); then
+  if out=$(python3 "$REPO_ROOT/scripts/test_eval_implement.py" 2>&1 \
+      && python3 "$REPO_ROOT/scripts/test_eval_implement_more.py" 2>&1); then
     echo "eval-implement: ok"
   else
     echo "eval-implement: FAILED"

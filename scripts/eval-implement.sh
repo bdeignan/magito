@@ -321,10 +321,11 @@ raise SystemExit(1)' "$REPO_REAL" "$1" || fail "$1 was not built in a worktree u
 # review_recorded <branch>: worker.py record wrote `<sha> reviewed by <name>` for the
 # branch, and the sha is the branch tip. A commit after the review makes it stale.
 review_recorded() {
-  local marker="$REPO/.magito/review-${1//\//-}"
+  local marker="$REPO/.magito/review-${1//\//-}" sha
+  sha="$(git -C "$REPO" rev-parse "$1")"
+  # The whole record is the first line: the sha and the reviewer together.
   [[ -f "$marker" ]] \
-    && [[ "$(head -1 "$marker" | cut -d' ' -f1)" == "$(git -C "$REPO" rev-parse "$1")" ]] \
-    && grep -q ' reviewed by ' "$marker" \
+    && [[ "$(head -1 "$marker")" =~ ^${sha}\ reviewed\ by\ [A-Za-z0-9._-]+$ ]] \
     || fail "$1: no review record at the branch tip"
 }
 
