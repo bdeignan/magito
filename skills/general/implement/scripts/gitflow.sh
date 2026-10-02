@@ -76,6 +76,7 @@ main_worktree() { git worktree list --porcelain | awk 'NR==1{sub(/^worktree /,""
 marker_path() { local slug="${1//\//-}"; echo "$(main_worktree)/.magito/review-${slug}"; }
 
 # require_clean_tree <verb>: refuse a working tree with uncommitted changes.
+# <verb> is the subcommand that asked (ahead, push, pr) and ends the message.
 # An untracked file that git does not ignore counts. The commit test below
 # rests on this: a run that built a change and never committed it has no commit
 # ahead of the base, and would otherwise read as "nothing to merge".
@@ -181,13 +182,13 @@ case "$cmd" in
     # the base lacks. 0 means the run made no change to merge. Exits 0 either way;
     # refuses the base branch itself and a tree with uncommitted changes.
     guard_not_base
-    require_clean_tree "the commit test"
+    require_clean_tree ahead
     counted="$(commits_ahead "${1:-}")"
     echo "${counted%% *}"
     ;;
   push)
     guard_not_base
-    require_clean_tree "the push"
+    require_clean_tree push
     git push -u origin "$(current_branch)"
     ;;
   worktree)
@@ -261,7 +262,7 @@ case "$cmd" in
   pr)
     # pr <issue> "<title>" "<body>"   the body precedes the Closes line
     guard_not_base
-    require_clean_tree "the pull request"
+    require_clean_tree pr
     # A branch with no commit ahead of the base holds no change: the run reports
     # its findings on the ticket instead. Same base as `ahead` with no argument.
     counted="$(commits_ahead)"

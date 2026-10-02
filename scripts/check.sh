@@ -353,7 +353,8 @@ check_worker_record() {
 
 check_gitflow_ahead() {
   local out
-  if out=$(python3 "$REPO_ROOT/scripts/test_gitflow_ahead.py" 2>&1); then
+  if out=$(python3 "$REPO_ROOT/scripts/test_gitflow_ahead.py" 2>&1 \
+      && python3 "$REPO_ROOT/scripts/test_gitflow_ahead_strict.py" 2>&1); then
     echo "gitflow-ahead: ok"
   else
     echo "gitflow-ahead: FAILED"
