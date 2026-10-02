@@ -22,6 +22,11 @@ run from your working directory; `<skills>` is your tool's installed skills dire
    the rest prints both kinds of line. The reviewer on the first line serves every review in
    the run.
 
+   **No reviewer at all.** When a start line says `reviewer: none from another family, using
+   a subagent` and the tool you run in cannot start a fresh-context subagent, no review of
+   any kind is possible. Stop here, before the integration branch and before any build, with
+   escalation 7 from pipeline.md.
+
    **One builder family per run.** The reviewer must come from a family other than the
    builder's, and the run has one final review. So every ticket in the run is built by
    builders of one family: you alone, roster workers the user named whose `family` values
