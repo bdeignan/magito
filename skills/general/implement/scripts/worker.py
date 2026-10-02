@@ -155,6 +155,10 @@ def entry_fault(name, entry):
     own messages for these; ready and the reviewer pick turn them into a skip."""
     if name == RESERVED:
         return f"the name {RESERVED} is reserved"
+    # A name is printed on one line and written into the review record, so it is one
+    # word: not empty, no space, no line break, no control character.
+    if not name or len(name.split()) != 1 or name != name.strip() or any(ord(c) < 32 for c in name):
+        return "the name must be one word with no spaces or line breaks"
     if not isinstance(entry, dict):
         return "not a table"
     if "cmd" not in entry:
@@ -350,7 +354,8 @@ def ready(family):
             line, answered[name] = ready_line(name, entry)
         except (Exception, SystemExit) as e:
             line, answered[name] = f"{name}: invalid entry ({e})", False
-        print(line)
+        # One line per worker, even for a name that holds a line break or nothing.
+        print(" ".join(line.split("\n")) if name.strip() else '""' + line)
     print(f"launcher allow rule: {'present' if allow_rule_present() else 'absent'}")
     if family is not None:
         name = None
@@ -497,7 +502,10 @@ def record(worktree, builder_family, reviewer):
             die(2, str(e))
         if entry is None:
             die(2, f"no worker '{reviewer}' in {ROSTER}")
-        family = entry.get("family") if isinstance(entry, dict) else None
+        fault = entry_fault(reviewer, entry)
+        if fault:
+            die(2, f"worker {reviewer!r} in {ROSTER} cannot review: invalid entry ({fault})")
+        family = entry.get("family")
         if not isinstance(family, str) or not family:
             die(2, f"worker '{reviewer}' in {ROSTER} needs a family that is a non-empty string")
         if family.lower() == builder_family.lower():
@@ -678,7 +686,7 @@ def main():
             name = pick_reviewer(data, writer_family, skip)
         except Fault as e:
             die(2, str(e))
-        if name:
+        if name is not None:
             print(name)
             sys.exit(0)
         die(3, no_reviewer_message(data, writer_family))
