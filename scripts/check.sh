@@ -56,6 +56,9 @@
 #      `pr` refuses a branch with no commit ahead. See issue #216.
 #  18. `gitflow.sh merge` lands a branch built in a linked worktree by merging
 #      where the base branch is already checked out.
+#  19. A roster worker's `env` table reaches that worker alone, wins over an
+#      inherited variable, counts for `requires_env`, and makes the entry
+#      unusable when it is not a table of strings. See issue #225.
 #
 # Not run here, because they start real tools and can cost money: the three paid
 # evals (eval-to-issues.sh, eval-implement.sh, eval-integrate.sh) and
@@ -390,6 +393,17 @@ check_gitflow_merge() {
   fi
 }
 
+check_worker_env() {
+  local out
+  if out=$(python3 "$REPO_ROOT/scripts/test_worker_env.py" 2>&1); then
+    echo "worker-env: ok"
+  else
+    echo "worker-env: FAILED"
+    echo "$out" | sed 's/^/    /'
+    FAILURES+=("worker.py env table")
+  fi
+}
+
 # --- run everything, then summarize ------------------------------------------
 check_install
 check_anti_slop
@@ -409,6 +423,7 @@ check_worker_start
 check_worker_record
 check_gitflow_ahead
 check_gitflow_merge
+check_worker_env
 
 echo
 if [[ ${#FAILURES[@]} -eq 0 ]]; then
