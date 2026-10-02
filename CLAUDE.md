@@ -282,10 +282,10 @@ workflow skills would otherwise raise on every read-only `git` and `gh` call:
   read-only command that merely computes the same path. Each of that one-liner's parts
   (`git rev-parse HEAD`, `git worktree list --porcelain | head -1`) is allowed on its own,
   so the trigger is the compound command that builds a path and writes in one go, not the
-  destination. Both skills that record a marker now use the file-writing tool, keeping the
-  shell command as a documented fallback for tools that have none. So when the classifier
-  refuses, first try the tool that naturally does the job; only if that is refused too,
-  ask the user to run it rather than hunting for a way around.
+  destination. The record is now written by one command, `worker.py record`, and no skill
+  writes the marker itself. The lesson still holds: when the classifier refuses, first try
+  the tool that naturally does the job; only if that is refused too, ask the user to run it
+  rather than hunting for a way around.
 
 **Agents** (Claude Code subagents) frontmatter reference:
 - Required: `name`, `description`
