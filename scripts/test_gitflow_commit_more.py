@@ -77,6 +77,31 @@ def main() -> int:
                 check(r.returncode == 1 and "\n  sub/c.txt\n" in r.stderr,
                       f"{shell}: naming the directory {dirname!r} does not name the staged file inside it",
                       f"exit {r.returncode} {r.stderr!r}")
+            # A staged deletion that removed its folder, named from another folder with `../`.
+            n += 1
+            path, env = repo(base, f"r{n}")
+            subprocess.run(["git", "commit", "-q", "-m", "fix: both"], cwd=path, env=env, check=True)
+            (path / "other").mkdir()
+            subprocess.run(["git", "rm", "-q", "-r", "sub"], cwd=path, env=env, check=True)
+            r = subprocess.run([shell, str(GITFLOW), "commit", "chore: drop sub", "../sub/c.txt"],
+                               cwd=path / "other", env=env, capture_output=True, text=True)
+            left = subprocess.run(["git", "diff", "--cached", "--name-only"], cwd=path, env=env,
+                                  capture_output=True, text=True).stdout
+            check(r.returncode == 0 and left == "" and not (path / "sub").exists(),
+                  f"{shell}: a staged deletion whose folder is gone, named with ../, is committed",
+                  f"exit {r.returncode} stderr={r.stderr!r} still staged={left!r}")
+            # `..` below a folder that is gone is resolved by hand.
+            n += 1
+            path, env = repo(base, f"r{n}")
+            subprocess.run(["git", "rm", "-q", "-r", "--cached", "sub"], cwd=path, env=env, check=True)
+            subprocess.run(["rm", "-r", str(path / "sub")], check=True)
+            r = subprocess.run([shell, str(GITFLOW), "commit", "fix: a, drop sub", "sub/../a.txt",
+                                "sub/c.txt"], cwd=path, env=env, capture_output=True, text=True)
+            left = subprocess.run(["git", "diff", "--cached", "--name-only"], cwd=path, env=env,
+                                  capture_output=True, text=True).stdout
+            check(r.returncode == 0 and left == "",
+                  f"{shell}: a name with .. below a folder that is gone resolves to its file",
+                  f"exit {r.returncode} stderr={r.stderr!r} still staged={left!r}")
             # The refusal itself, under this shell.
             n += 1
             path, env = repo(base, f"r{n}")

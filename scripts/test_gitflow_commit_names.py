@@ -77,6 +77,16 @@ def main() -> int:
                                env=env, capture_output=True, text=True)
             check(r.returncode == 0 and staged(path, env) == [],
                   f"{shell}: naming both commits both", f"exit {r.returncode} stderr={r.stderr!r}")
+        for i, shell in enumerate(SHELLS):
+            # A name that ends in a line break, named exactly, is committed: no step may strip it.
+            path, env = repo(base, f"d{i}")
+            (path / "end\n").write_text("end\n")
+            subprocess.run(["git", "add", "--", "end\n"], cwd=path, env=env, check=True, capture_output=True)
+            r = subprocess.run([shell, str(GITFLOW), "commit", "fix: all", "foo", "foo\nbar", "end\n"],
+                               cwd=path, env=env, capture_output=True, text=True)
+            check(r.returncode == 0 and staged(path, env) == [],
+                  f"{shell}: a staged name that ends in a line break, named exactly, is committed",
+                  f"exit {r.returncode} stderr={r.stderr!r}")
     return 0 if all(RESULTS) else 1
 
 
