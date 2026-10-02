@@ -162,22 +162,31 @@ case "$cmd" in
     #
     # A file already staged but not named would ride along, since `git commit`
     # takes the whole index. So before staging anything, refuse when one is
-    # there: a refusal leaves the index as it was. Git matches the names itself,
-    # so a name relative to a subdirectory, `./x`, or an absolute path all count.
+    # there: a refusal leaves the index as it was. Each name becomes its path from
+    # the repository root, through its parent directory's physical path, so
+    # `./x`, `../x`, and an absolute path all count. A directory names no file:
+    # git's own path matching would expand it, so it is not used here.
     guard_not_base
     msg="${1:?message required}"; shift
     [ "$#" -gt 0 ] || { echo "commit needs explicit files — never git add -A" >&2; exit 1; }
     export GIT_LITERAL_PATHSPECS=1
+    top="$(git rev-parse --show-toplevel)"
+    named=()
+    for f in "$@"; do
+      b="$(basename -- "$f")"
+      # A parent directory that is gone (a deleted folder) keeps the name as given.
+      if d="$(CDPATH= cd -- "$(dirname -- "$f")" 2>/dev/null && pwd -P)"; then
+        f="$d/$b"
+        f="${f#"$top"/}"
+      fi
+      named+=("$f")
+    done
     # Paths are compared whole, one array element each, so a name that holds a
     # line break never matches part of another. Bash 3.2 has no associative arrays.
-    named_staged=()
-    while IFS= read -r -d '' p; do
-      named_staged+=("$p")
-    done < <(git diff --cached --name-only --no-renames -z -- "$@")
     unnamed=()
     while IFS= read -r -d '' p; do
       found=0
-      for q in ${named_staged[@]+"${named_staged[@]}"}; do
+      for q in "${named[@]}"; do
         [ "$p" = "$q" ] && { found=1; break; }
       done
       [ "$found" = 1 ] || unnamed+=("$p")

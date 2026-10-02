@@ -68,6 +68,15 @@ def main() -> int:
                 check(r.returncode == 0 and left == "",
                       f"{shell}: staged files named with {label} are committed",
                       f"exit {r.returncode} stderr={r.stderr!r} still staged={left!r}")
+            # A directory names no file: naming `sub` or `sub/` leaves sub/c.txt unnamed.
+            for dirname in ("sub", "sub/"):
+                n += 1
+                path, env = repo(base, f"r{n}")
+                r = subprocess.run([shell, str(GITFLOW), "commit", "fix: a", "a.txt", dirname], cwd=path,
+                                   env=env, capture_output=True, text=True)
+                check(r.returncode == 1 and "\n  sub/c.txt\n" in r.stderr,
+                      f"{shell}: naming the directory {dirname!r} does not name the staged file inside it",
+                      f"exit {r.returncode} {r.stderr!r}")
             # The refusal itself, under this shell.
             n += 1
             path, env = repo(base, f"r{n}")
