@@ -1,9 +1,9 @@
 # Worker contract
 
-The delegable build-slice of an issue: what a driver hands to an executor — a Claude
-subagent or a headless shell CLI — and what comes back. The `implement` single-issue path
-(SKILL.md step 4) and the parallel fan-out (`references/parallel.md` step 3) both delegate
-against this contract. The worker implements and stages; the driver owns branch, commit,
+The delegable build-slice of a ticket: what a driver hands to an executor — a Claude
+subagent or a headless shell CLI — and what comes back. The build step of `implement`
+([pipeline.md](./pipeline.md) step 3) and a batch run ([parallel.md](./parallel.md)) both
+delegate against this contract. The worker implements and stages; the driver owns branch, commit,
 review, merge, and PR.
 
 ## The brief
@@ -15,8 +15,8 @@ standing docs are the only thing that may be named by exact repo-relative path.
 
 Every brief carries:
 
-1. **The assigned directory** — a worktree path (the parallel fan-out) or the repo tree on its
-   feature branch (implement). The worker never touches files outside it.
+1. **The assigned directory** — always the ticket's worktree path. Every build happens in
+   a worktree. The worker never touches files outside it.
 2. **The full issue spec, pasted in** — body, acceptance criteria, any repo
    conventions the work needs. Never a bare issue number or URL.
 3. **The verification floor, in full** (workers cannot load `verifying`):
@@ -215,8 +215,10 @@ does not need them.
 - **Dies mid-run** (timeout, nonzero exit, garbage output): that issue reports
   `BLOCKED` like any executor failure. No automatic retry on another worker or model.
 
-Picking a spec reviewer is the one exception to "stop and ask." The user named no single
-worker for it, so there is no spend choice to override. `python3
+Picking a reviewer is the one exception to "stop and ask." The user named no single
+worker for it, so there is no spend choice to override. For a run, `worker.py start` makes
+this pick and prints it in the start line, and `worker.py record` runs it again before a
+subagent review can be recorded. `python3
 <skills>/implement/scripts/worker.py reviewer <writer-family>` tries the workers named in
 `reviewers`, in that order, then every other worker in file order. When `reviewers` is
 absent or empty, `spec_reviewer` counts as a list of one. It skips any worker with no `family`, a
@@ -225,15 +227,16 @@ probe, and says so on stderr. `--skip <worker>`, which can be repeated, passes o
 candidate: use it to reach another reviewer after one failed in the middle of a review. It prints the
 name of the first worker that passes, alone on stdout. It exits 3 when none passes.
 
-### Reviewer replies on the pipeline path
+### Reviewer replies in a run
 
-The pipeline path in [pipeline.md](./pipeline.md) picks its code reviewer with the same
-`worker.py reviewer <builder-family>` call. The brief carries the ticket body and
-`git diff <base>...HEAD`, and tells the reviewer to change no files and to answer with
-`VERDICT PASS` or one or more `VERDICT FIX: <finding>` lines. Reading a reply: any
-`VERDICT FIX` line means FIX, even beside a `VERDICT PASS`. A reply with neither token, or a
-nonzero exit, counts as a failed review, so run it again. You verify the no-write rule with
-`worktree_snapshot.py`, never by trusting the reviewer's word.
+The review step in [pipeline.md](./pipeline.md) uses the reviewer that the start line names:
+the same pick as `worker.py reviewer <builder-family>`, made by `worker.py start`. The brief
+carries the ticket body and `git diff <base>...HEAD`, and tells the reviewer to change no
+files and to answer with `VERDICT PASS` or one or more `VERDICT FIX: <finding>` lines.
+Reading a reply: any `VERDICT FIX` line means FIX, even beside a `VERDICT PASS`. A reply with
+neither token, or a nonzero exit, counts as a failed review, so run it again, as
+pipeline.md step 6 says. `worker.py review` verifies the no-write rule with
+`worktree_snapshot.py`; never trust the reviewer's word for it.
 
 ## Nested-CLI gotchas (verified July 2026)
 
