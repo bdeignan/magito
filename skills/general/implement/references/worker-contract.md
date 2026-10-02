@@ -134,7 +134,9 @@ The inline form `env = { GOOGLE_CLOUD_PROJECT = "my-project-id" }` is the same t
 worker starts with the launcher's own environment plus the table, and a table entry wins over
 an inherited variable of the same name. The table never changes the launcher's environment
 and never reaches another worker. A name in `requires_env` counts as set when the table sets
-it to a non-empty string. A variable name is letters, digits, and `_`, and does not start with
+it to a non-empty string. One name is the exception: the launcher removes
+`CLAUDE_CODE_SESSION_ID` from every worker, so the table cannot set it and it never counts as
+set. A variable name is letters, digits, and `_`, and does not start with
 a digit. An `env` that is not a table of strings makes the entry unusable: `ready` shows
 `invalid entry (env is not a table of strings)`, the reviewer pick passes over the worker,
 and `probe` and `run` exit 2. An `env KEY=value` prefix inside `cmd` keeps working. **The `env`

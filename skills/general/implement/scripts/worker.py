@@ -230,14 +230,14 @@ def entry_env(entry):
 def env_state(entry):
     """('ok' | 'invalid' | 'missing', the missing names) for an entry's requires_env.
     A variable counts as set only when the worker will receive it and it is not the
-    empty string. The entry's own `env` table wins over the launcher's environment,
-    as it does when the worker starts."""
+    empty string. It reads worker_env, the environment the worker starts with, so
+    this report and the launch can never disagree."""
     need = entry.get("requires_env")
     if need is None:
         return "ok", []
     if not isinstance(need, list) or not all(isinstance(n, str) for n in need):
         return "invalid", []
-    received = {**os.environ, **(entry_env(entry) or {})}
+    received = worker_env(entry)
     missing = [n for n in need if not received.get(n)]
     return ("missing", missing) if missing else ("ok", [])
 

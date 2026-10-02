@@ -58,7 +58,8 @@
 #      where the base branch is already checked out.
 #  19. A roster worker's `env` table reaches that worker alone, wins over an
 #      inherited variable, counts for `requires_env`, and makes the entry
-#      unusable when it is not a table of strings. See issue #225.
+#      unusable when it is not a table of strings. A second script covers a
+#      required variable the worker never receives. See issue #225.
 #
 # Not run here, because they start real tools and can cost money: the three paid
 # evals (eval-to-issues.sh, eval-implement.sh, eval-integrate.sh) and
@@ -395,7 +396,8 @@ check_gitflow_merge() {
 
 check_worker_env() {
   local out
-  if out=$(python3 "$REPO_ROOT/scripts/test_worker_env.py" 2>&1); then
+  if out=$(python3 "$REPO_ROOT/scripts/test_worker_env.py" 2>&1 \
+      && python3 "$REPO_ROOT/scripts/test_worker_env_more.py" 2>&1); then
     echo "worker-env: ok"
   else
     echo "worker-env: FAILED"
