@@ -1,109 +1,105 @@
-# The parallel fan-out
+# A batch of tickets
 
-Read this only when `/implement` was handed **more than one** issue. For a single issue, or
-dependent work, the sequential path in [SKILL.md](../SKILL.md) is the whole story — this
-reference stays out of context until you actually fan out.
-
-Run several issues at once. This is the expensive exception — parallel
-agents burn far more tokens and only pay off when the issues are genuinely independent and
-worth it.
-
-The seam that makes parallelism safe: each executor's blast radius is **one worktree**,
-staging is its edge, and **you** — the orchestrator — own every commit, merge, and PR. Never
-merge to the base branch; that is the human's gate.
-
-## Where this runs
-
-Shell workers run under any driver on any machine — a CLI the user names from
-`~/.magito/workers.toml` ("via omp"). The `haiku-executor` sub-agent is **Claude Code only**;
-it needs subagents. So the fan-out itself works anywhere the user has a shell worker, and
-only the built-in executor is Claude-specific. That is why the parallel path lives as a
-reference under the general `implement` skill instead of splitting back into a Claude-only
-skill of its own.
+Read this only when `/implement` was handed **more than one** ticket and the tickets do not
+all come from the same accepted intent. Tickets from one accepted intent follow
+[integrate.md](./integrate.md). A batch is the ordinary steps in [pipeline.md](./pipeline.md),
+run for several tickets at once: this file says only how to split the batch and run it.
+`<skills>` is your tool's installed skills directory, as in [SKILL.md](../SKILL.md).
 
 Carry the caller's selected tracker adapter and main worktree root through every ticket
-operation below. The adapter-selection contract in [SKILL.md](../SKILL.md) applies to
-this path too. Read local ticket files from the main root before preparing worker briefs.
+operation below. The adapter-selection contract in [SKILL.md](../SKILL.md) applies here too.
+Read local ticket files from the main root before preparing worker briefs.
 
 ## Process
 
-1. **Collect the issues.** From the identifiers given, or with the **list open tickets**
+1. **Collect the tickets.** From the identifiers given, or with the **list open tickets**
    operation from `docs/agents/issue-tracker.md`, keeping whatever that file says marks a
-   ticket ready for an agent. Read each spec with **fetch a ticket**.
+   ticket ready for an agent. Read each one with **fetch a ticket**.
 
-2. **Build the file-touch graph.** Explore to estimate which files each issue touches. This
-   partitions the set:
-   - **Shared-file cluster** — issues that touch common files. Run these **sequentially** in
-     the main tree (no worktree); parallel worktrees would only collide at merge, and
-     combining their commits is trivial when serialized.
-   - **Disjoint issues** — independent file sets. These can run **in parallel**, one worktree
-     each.
+2. **Split the batch.** Explore to estimate which files each ticket touches. Tickets with
+   separate files run **at the same time**. Tickets that share files run **in order**, one
+   after another: parallel work on the same files would only collide at merge.
 
-   State the partition to the user before launching anything: which issues run sequentially in
-   the main tree, which fan out to their own worktrees, and why. That narration is the
-   checkpoint where a wrong file-touch estimate gets caught before any executor starts.
+3. **Decide who builds each ticket.** The rule is the one for a single ticket: you build
+   unless the user names a worker. One exception follows from what a session can do. It
+   cannot build several tickets at the same moment.
+   - A ticket that runs in order is built by you, or by the roster worker the user named
+     for it.
+   - A ticket that runs at the same time as others is built by an executor. Pick it by the
+     first of these that applies:
+     1. The roster worker the user named for it.
+     2. In Claude Code, the `haiku-executor` subagent.
+     3. In any other tool that can start subagents, one subagent of that tool per ticket,
+        given the same brief. Use it only when you know which model that subagent runs, and
+        so its model family. When you cannot tell, treat the tool as case 4: the reviewer
+        must come from a family other than the builder's, and that needs the builder's family.
+     4. In a tool that cannot start subagents, there is no executor. Say so, and run those
+        tickets in order with you building.
 
-3. **Fan out the disjoint issues.** Create each worktree with `bash
-   <skills>/implement/scripts/gitflow.sh worktree add <branch>`. It prints the path it
-   created. Use the script, not raw `git worktree add`. It picks the layout:
-   `.magito/worktrees/<branch>` in the main checkout, which git ignores, and never under
-   `/tmp`. It also marks the branch as
-   fan-out work, and that mark is the only thing that makes the review gate apply (ADR 0014).
-   Hand-roll the `git` command instead and this fan-out lands ungated. Launch one executor per
-   worktree — `haiku-executor` by default (Claude Code only), or a shell worker the user names
-   from `~/.magito/workers.toml` ("12 and 14 via omp, 15 via haiku"). Run `worker.py workers` first and name only a worker it prints; if the user names an absent worker, say so and stop. When `worker.py thrifty` prints `on`, use the cheapest subagent model for in-session executors (`haiku` in Claude Code). Shell workers go through
-   the launcher, never a hand-built command line: probe once with `python3
-   ~/.claude/skills/implement/scripts/worker.py probe <worker>` before fanning out (degrade
-   loudly per the contract), then launch each with `python3
-   ~/.claude/skills/implement/scripts/worker.py run <worker> <worktree> <brief-file>
-   [timeout]`. Write each brief to a file, following the worker contract at
-   `~/.claude/skills/implement/references/worker-contract.md`, which defines exactly what a
-   brief must carry. Executors cannot load skills, so the brief itself carries the discipline —
-   nothing here restates the contract. Collect each executor's `DONE` (with its staged
-   files) or `BLOCKED`. Background executors notify on completion — never poll, busy-wait, or
-   schedule wakeups while one runs.
+   When the user names a roster worker, run `python3 <skills>/implement/scripts/worker.py
+   workers` first and name only a worker it prints. If the user names a worker it does not
+   print, say so and stop. Probe a named worker once with `worker.py probe <worker>`, and
+   degrade loudly per [worker-contract.md](./worker-contract.md). When the user names no
+   roster worker, do not run `worker.py workers` at all: a machine with no roster file still
+   runs the batch. When `worker.py thrifty` prints `on`, use the cheapest subagent model for
+   in-session executors (`haiku` in Claude Code); when it exits non-zero because the machine
+   has no roster file, thrifty mode counts as off.
 
-4. **Commit each result, then review it — in that order.** Working inside the worktree (`cd
-   <worktree-path>`), curate the executor's staged changes into conventional commits, then run
-   `reviewing-changes` against the branch point.
+4. **Print a start line for every ticket.** Run `worker.py start` once per ticket and show
+   each line to the user with its ticket. Pass `--family <your-family>` for a ticket you
+   build, `--builder <worker>` for a roster worker, and `--family <executor-family> --label
+   <executor-name>` for a subagent executor. The family is that of the model the subagent
+   runs, which can differ from yours. In Claude Code that is `--family anthropic --label
+   haiku-executor`, so the line says `builder: haiku-executor (anthropic)`; in another tool
+   use `--label subagent` with that subagent's family. A subagent's line never says "this
+   session". Add `--intent <path>` and `--small` for that ticket by the rules in `SKILL.md`.
+   Each line names that ticket's builder, its reviewer, and whether it needs a plan.
 
-   The order is load-bearing. `reviewing-changes` pins its decision to the current sha, so
-   reviewing the staged diff first records the branch point, and your commits then stale it —
-   the gate blocks the pull request every time. Committing first means the decision names the
-   sha you will actually push. Nothing has landed at this point; the commits are local to the
-   worktree.
+   A subagent executor is the builder, not the reviewer. On a machine with no roster, each
+   line reads `reviewer: none from another family, using a subagent`: a separate
+   fresh-context subagent reviews each ticket. In a tool that cannot start subagents (case 4
+   above), that line means the ticket cannot be reviewed at all: stop the batch before any
+   build with escalation 7 from `pipeline.md`, "No reviewer is available".
 
-   The review itself is non-negotiable, for every worktree. One skill invocation covers one
-   worktree — N worktrees means N invocations; never mark a second diff "reviewed the same
-   way" on the strength of the first. Hand-rolling the review with your own subagents is not an
-   invocation either — call the skill, so each review runs the current contract rather than a
-   remembered copy of it. A manual `git diff` eyeball is not a substitute; if you catch
-   yourself doing that instead, stop and run the skill. The single-issue path offers its review
-   as a prompt you can decline; a fan-out does not. Parallel builds are the least supervised
-   work this system does, which is exactly where the review earns its cost.
+5. **One stop for the whole batch.** Before any executor starts, show the user: which
+   tickets run at the same time, which run in order and why, who builds each ticket, how many
+   executors will start and which worker backs each, and a short plan for every ticket whose
+   start line ends with `plan: I will show it and wait for you`. Tickets that run in order
+   each get their own pull request from the base branch, so those pull requests can conflict
+   with each other: name the order to merge them in. Then stop and wait for approval, once.
+   When no ticket's start line asks for a plan, state the split and the builders and go on
+   without a stop.
 
-5. **Open PRs, then tear down.** Accept a worktree's result only if step 4 produced its
-   `reviewing-changes` two-axis result — no result, no acceptance. Push and open the PR **from
-   inside the worktree**, through the script: `cd <worktree-path> && bash
-   <skills>/implement/scripts/gitflow.sh push`, then `gitflow.sh pr <issue> "<title>"
-   "<body>"`. Run these from the main checkout instead and they refuse outright, because the
-   script reads the current branch from the working directory and the main checkout is on the
-   base branch. Write the body per `~/.claude/skills/implement/references/pr-body.md`; do not
-   leave it as only `Closes #N`. The script is where the fan-out gate actually runs, so it
-   refuses a branch whose review decision is missing or stale. That refusal is the gate doing
-   its job: go back to step 4, do not reach for raw `gh pr create`.
+6. **Run `pipeline.md` in full for every ticket, each in its own worktree.** That includes
+   the tickets that share files: each gets a worktree from the base branch, made with
+   `bash <skills>/implement/scripts/gitflow.sh worktree add <branch>`. Nothing is built in the
+   main checkout. A ticket that runs in order follows `pipeline.md` with no change.
 
-   Tear down finished worktrees with `gitflow.sh worktree remove <path>`, which uses `git
-   worktree remove` (never `rm -rf`) and clears the branch's marker. A dirty worktree makes it
-   refuse rather than destroy an executor's uncommitted work — read what is there before
-   deciding to pass `--force`. Order matters: tear down **after** the PR is open, since removal
-   clears the marker the gate reads. Once the last one is removed, `.magito/worktrees/`
-   should be empty. Surface any `BLOCKED` issue back to the user instead of
-   guessing.
+   For a ticket that an executor builds, the one change is who does the build in step 3 of
+   `pipeline.md`: the executor. You do every other step yourself, in the order `pipeline.md`
+   gives. So before the executor starts, and when the ticket names a red check, you create
+   the worktree, write the test files the red check needs, run it, save the failing output,
+   and commit those test files in a commit of their own. That commit is the first on the
+   branch, and the test files are locked from then on. A ticket with no red check skips this.
+   Write the brief per the worker contract; it says the tests exist, names them, and forbids
+   changing them. Launch a shell worker with `python3 <skills>/implement/scripts/worker.py
+   run <worker> <worktree> <brief-file> [timeout]`, never a hand-built command line. Collect
+   each executor's `DONE` (with its staged files) or `BLOCKED`. Background executors notify
+   on completion — never poll, busy-wait, or schedule wakeups while one runs.
+
+   After the executor reports, work inside that worktree: commit its staged work as
+   conventional commits, then go on from step 4 of `pipeline.md` — the check, the commit
+   test, the review with the reviewer from that ticket's start line, the fix rounds, the
+   record with `worker.py record`, the push, and the pull request. Those steps live in
+   `pipeline.md`; this file adds none of its own.
+
+7. **Tear down.** After a ticket's pull request is open, remove its worktree with
+   `gitflow.sh worktree remove <path>`, which also clears the branch's marker. A dirty
+   worktree makes it refuse: read what is there before deciding to pass `--force`. Surface
+   any `BLOCKED` ticket back to the user instead of guessing.
 
 ## Cost honesty
 
 State up front exactly how many executors you are about to launch and which worker backs each.
-If the issues turn out to share more files than expected, say so and fall back to running them
-sequentially through the single-issue path rather than forcing parallelism that will just
-conflict.
+If the tickets turn out to share more files than expected, say so and run them in order
+rather than forcing parallelism that will just conflict.
