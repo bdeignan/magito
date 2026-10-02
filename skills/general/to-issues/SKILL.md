@@ -70,9 +70,21 @@ is a different folder.
 
    It prints a worker name, or exits non-zero when no worker from another family works.
    Write the brief to `.scratch/<NNNN>-<slug>/review-brief.md`. It holds the full intent doc
-   (or the plan you worked from), every draft file in full, the checklist below, and this
-   instruction: "You are reviewing, not building. Do not create, edit, or delete any file.
-   Reply with one VERDICT line per ticket file and one COVERAGE line for the complete set." Then:
+   (or the plan you worked from), every draft file in full, the checklist below, and these
+   instructions:
+
+   "You are reviewing, not building. Do not create, edit, or delete any file. Report every
+   defect you find now, in this one reply. Do not hold any back for a later round. Reply with
+   one VERDICT line per ticket file and one COVERAGE line for the complete set. NOTE lines are
+   not verdicts. A NOTE never blocks.
+
+   A `FIX` verdict must name the checklist item, 1 to 5, that the ticket fails, and quote the
+   sentence that fails it. Or it must name the decision that the ticket contradicts: a decision
+   in the intent doc, or, when the set has no intent doc, a decision in the plan the user
+   approved. Anything else is a NOTE line.
+
+   Wording taste is a NOTE. For a ticket that changes only prose, a reviewable check is enough:
+   do not ask for a test that pins wording." Then:
 
    A reviewer must not change any file. Check this by file contents, since `git status`
    cannot see the excluded drafts.
@@ -111,6 +123,7 @@ is a different folder.
    ```
    VERDICT 01-slug.md PASS
    VERDICT 02-slug.md FIX: <what is wrong>
+   NOTE 02-slug.md: <a remark that does not block>
    VERDICT 03-slug.md AMBIGUOUS: <what the intent does not settle>
    COVERAGE PASS
    # Or: COVERAGE FIX: <missing outcome> / COVERAGE AMBIGUOUS: <unsettled intent>
@@ -118,13 +131,26 @@ is a different folder.
 
 6. **Act on the verdicts.** Require exactly one verdict for each draft filename and exactly
    one COVERAGE verdict. Missing, duplicate, unknown, or malformed verdicts are a failed
-   review; stop and report them. Apply the following rules to both ticket and coverage verdicts:
+   review; stop and report them. NOTE lines are not verdicts. They do not count toward the
+   rule of exactly one verdict per draft file. Apply the following rules to both ticket and
+   coverage verdicts:
    - **AMBIGUOUS** on any ticket: stop and escalate to the user at once, quoting the line. Do
      not guess.
    - **FIX** on any ticket: revise those drafts and run step 5 again. After two FIX rounds,
      stop and escalate with the remaining FIX lines.
    - **PASS** on every ticket and COVERAGE: publish. Each published body ends with
      `Spec review: <worker or "subagent"> (<family>), round <n>`.
+
+   NOTE lines follow their own rules:
+   - A reply can hold several NOTE lines for one draft file and none for another.
+   - A NOTE line never stands in for a verdict. A reply with a NOTE line for a file and no
+     `VERDICT` line for that file is a failed review, as a missing verdict is.
+   - `worker.py review` prints only the `VERDICT` and `COVERAGE` lines. The NOTE lines are in
+     the full output file that it names on stderr. Read them there.
+   - The driver never runs another review round for a NOTE. It can apply a NOTE to a draft
+     before publishing when the change is plainly right, and it lists each one it applied
+     when it reports the published tickets. A draft changed for a NOTE after every verdict
+     was PASS is published without a new review round.
 
 7. **Publish** by following [publication.md](./references/publication.md). It looks for
    each ticket before publishing it, so a rerun after an interruption never publishes a
