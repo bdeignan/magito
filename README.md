@@ -181,6 +181,7 @@ issue). Those tickets keep the older steps: plan approval before code and "ship 
 - **`/domain-modeling`**: sharpen the project vocabulary and record decisions in the glossary and ADRs.
 - **`/verifying`**: the testing discipline for Python work: real seams, red-green, and data checks.
 - **`/writing-for-agents`**: write skills, `AGENTS.md`, `CLAUDE.md`, issues, and prompts that agents read well.
+- **`/workers`**: see which other coding tools on this machine magito can use to build and review, and why the rest are not ready. It creates the roster when the machine has none.
 - **`/setup-magito`**: audit and repair one repo's magito configuration. Run it once per new project; it is safe to re-run.
 
 ### What magito promises
