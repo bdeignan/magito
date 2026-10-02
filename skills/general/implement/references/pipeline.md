@@ -22,10 +22,10 @@ directory, as in `SKILL.md`.
 3. **Build.** You build, or the worker the user named builds, per
    [worker-contract.md](./worker-contract.md). When step 2 ran, commit the test files from the
    red step first, in their own commit, and record that commit. Those test files are locked
-   from then on. A test case that the builder adds after that commit goes in a second test
-   file, such as `test_<name>_more.py`, registered wherever the first one is. Hold this floor
-   at every seam. It applies even when the ticket's acceptance criteria say nothing about
-   tests; they are a floor, not the ceiling:
+   from then on. A test case that the builder adds after that commit goes in a
+   second test file, such as `test_<name>_more.py`, registered wherever the first one is.
+   Hold this floor at every seam. It applies even when the ticket's acceptance criteria say
+   nothing about tests; they are a floor, not the ceiling:
    - Red-green where the behavior is specifiable in advance: watch the test fail for the right
      reason first. Pin-and-guard (characterization, eval threshold, smoke) where it is not.
    - ALWAYS invariant and schema checks at every data boundary the diff crosses:
