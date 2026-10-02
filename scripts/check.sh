@@ -36,6 +36,11 @@
 #      named worker. A second script counts worker starts: a passed-over
 #      worker is never started, and `ready` probes each worker once. See
 #      issue #213.
+#  15. `worker.py start` prints one line that names the builder, the reviewer,
+#      and the plan stop, and agrees with `worker.py reviewer` on every roster.
+#      A second script covers a roster that cannot be loaded and values with
+#      line breaks. A third compares the whole line and stderr against
+#      `worker.py reviewer`. See issue #214.
 #
 # Collects all failures instead of stopping at the first one, prints a summary,
 # and exits 1 if anything failed, 0 otherwise. Bash and the stdlib Python
@@ -314,6 +319,19 @@ check_worker_ready() {
   fi
 }
 
+check_worker_start() {
+  local out
+  if out=$(python3 "$REPO_ROOT/scripts/test_worker_start.py" 2>&1 \
+      && python3 "$REPO_ROOT/scripts/test_worker_start_roster.py" 2>&1 \
+      && python3 "$REPO_ROOT/scripts/test_worker_start_strict.py" 2>&1); then
+    echo "worker-start: ok"
+  else
+    echo "worker-start: FAILED"
+    echo "$out" | sed 's/^/    /'
+    FAILURES+=("worker.py start line")
+  fi
+}
+
 # --- run everything, then summarize ------------------------------------------
 check_install
 check_anti_slop
@@ -329,6 +347,7 @@ check_gitflow_pr
 check_worker_review
 check_gitflow_worktree
 check_worker_ready
+check_worker_start
 
 echo
 if [[ ${#FAILURES[@]} -eq 0 ]]; then

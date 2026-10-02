@@ -73,7 +73,17 @@ through the launcher script, never a hand-built command line:
 python3 <skills>/implement/scripts/worker.py probe <worker>
 python3 <skills>/implement/scripts/worker.py run <worker> <dir> <brief-file> [timeout]
 python3 <skills>/implement/scripts/worker.py ready [--family <family>]
+python3 <skills>/implement/scripts/worker.py start (--family <family> [--label <text>] | --builder <worker>) [--intent <path>] [--small]
 ```
+
+`start` prints the one line that opens a run, for example
+`builder: this session (anthropic) · reviewer: codex (openai) · plan: already approved (intent 0005)`.
+The builder part names this session, a labelled builder such as a subagent, or the roster
+worker given with `--builder`. The reviewer part is the same pick `reviewer` makes for the
+builder's family. Whenever that pick fails, for a missing roster as for a failed probe, the
+part reads `reviewer: none from another family, using a subagent`, the reason goes to stderr,
+and the command still exits 0. The plan part says whether the run stops for plan approval: no
+stop for an accepted intent given with `--intent`, none for `--small`, and a stop otherwise.
 
 `ready` reports every roster worker on one line each: its family, whether its program is
 installed, whether its required variables are set, and whether its probe answers. A last line

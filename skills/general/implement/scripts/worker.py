@@ -13,6 +13,8 @@ runs the worker with its working directory set, and enforces a timeout.
     python3 worker.py review <worker> <dir> <brief-file> [timeout-seconds]
     python3 worker.py reviewer <writer-family> [--skip <worker>]...
     python3 worker.py ready [--family <family>]
+    python3 worker.py start (--family <family> [--label <text>] | --builder <worker>)
+                            [--intent <path>] [--small]
     python3 worker.py thrifty
     python3 worker.py workers
 
@@ -24,7 +26,9 @@ reviewer failed in the middle of a review. It also passes over a candidate whose
 `requires_env` names an unset variable, and any entry it cannot use. ready reports,
 one line per roster worker, whether its program is installed, its `requires_env`
 variables are set, and its probe answers; then whether an allow rule for this
-launcher exists; then, with --family, which worker reviewer would pick. Judgement
+launcher exists; then, with --family, which worker reviewer would pick. start prints
+the one line that opens a run: who builds, who reviews (the same pick as reviewer, or
+the subagent fallback whenever that pick fails), and whether a plan stop comes. Judgement
 (bootstrap, fallback choice) stays with the driver; this script only fails loudly. Thrifty mode (env MAGITO_THRIFTY=1, or `thrifty = true`
 in the roster; MAGITO_THRIFTY=0 forces it off) limits reviewer to workers whose `tier`
 is `cheap`, with no tier counting as `strong`. thrifty prints on or off. workers prints
@@ -71,14 +75,26 @@ def die(code, msg):
     sys.exit(code)
 
 
-def load_roster():
+def read_roster():
+    """(data, None), or (None, why it could not be read). Never exits."""
     if not ROSTER.exists():
-        die(2, f"{ROSTER} not found — bootstrap it per worker-contract.md")
+        return None, f"{ROSTER} not found — bootstrap it per worker-contract.md"
     try:
         with open(ROSTER, "rb") as f:
-            return tomllib.load(f)
+            return tomllib.load(f), None
     except tomllib.TOMLDecodeError as e:
-        die(2, f"{ROSTER} is not valid TOML: {e}")
+        return None, f"{ROSTER} is not valid TOML: {e}"
+    except Exception as e:
+        # Every other way a load can fail: a directory at the roster path, a file this
+        # user cannot read, bytes that are not UTF-8. None of them may end in a traceback.
+        return None, f"{ROSTER} cannot be read: {e}"
+
+
+def load_roster():
+    data, problem = read_roster()
+    if problem:
+        die(2, problem)
+    return data
 
 
 def resolve(name):
@@ -340,6 +356,93 @@ def ready(family):
     sys.exit(0)
 
 
+NO_REVIEWER = "reviewer: none from another family, using a subagent"
+START_USAGE = ("usage: worker.py start (--family <family> [--label <text>] | --builder <worker>) "
+               "[--intent <path>] [--small]")
+
+
+def no_reviewer_message(data, writer_family) -> str:
+    """What reviewer says when no candidate passed. Call only after a pick returned None."""
+    if thrifty_state(data):
+        return f"thrifty mode: no cheap reviewer outside family '{writer_family}' passed its probe"
+    return f"no reviewer outside family '{writer_family}' passed its probe"
+
+
+def start_reviewer(builder_family) -> str:
+    """The reviewer part of the start line. Every failure of the pick that reviewer
+    runs becomes the subagent fallback: a fault here is never an error for start."""
+    data, problem = read_roster()
+    if data is None:
+        if not ROSTER.exists():
+            problem = f"no roster at {ROSTER}: run the workers skill to create one"
+        print(f"worker.py: {problem}", file=sys.stderr)
+        return NO_REVIEWER
+    try:
+        name = pick_reviewer(data, builder_family)
+        if name is None:
+            print(f"worker.py: {no_reviewer_message(data, builder_family)}", file=sys.stderr)
+            return NO_REVIEWER
+    except Fault as e:
+        print(f"worker.py: {e}", file=sys.stderr)
+        return NO_REVIEWER
+    return f"reviewer: {name} ({data['workers'][name]['family']})"
+
+
+def start_plan(intent, small) -> str:
+    """The plan part of the start line. An accepted intent wins over --small."""
+    if intent is not None:
+        path = Path(intent)
+        try:
+            with open(path, encoding="utf-8") as f:
+                head = [f.readline() for _ in range(5)]
+        except (OSError, UnicodeDecodeError) as e:
+            print(f"worker.py: cannot read intent file {path}: {e}", file=sys.stderr)
+            head = []
+        if any(line.startswith("Status: accepted") for line in head):
+            digits = re.match(r"\d+", path.name)
+            number = digits.group(0) if digits else path.name.removesuffix(".md")
+            return f"plan: already approved (intent {number})"
+    if small:
+        return "plan: skipped, small change"
+    return "plan: I will show it and wait for you"
+
+
+def start(args):
+    """Print the one line that opens a run: who builds, who reviews, and the plan stop."""
+    opts, small, rest = {}, False, list(args)
+    while rest:
+        flag = rest.pop(0)
+        if flag == "--small" and not small:
+            small = True
+        elif flag in ("--family", "--label", "--builder", "--intent") and flag not in opts \
+                and rest and rest[0] and not rest[0].startswith("--") and len(rest[0].splitlines()) == 1:
+            # A value is one non-empty line: the output is one line, whatever it is given.
+            opts[flag] = rest.pop(0)
+        else:
+            die(2, START_USAGE)
+    family, label, builder = opts.get("--family"), opts.get("--label"), opts.get("--builder")
+    if (family is None) == (builder is None) or (label is not None and family is None):
+        die(2, START_USAGE)
+    if builder is not None:
+        # A person named this worker, so the run must not go on without it.
+        try:
+            entry = workers_table(load_roster()).get(builder)
+        except Fault as e:
+            die(2, str(e))
+        if entry is None:
+            die(2, f"no worker '{builder}' in {ROSTER}")
+        family = entry.get("family") if isinstance(entry, dict) else None
+        if not isinstance(family, str) or not family:
+            die(2, f"worker '{builder}' in {ROSTER} needs a family that is a non-empty string")
+        who = f"builder: {builder} ({family})"
+    else:
+        who = f"builder: {label or 'this session'} ({family})"
+    line = " · ".join([who, start_reviewer(family), start_plan(opts.get("--intent"), small)])
+    # Exactly one line on stdout, even when a roster family or a file name holds a line break.
+    print(" ".join(line.splitlines()))
+    sys.exit(0)
+
+
 def probe_ok(name, echo_failure=False) -> bool:
     """Run a probe against the named worker. Return True iff it answers VERDICT-OK.
     echo_failure replays a failed probe's output for diagnosis — off for reviewer,
@@ -506,19 +609,18 @@ def main():
         data = load_roster()
         try:
             name = pick_reviewer(data, writer_family, skip)
-            thrifty = thrifty_state(data)
         except Fault as e:
             die(2, str(e))
         if name:
             print(name)
             sys.exit(0)
-        if thrifty:
-            die(3, f"thrifty mode: no cheap reviewer outside family '{writer_family}' passed its probe")
-        die(3, f"no reviewer outside family '{writer_family}' passed its probe")
+        die(3, no_reviewer_message(data, writer_family))
     elif args[:1] == ["ready"]:
         if args[1:] and (args[1] != "--family" or len(args) != 3):
             die(2, "usage: worker.py ready [--family <family>]")
         ready(args[2] if args[1:] else None)
+    elif args[:1] == ["start"]:
+        start(args[1:])
     elif args[:1] == ["thrifty"]:
         print("on" if thrifty_on(load_roster()) else "off")
         sys.exit(0)
@@ -562,6 +664,8 @@ def main():
         die(2, "usage: worker.py probe <worker> | "
                "worker.py reviewer <writer-family> [--skip <worker>]... | "
                "worker.py ready [--family <family>] | "
+               "worker.py start (--family <family> [--label <text>] | --builder <worker>) "
+               "[--intent <path>] [--small] | "
                "worker.py thrifty | worker.py workers | "
                "worker.py run <worker> <dir> <brief-file> [timeout] | "
                "worker.py review <worker> <dir> <brief-file> [timeout]")
