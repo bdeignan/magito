@@ -115,7 +115,31 @@ same family when their `family` strings are equal after lowercasing. An optional
 labels how strong the pinned model is; a worker with no `tier` counts as
 `strong`. An optional `requires_env` field is a list of environment variable names the tool
 needs, such as `requires_env = ["GOOGLE_CLOUD_PROJECT"]`. When one is unset or empty, `ready`
-names it and the reviewer pick passes over that worker without probing it. A worker cannot
+names it and the reviewer pick passes over that worker without probing it. An optional `env`
+field is a table of variable names and string values that the launcher sets for that worker
+alone, for `probe`, `run`, and `review`:
+
+```toml
+[workers.gemini]
+cmd = "gemini --skip-trust --model {model} --include-directories {cwd} -p {brief}"
+model = "gemini-3.1-pro-preview"
+family = "google"
+requires_env = ["GOOGLE_CLOUD_PROJECT"]
+
+[workers.gemini.env]
+GOOGLE_CLOUD_PROJECT = "my-project-id"
+```
+
+The inline form `env = { GOOGLE_CLOUD_PROJECT = "my-project-id" }` is the same thing. The
+worker starts with the launcher's own environment plus the table, and a table entry wins over
+an inherited variable of the same name. The table never changes the launcher's environment
+and never reaches another worker. A name in `requires_env` counts as set when the table sets
+it to a non-empty string. A variable name is letters, digits, and `_`, and does not start with
+a digit. An `env` that is not a table of strings makes the entry unusable: `ready` shows
+`invalid entry (env is not a table of strings)`, the reviewer pick passes over the worker,
+and `probe` and `run` exit 2. An `env KEY=value` prefix inside `cmd` keeps working. **The `env`
+table is not a place for a secret.** The roster is a plain file on disk. An API key or a
+token goes in `~/.zshenv` or in the tool's own login, never in `env`. A worker cannot
 be named `subagent`: the review record keeps that word for a fresh-context subagent. A
 worker name is one plain word of letters, digits, `.`, `_`, or `-`. No command lists,
 probes, launches, picks, or records a worker with any other name. A top-level `reviewers` key is a list of worker names, ranked: the
