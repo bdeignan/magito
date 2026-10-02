@@ -41,6 +41,10 @@
 #      A second script covers a roster that cannot be loaded and values with
 #      line breaks. A third compares the whole line and stderr against
 #      `worker.py reviewer`. See issue #214.
+#  16. `worker.py record` writes the review record into an existing marker,
+#      and refuses a subagent record exactly when `worker.py reviewer` names a
+#      worker. A second script covers worker names that are not one word, which
+#      no command may pick or record. See issue #215.
 #
 # Collects all failures instead of stopping at the first one, prints a summary,
 # and exits 1 if anything failed, 0 otherwise. Bash and the stdlib Python
@@ -332,6 +336,18 @@ check_worker_start() {
   fi
 }
 
+check_worker_record() {
+  local out
+  if out=$(python3 "$REPO_ROOT/scripts/test_worker_record.py" 2>&1 \
+      && python3 "$REPO_ROOT/scripts/test_worker_names.py" 2>&1); then
+    echo "worker-record: ok"
+  else
+    echo "worker-record: FAILED"
+    echo "$out" | sed 's/^/    /'
+    FAILURES+=("worker.py record")
+  fi
+}
+
 # --- run everything, then summarize ------------------------------------------
 check_install
 check_anti_slop
@@ -348,6 +364,7 @@ check_worker_review
 check_gitflow_worktree
 check_worker_ready
 check_worker_start
+check_worker_record
 
 echo
 if [[ ${#FAILURES[@]} -eq 0 ]]; then

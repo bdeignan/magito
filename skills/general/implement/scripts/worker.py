@@ -15,6 +15,7 @@ runs the worker with its working directory set, and enforces a timeout.
     python3 worker.py ready [--family <family>]
     python3 worker.py start (--family <family> [--label <text>] | --builder <worker>)
                             [--intent <path>] [--small]
+    python3 worker.py record <worktree> <builder-family> <reviewer|subagent>
     python3 worker.py thrifty
     python3 worker.py workers
 
@@ -28,7 +29,10 @@ one line per roster worker, whether its program is installed, its `requires_env`
 variables are set, and its probe answers; then whether an allow rule for this
 launcher exists; then, with --family, which worker reviewer would pick. start prints
 the one line that opens a run: who builds, who reviews (the same pick as reviewer, or
-the subagent fallback whenever that pick fails), and whether a plan stop comes. Judgement
+the subagent fallback whenever that pick fails), and whether a plan stop comes. record
+writes the review record that gitflow.sh pr and merge require, `<sha> reviewed by <name>`,
+into the marker that gitflow.sh worktree add created. `record ... subagent` runs the
+reviewer pick again first and refuses (exit 6) when a roster worker answers. Judgement
 (bootstrap, fallback choice) stays with the driver; this script only fails loudly. Thrifty mode (env MAGITO_THRIFTY=1, or `thrifty = true`
 in the roster; MAGITO_THRIFTY=0 forces it off) limits reviewer to workers whose `tier`
 is `cheap`, with no tier counting as `strong`. thrifty prints on or off. workers prints
@@ -37,7 +41,8 @@ review runs one review round: it snapshots <dir> (plus <dir>/.scratch), runs the
 snapshots again, saves the full output to a file named on stderr, and prints only the
 VERDICT and COVERAGE lines. ready exits 0 whenever the roster parsed as TOML, whatever
 is wrong with a single entry or setting. Exit: 0 ok, 2 config error, 3 probe fail or no reviewer
-found, 4 the reviewer changed files, 5 no verdict line, 124 timeout, otherwise the
+found, 4 the reviewer changed files, 5 no verdict line, 6 a subagent record refused
+because a roster reviewer is available, 124 timeout, otherwise the
 worker's own exit code. Stdlib only,
 by design.
 """
@@ -64,6 +69,7 @@ PROBE_PROMPT = "Reply with exactly: VERDICT-OK"
 SHELL_OPS = ("&&", "||", "|", ";", "cd")
 RESERVED = "subagent"  # the review record's word for a review by a fresh-context subagent
 ASSIGNMENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
+WORKER_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
 
 
 class Fault(Exception):
@@ -150,6 +156,11 @@ def entry_fault(name, entry):
     own messages for these; ready and the reviewer pick turn them into a skip."""
     if name == RESERVED:
         return f"the name {RESERVED} is reserved"
+    # A name is printed on one line and written into the review record, so it is one
+    # plain word. An allowed set, not a list of banned characters: every space, line
+    # break, and control character in any alphabet is out by construction.
+    if not WORKER_NAME.fullmatch(name):
+        return "the name must be one word of letters, digits, '.', '_', or '-'"
     if not isinstance(entry, dict):
         return "not a table"
     if "cmd" not in entry:
@@ -341,10 +352,14 @@ def ready(family):
     answered = {}
     for name, entry in workers.items():
         # One entry's fault must never end the report.
+        # One line per worker: a name outside the allowed set is shown quoted and
+        # escaped, so a line break or control character in it cannot break the line.
+        shown = name if WORKER_NAME.fullmatch(name) else json.dumps(name)
         try:
             line, answered[name] = ready_line(name, entry)
+            line = shown + line[len(name):]
         except (Exception, SystemExit) as e:
-            line, answered[name] = f"{name}: invalid entry ({e})", False
+            line, answered[name] = f"{shown}: invalid entry ({e})", False
         print(line)
     print(f"launcher allow rule: {'present' if allow_rule_present() else 'absent'}")
     if family is not None:
@@ -440,6 +455,71 @@ def start(args):
     line = " · ".join([who, start_reviewer(family), start_plan(opts.get("--intent"), small)])
     # Exactly one line on stdout, even when a roster family or a file name holds a line break.
     print(" ".join(line.splitlines()))
+    sys.exit(0)
+
+
+def git_fact(worktree, *args):
+    """One line of git output for a worktree, or None when git cannot answer."""
+    try:
+        r = subprocess.run(["git", "-C", worktree, *args], capture_output=True, text=True)
+    except OSError:
+        return None
+    out = r.stdout.strip()
+    return out if r.returncode == 0 and out else None
+
+
+def record(worktree, builder_family, reviewer):
+    """Write the review record for the branch checked out in <worktree>.
+
+    The marker lives in the MAIN worktree's .magito/, where gitflow.sh reads it, and
+    is never created here: only a branch made by gitflow.sh worktree add has one.
+    gitflow.sh reads the first word only, so the words after the sha are for people."""
+    if not Path(worktree).is_dir():
+        die(2, f"worktree does not exist: {worktree}")
+    branch = git_fact(worktree, "rev-parse", "--abbrev-ref", "HEAD")
+    sha = git_fact(worktree, "rev-parse", "HEAD")
+    listing = git_fact(worktree, "worktree", "list", "--porcelain")
+    if not branch or not sha or not listing or not listing.startswith("worktree "):
+        die(2, f"not a git worktree with a commit: {worktree}")
+    root = listing.splitlines()[0][len("worktree "):]
+    marker = Path(root) / ".magito" / f"review-{branch.replace('/', '-')}"
+    if not marker.is_file():
+        die(2, f"no review marker for {branch}: create the branch with gitflow.sh worktree add")
+    if reviewer == RESERVED:
+        # A subagent review can be recorded only when the roster has no reviewer to
+        # offer: the same pick that `reviewer` runs, run again here.
+        data, problem = read_roster()
+        name = None
+        if data is None:
+            print(f"worker.py: {problem}", file=sys.stderr)
+        else:
+            try:
+                name = pick_reviewer(data, builder_family)
+            except Fault as e:
+                print(f"worker.py: {e}", file=sys.stderr)
+        if name is not None:
+            die(6, f"{name} ({data['workers'][name]['family']}) answers its probe: "
+                   "review with it, not a subagent")
+    else:
+        try:
+            entry = workers_table(load_roster()).get(reviewer)
+        except Fault as e:
+            die(2, str(e))
+        if entry is None:
+            die(2, f"no worker '{reviewer}' in {ROSTER}")
+        fault = entry_fault(reviewer, entry)
+        if fault:
+            die(2, f"worker {reviewer!r} in {ROSTER} cannot review: invalid entry ({fault})")
+        family = entry.get("family")
+        if not isinstance(family, str) or not family:
+            die(2, f"worker '{reviewer}' in {ROSTER} needs a family that is a non-empty string")
+        if family.lower() == builder_family.lower():
+            die(2, f"worker '{reviewer}' is the same family as the builder ({family}): "
+                   "a review must come from another family")
+    line = f"{sha} reviewed by {reviewer}"
+    marker.write_text(line + "\n")
+    print(marker)
+    print(line)
     sys.exit(0)
 
 
@@ -611,7 +691,7 @@ def main():
             name = pick_reviewer(data, writer_family, skip)
         except Fault as e:
             die(2, str(e))
-        if name:
+        if name is not None:
             print(name)
             sys.exit(0)
         die(3, no_reviewer_message(data, writer_family))
@@ -621,6 +701,10 @@ def main():
         ready(args[2] if args[1:] else None)
     elif args[:1] == ["start"]:
         start(args[1:])
+    elif args[:1] == ["record"]:
+        if len(args) != 4:
+            die(2, "usage: worker.py record <worktree> <builder-family> <reviewer|subagent>")
+        record(args[1], args[2], args[3])
     elif args[:1] == ["thrifty"]:
         print("on" if thrifty_on(load_roster()) else "off")
         sys.exit(0)
@@ -666,6 +750,7 @@ def main():
                "worker.py ready [--family <family>] | "
                "worker.py start (--family <family> [--label <text>] | --builder <worker>) "
                "[--intent <path>] [--small] | "
+               "worker.py record <worktree> <builder-family> <reviewer|subagent> | "
                "worker.py thrifty | worker.py workers | "
                "worker.py run <worker> <dir> <brief-file> [timeout] | "
                "worker.py review <worker> <dir> <brief-file> [timeout]")
