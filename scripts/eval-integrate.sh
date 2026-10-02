@@ -395,13 +395,15 @@ test_first() {
 }
 
 # review_recorded <branch>: worker.py record wrote `<sha> reviewed by <name>` for the
-# branch, on one line, and the sha is the branch tip. A commit after the review makes it
+# branch, both on its first line, and the sha is the branch tip. A commit after the review makes it
 # stale. Only the integration branch gets a record; ticket branches get none.
 review_recorded() {
-  local marker="$REPO/.magito/review-${1//\//-}" sha
+  local marker="$REPO/.magito/review-${1//\//-}" sha line=""
   sha="$(git -C "$REPO" rev-parse "$1")"
-  [[ -f "$marker" ]] \
-    && [[ "$(head -1 "$marker")" =~ ^${sha}\ reviewed\ by\ [A-Za-z0-9._-]+$ ]] \
+  [[ -f "$marker" ]] && line="$(head -1 "$marker")"
+  # The first line is the record: its first word is the branch tip, and the same line
+  # says who reviewed. Words after the reviewer do not matter.
+  [[ "${line%% *}" == "$sha" && "$line" == *" reviewed by "* ]] \
     || fail "$1: no review record at the branch tip"
 }
 

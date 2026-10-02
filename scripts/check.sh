@@ -266,7 +266,8 @@ check_eval_implement() {
 
 check_eval_integrate() {
   local out
-  if out=$(python3 "$REPO_ROOT/scripts/test_eval_integrate.py" 2>&1); then
+  if out=$(python3 "$REPO_ROOT/scripts/test_eval_integrate.py" 2>&1 \
+      && python3 "$REPO_ROOT/scripts/test_eval_integrate_more.py" 2>&1); then
     echo "eval-integrate: ok"
   else
     echo "eval-integrate: FAILED"
