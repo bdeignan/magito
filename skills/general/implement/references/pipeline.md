@@ -22,8 +22,10 @@ directory, as in `SKILL.md`.
 3. **Build.** You build, or the worker the user named builds, per
    [worker-contract.md](./worker-contract.md). When step 2 ran, commit the test files from the
    red step first, in their own commit, and record that commit. Those test files are locked
-   from then on. Hold this floor at every seam. It applies even when the ticket's acceptance
-   criteria say nothing about tests; they are a floor, not the ceiling:
+   from then on. A test case that the builder adds after that commit goes in a second test
+   file, such as `test_<name>_more.py`, registered wherever the first one is. Hold this floor
+   at every seam. It applies even when the ticket's acceptance criteria say nothing about
+   tests; they are a floor, not the ceiling:
    - Red-green where the behavior is specifiable in advance: watch the test fail for the right
      reason first. Pin-and-guard (characterization, eval threshold, smoke) where it is not.
    - ALWAYS invariant and schema checks at every data boundary the diff crosses:
@@ -69,9 +71,11 @@ directory, as in `SKILL.md`.
 
    How a round runs, whoever reviews. The builder family is the family of the model that
    wrote the code. The brief holds the ticket body, the output of `git diff <base>...HEAD`,
-   and the reply format in [worker-contract.md](./worker-contract.md): the reviewer answers
-   `VERDICT PASS`, or one or more `VERDICT FIX: <finding>` lines, and changes no files. Write
-   the brief to a file outside the worktree with your file-writing tool.
+   the reply format in [worker-contract.md](./worker-contract.md), and the reviewer rules from
+   that file. When step 2 ran, the brief also names the red-step commit and the locked test
+   files. The reviewer answers `VERDICT PASS`, or one or more `VERDICT FIX: <finding>` lines,
+   and changes no files. Write the brief to a file outside the worktree with your file-writing
+   tool.
    - **A roster worker reviews.** Run the round as one command:
      `python3 <skills>/implement/scripts/worker.py review <reviewer> <worktree> <brief-file>`.
      It snapshots the worktree's tracked and untracked files, runs the reviewer, snapshots
