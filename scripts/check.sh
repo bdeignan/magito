@@ -34,7 +34,9 @@
 #  12. `worker.py review` runs one review round, fails a reviewer that changed a
 #      file, and prints only the verdict lines. See issue #209.
 #  13. `gitflow.sh worktree add` puts worktrees in .magito/worktrees and keeps
-#      them out of git status. See issue #209 and ADR 0019.
+#      them out of git status. A new branch starts from the base branch,
+#      `--from` names another start point, and a branch already checked out is
+#      reused. See issue #209 and ADR 0019.
 #  14. `worker.py ready` reports each roster worker without ending on a bad
 #      entry, `requires_env` is honored, and `reviewer --skip` passes over a
 #      named worker. A second script counts worker starts: a passed-over

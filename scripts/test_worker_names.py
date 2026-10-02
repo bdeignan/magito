@@ -84,6 +84,30 @@ def main() -> int:
                   and "invalid entry" in r.stderr and "Traceback" not in r.stderr,
                   f"record refuses the worker name {name!r}", f"{r.returncode} {r.stdout!r} {r.stderr!r}")
 
+        # No command lists, probes, launches, or builds with a badly named worker.
+        log = home / "started.log"
+        fake = home / "fake.py"
+        fake.write_text(f"import sys\nopen({str(log)!r}, 'a').write('x')\nprint(sys.argv[-1])\n")
+        logged = []
+        for key in BAD + ['"subagent"']:
+            logged += [f"[workers.{key}]", f'cmd = "{sys.executable} {fake} {{brief}}"', 'family = "openai"']
+        roster.write_text("\n".join(logged + good) + "\n")
+        r = run("workers")
+        check(r.returncode == 0 and r.stdout == "good\n" and r.stderr.count("worker.py: skip") == len(BAD) + 1,
+              "workers lists only the well named worker and says why it skipped each other one",
+              f"{r.stdout!r} {r.stderr!r}")
+        brief = home / "brief.txt"
+        brief.write_text("do nothing")
+        for name in ("subagent", "two words", "line\nbreak", ""):
+            for args in (["probe", name], ["run", name, str(home), str(brief)], ["review", name, str(home), str(brief)],
+                         ["start", "--builder", name]):
+                if name == "" and args[0] == "start":
+                    continue  # an empty option value is a usage error of its own
+                r = run(*args)
+                check(r.returncode == 2 and r.stdout == "" and "Traceback" not in r.stderr,
+                      f"`{args[0]}` refuses the worker name {name!r}", f"{r.returncode} {r.stdout!r} {r.stderr!r}")
+        check(not log.exists(), "no badly named worker was ever started")
+
         # With a well named worker beside them, the pick goes to that worker.
         roster.write_text("\n".join(only_bad + good) + "\n")
         marker.write_text("pending\n")

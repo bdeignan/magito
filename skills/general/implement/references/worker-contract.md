@@ -116,7 +116,9 @@ labels how strong the pinned model is; a worker with no `tier` counts as
 `strong`. An optional `requires_env` field is a list of environment variable names the tool
 needs, such as `requires_env = ["GOOGLE_CLOUD_PROJECT"]`. When one is unset or empty, `ready`
 names it and the reviewer pick passes over that worker without probing it. A worker cannot
-be named `subagent`: the review record keeps that word for a fresh-context subagent. A top-level `reviewers` key is a list of worker names, ranked: the
+be named `subagent`: the review record keeps that word for a fresh-context subagent. A
+worker name is one plain word of letters, digits, `.`, `_`, or `-`. No command lists,
+probes, launches, picks, or records a worker with any other name. A top-level `reviewers` key is a list of worker names, ranked: the
 pipeline tries them in that order when it asks for a spec reviewer from a different family,
 then every other worker in file order. Each candidate must pass the family rule and its
 probe, so when the first reviewer is out of quota the next one takes over. The older

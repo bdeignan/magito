@@ -49,7 +49,8 @@ run from your working directory; `<skills>` is your tool's installed skills dire
      feature folder number and the file number (`0001-01`), and `<slug>` is the rest of the
      file name. For a tracker with issue numbers, `<ticket-id>` is the number.
    - Create the ticket's branch from the current integration branch, so the ticket sees every
-     ticket merged before it.
+     ticket merged before it: `gitflow.sh worktree add feat/<ticket-id>-<slug> --from
+     integrate/<NNNN>-<slug>`. Without `--from`, the branch starts from the base branch.
    - In pipeline.md step 5, the commit test for a ticket branch is
      `gitflow.sh ahead integrate/<NNNN>-<slug>`. When it prints `0`, do not review and do not
      merge that branch. Post the findings on the ticket as a comment, name them in the last
@@ -127,7 +128,9 @@ A rerun with the integration branch present picks up where the last run stopped.
   unless an earlier run already posted one, and the ticket's worktree removed. Otherwise run
   the check and the review again on it, then merge it as in step 4. Do not rebuild it, and do
   not rebase it or merge the integration branch into it.
-- Do not create a second integration branch. `gitflow.sh worktree add` reuses the existing one.
+- Do not create a second integration branch. Run `gitflow.sh worktree add
+  integrate/<NNNN>-<slug>` again: when the branch is already checked out in a worktree, it
+  prints that worktree's path and creates nothing.
 
 ## Escalations added by this run
 

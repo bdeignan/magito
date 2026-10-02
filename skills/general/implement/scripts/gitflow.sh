@@ -192,8 +192,15 @@ case "$cmd" in
     git push -u origin "$(current_branch)"
     ;;
   worktree)
-    # worktree add <branch> [path]   create a worktree for an unsupervised executor
+    # worktree add <branch> [path] [--from <ref>]   create a worktree for a run
     # worktree remove <path> [--force]
+    #
+    # A new branch starts from the base branch, never from wherever the caller
+    # happens to stand: a run started on another branch must not inherit its
+    # commits. `--from <ref>` names another start point, as an integrated run does
+    # for a ticket branch that starts from the integration branch. A branch that is
+    # already checked out in a worktree is reused: `add` prints that worktree's
+    # path and creates nothing, so a resumed run can call it again.
     #
     # `add` also records that this branch is fan-out work, by writing `pending`
     # as its review decision. Nothing else marks a branch that way, which is how
@@ -211,7 +218,16 @@ case "$cmd" in
     sub="${1:?worktree needs a subcommand — add or remove}"; shift
     case "$sub" in
       add)
-        branch="${1:?branch required}"; path="${2:-}"
+        branch="${1:?branch required}"; shift
+        path=""; from=""
+        while [ "$#" -gt 0 ]; do
+          case "$1" in
+            --from) from="${2:?--from needs a branch or a commit}"; shift 2 ;;
+            *)
+              [ -z "$path" ] || { echo "usage: worktree add <branch> [path] [--from <ref>]" >&2; exit 1; }
+              path="$1"; shift ;;
+          esac
+        done
         root="$(main_worktree)"
         # Probe the real paths `add` creates. A directory-only pattern cannot match
         # a folder that does not exist yet, so probe a path inside the worktree.
@@ -230,14 +246,30 @@ case "$cmd" in
           [ -n "$dir" ] || dir="$root/.magito/worktrees"
           path="${dir}/${slug}"
         fi
+        marker="$(marker_path "$branch")"
+        mkdir -p "$(dirname "$marker")"
+        # A branch already checked out in a worktree is reused as it is. Its marker
+        # keeps whatever a review recorded; only a missing one is written. No
+        # `exit` in the awk: see main_worktree above.
+        existing="$(git worktree list --porcelain | awk -v b="branch refs/heads/${branch}" \
+          '/^worktree /{p=substr($0,10)} $0==b{print p}')"
+        if [ -n "$existing" ]; then
+          [ -f "$marker" ] || printf 'pending\n' > "$marker"
+          echo "$existing"
+          exit 0
+        fi
         # `add -b` fails outright when the branch exists, so don't assume it's new.
         if git show-ref --verify --quiet "refs/heads/${branch}"; then
           git worktree add "$path" "$branch"
         else
-          git worktree add -b "$branch" "$path"
+          if [ -z "$from" ]; then
+            base="$(default_branch)"
+            if git show-ref --verify --quiet "refs/heads/${base}"; then from="$base"
+            elif git show-ref --verify --quiet "refs/remotes/origin/${base}"; then from="origin/${base}"
+            else from="HEAD"; fi
+          fi
+          git worktree add --no-track -b "$branch" "$path" "$from"
         fi
-        marker="$(marker_path "$branch")"
-        mkdir -p "$(dirname "$marker")"
         printf 'pending\n' > "$marker"
         echo "$path"
         ;;
@@ -254,7 +286,7 @@ case "$cmd" in
         git worktree prune
         ;;
       *)
-        echo "usage: worktree {add <branch> [path]|remove <path> [--force]}" >&2
+        echo "usage: worktree {add <branch> [path] [--from <ref>]|remove <path> [--force]}" >&2
         exit 1
         ;;
     esac
@@ -355,7 +387,7 @@ case "$cmd" in
     esac
     ;;
   *)
-    echo "usage: gitflow.sh {branch <issue> <slug> [kind]|commit <msg> <file>...|ahead [base]|push|pr <issue> <title> <body>|merge|worktree add <branch> [path]|worktree remove <path> [--force]}" >&2
+    echo "usage: gitflow.sh {branch <issue> <slug> [kind]|commit <msg> <file>...|ahead [base]|push|pr <issue> <title> <body>|merge|worktree add <branch> [path] [--from <ref>]|worktree remove <path> [--force]}" >&2
     exit 1
     ;;
 esac

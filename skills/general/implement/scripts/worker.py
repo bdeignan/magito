@@ -104,6 +104,9 @@ def load_roster():
 
 
 def resolve(name):
+    fault = name_fault(name)
+    if fault:
+        die(2, f"worker {name!r} cannot be used: {fault}")
     data = load_roster()
     entry = data.get("workers", {}).get(name)
     if entry is None:
@@ -151,9 +154,9 @@ def program_of(tokens):
     return None
 
 
-def entry_fault(name, entry):
-    """Why a roster entry cannot be used at all, or None. probe and run keep their
-    own messages for these; ready and the reviewer pick turn them into a skip."""
+def name_fault(name):
+    """Why a worker name cannot be used, or None. The rule holds for every command:
+    no worker with such a name is listed, probed, launched, picked, or recorded."""
     if name == RESERVED:
         return f"the name {RESERVED} is reserved"
     # A name is printed on one line and written into the review record, so it is one
@@ -161,6 +164,15 @@ def entry_fault(name, entry):
     # break, and control character in any alphabet is out by construction.
     if not WORKER_NAME.fullmatch(name):
         return "the name must be one word of letters, digits, '.', '_', or '-'"
+    return None
+
+
+def entry_fault(name, entry):
+    """Why a roster entry cannot be used at all, or None. probe and run keep their
+    own messages for a faulty cmd; ready and the reviewer pick turn it into a skip."""
+    fault = name_fault(name)
+    if fault:
+        return fault
     if not isinstance(entry, dict):
         return "not a table"
     if "cmd" not in entry:
@@ -440,6 +452,9 @@ def start(args):
         die(2, START_USAGE)
     if builder is not None:
         # A person named this worker, so the run must not go on without it.
+        fault = name_fault(builder)
+        if fault:
+            die(2, f"worker {builder!r} cannot build: {fault}")
         try:
             entry = workers_table(load_roster()).get(builder)
         except Fault as e:
@@ -715,7 +730,11 @@ def main():
             die(2, f"'workers' in {ROSTER} must be a table of [workers.<name>] entries")
         thrifty = thrifty_on(data)
         for name, entry in workers.items():
-            if not thrifty or is_cheap(entry):
+            fault = name_fault(name)
+            if fault:
+                # Never offer a name that no other command accepts.
+                print(f"worker.py: skip {name!r}: {fault}", file=sys.stderr)
+            elif not thrifty or is_cheap(entry):
                 print(name)
         sys.exit(0)
     elif len(args) >= 4 and args[0] == "run":
