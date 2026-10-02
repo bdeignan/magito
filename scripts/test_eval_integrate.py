@@ -42,6 +42,15 @@ def merge(branch, flag="--no-ff"):
     git("merge", flag, "-m", "merge " + branch, branch)
 
 
+def record(text=None):
+    """Write the review record that worker.py record writes for the integration branch
+    after the final review passes: one line, the branch tip and the reviewer."""
+    sha = git("rev-parse", INT).strip()
+    marker = repo / ".magito" / ("review-" + INT.replace("/", "-"))
+    marker.parent.mkdir(exist_ok=True)
+    marker.write_text(text.format(sha=sha) if text else sha + " reviewed by fake\\n")
+
+
 def gh_pr(body):
     subprocess.run(["gh", "pr", "create", "--title", "Greet", "--body", body], cwd=repo, check=True, capture_output=True)
 
@@ -120,12 +129,26 @@ else:
                 merge(B1, flag)
             build("feat/0001-02-hello", INT, TICKET2)
             merge("feat/0001-02-hello", flag)
-    response = "" if mode == "no-coverage" else "COVERAGE PASS\\n"
-    response += "Merged ticket 01, then ticket 02.\\n"
+        # The final review passed: record it, unless the mode acts out a missing,
+        # stale, or malformed record.
+        if mode == "split-record":
+            record("{sha} pending\\nx reviewed by fake\\n")
+        elif mode != "no-coverage":
+            record()
+        if mode == "stale-record":
+            git("checkout", INT)
+            (repo / "late.txt").write_text("after the review\\n")
+            git("add", "late.txt")
+            git("commit", "-m", "docs: a commit after the review")
+    response = "Merged ticket 01, then ticket 02. The reviewer passed the whole branch.\\n"
     if mode == "early-question":
         response = "Is the plan fine?\\n" + response
     if variant == "pr":
-        body = "Merge order: 01, 02.\\nCOVERAGE PASS\\n"
+        body = "Delivers ticket 01, then ticket 02. No merge conflicts.\\n"
+        if mode == "body-verdict":
+            body += "COVERAGE PASS\\n"
+        elif mode == "body-verdict-lower":
+            body += "The review ended with verdict pass.\\n"
         if mode != "missing-closes":
             body += "\\nCloses #102\\n"
         if mode == "double-first":
@@ -147,6 +170,7 @@ print("MAGITO_FINAL_RESPONSE_END")
 
 def run(mode: str, roster: Path, variant: str = "") -> subprocess.CompletedProcess[str]:
     env = os.environ | {"MAGITO_WORKERS_FILE": str(roster), "INTEGRATE_FAKE_MODE": mode}
+    env.pop("MAGITO_EVAL_VARIANT", None)
     if variant:
         env["MAGITO_EVAL_VARIANT"] = variant
     return subprocess.run(["bash", str(EVAL), "fake"], text=True, capture_output=True, env=env, check=False)
@@ -173,14 +197,17 @@ def main() -> None:
             'family = "test"\n'
         )
 
-        # Two tickets merged in order onto one integration branch, COVERAGE PASS.
+        # Two tickets merged in order onto one integration branch, with a review record
+        # at its tip. The review is proved by that record, not by a phrase in the response.
         expect_pass("integrate", run("green", roster))
         for mode, needle in [
             ("no-integrate", "integration branch"),
             ("wrong-order", "out of order"),
             ("fast-forward", "merge commits"),
             ("red-final", "check is red"),
-            ("no-coverage", "COVERAGE PASS"),
+            ("no-coverage", "integrate/0001-greet: no review record at the branch tip"),
+            ("stale-record", "integrate/0001-greet: no review record at the branch tip"),
+            ("split-record", "integrate/0001-greet: no review record at the branch tip"),
             ("early-question", "question before the merge checkpoint"),
             # A merged ticket branch is still checked: its own commits, not an empty range.
             ("code-before-test", "feat/0001-02-hello: code committed before its test"),
@@ -192,6 +219,8 @@ def main() -> None:
         expect_pass("integrate (resume)", run("green", roster, "resume"))
         expect_fail("integrate (resume)", "rebuild", "rebuilt", run("rebuild", roster, "resume"))
         expect_fail("integrate (resume)", "code-before-test", "code committed before its test", run("code-before-test", roster, "resume"))
+        # A resumed run needs the review record for the integration branch too.
+        expect_fail("integrate (resume)", "no-coverage", "no review record at the branch tip", run("no-coverage", roster, "resume"))
 
         # Closing rule: one pull request, first ticket closed once, every other ticket closed.
         expect_pass("integrate (pr)", run("green", roster, "pr"))
@@ -200,10 +229,15 @@ def main() -> None:
             ("double-first", "Closes #101"),
             ("no-pr", "no pull request"),
             ("two-prs", "one pull request"),
+            # A pull request body never names a review result, in any letter case.
+            ("body-verdict", "the pull request body names a review result"),
+            ("body-verdict-lower", "the pull request body names a review result"),
+            ("no-coverage", "no review record at the branch tip"),
         ]:
             expect_fail("integrate (pr)", mode, needle, run(mode, roster, "pr"))
 
-        # Semantic conflict: stop with escalation 6 and open no pull request.
+        # Semantic conflict: stop with escalation 6 and open no pull request. The run
+        # stops before any final review, so it passes with no review record on disk.
         expect_pass("integrate (semantic-conflict)", run("green", roster, "semantic-conflict"))
         for mode, needle in [
             ("merged-red", "check is red"),

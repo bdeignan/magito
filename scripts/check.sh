@@ -24,7 +24,9 @@
 #      in its default case and in the red-passes, no-intent, and no-intent-small
 #      variants. It proves a review by the record on disk, not by the response.
 #   9. The paid integrate evaluator (two tickets, resume, closing rule, semantic
-#      conflict) passes and fails as its fake workers dictate.
+#      conflict) passes and fails as its fake workers dictate. It proves the
+#      final review by the record on disk and fails a pull request body that
+#      names a review result.
 #  10. `install.py` links and registers the Codex hooks with a fail-open command, and
 #      installs clean when a stanza has no hooks keys.
 #  11. `gitflow.sh pr` refuses an empty body and a title that does not match
@@ -264,7 +266,8 @@ check_eval_implement() {
 
 check_eval_integrate() {
   local out
-  if out=$(python3 "$REPO_ROOT/scripts/test_eval_integrate.py" 2>&1); then
+  if out=$(python3 "$REPO_ROOT/scripts/test_eval_integrate.py" 2>&1 \
+      && python3 "$REPO_ROOT/scripts/test_eval_integrate_more.py" 2>&1); then
     echo "eval-integrate: ok"
   else
     echo "eval-integrate: FAILED"
