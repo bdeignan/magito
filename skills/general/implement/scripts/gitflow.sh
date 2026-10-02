@@ -266,7 +266,12 @@ case "$cmd" in
             base="$(default_branch)"
             if git show-ref --verify --quiet "refs/heads/${base}"; then from="$base"
             elif git show-ref --verify --quiet "refs/remotes/origin/${base}"; then from="origin/${base}"
-            else from="HEAD"; fi
+            else
+              # Never fall back to the caller's HEAD: that is the branch the run
+              # must not inherit commits from.
+              echo "gitflow.sh worktree add: base branch '${base}' not found — set git config magito.baseBranch <branch>, or pass --from <ref>" >&2
+              exit 1
+            fi
           fi
           git worktree add --no-track -b "$branch" "$path" "$from"
         fi

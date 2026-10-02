@@ -159,6 +159,23 @@ def main() -> None:
         check(r.returncode == 0 and marker.read_text() == "pending\n",
               "resume: a missing marker is written as pending")
 
+    # No base branch to be found: never fall back to the caller's branch.
+    with tempfile.TemporaryDirectory() as t:
+        repo = Repo(Path(t))
+        repo.git("branch", "-m", "main", "trunk")
+        (repo.root / "wip.txt").write_text("caller's work\n")
+        repo.git("add", "wip.txt")
+        repo.git("commit", "-q", "-m", "work on the caller's branch")
+        r = repo.add("feat/11-p")
+        check(r.returncode != 0 and "base branch 'main' not found" in r.stderr
+              and not (repo.root / ".magito/worktrees/feat-11-p").exists()
+              and repo.git("branch", "--list", "feat/11-p").strip() == "",
+              f"no base: exits non-zero, names the base, and creates nothing (got {r.returncode} {r.stderr.strip()!r})")
+        repo.git("config", "magito.baseBranch", "trunk")
+        r = repo.add("feat/11-p")
+        check(r.returncode == 0 and (repo.root / ".magito/worktrees/feat-11-p/wip.txt").exists(),
+              f"magito.baseBranch: the configured base is the start point (stderr {r.stderr.strip()!r})")
+
     if failures:
         raise SystemExit(1)
     print("test_gitflow_worktree: ok")

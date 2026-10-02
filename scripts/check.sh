@@ -55,6 +55,11 @@
 #      and `ahead`, `push`, and `pr` refuse a tree with uncommitted changes;
 #      `pr` refuses a branch with no commit ahead. See issue #216.
 #
+# Not run here, because they start real tools and can cost money: the three paid
+# evals (eval-to-issues.sh, eval-implement.sh, eval-integrate.sh) and
+# eval-workers.sh, which runs the worker commands against the real roster and a
+# real reviewer from another model family.
+#
 # Collects all failures instead of stopping at the first one, prints a summary,
 # and exits 1 if anything failed, 0 otherwise. Bash and the stdlib Python
 # scripts already in the repo only — no new dependencies (out of scope: a test
@@ -325,7 +330,8 @@ check_gitflow_worktree() {
 check_worker_ready() {
   local out
   if out=$(python3 "$REPO_ROOT/scripts/test_worker_ready.py" 2>&1 \
-      && python3 "$REPO_ROOT/scripts/test_worker_probe_count.py" 2>&1); then
+      && python3 "$REPO_ROOT/scripts/test_worker_probe_count.py" 2>&1 \
+      && python3 "$REPO_ROOT/scripts/test_worker_allow_rule.py" 2>&1); then
     echo "worker-ready: ok"
   else
     echo "worker-ready: FAILED"

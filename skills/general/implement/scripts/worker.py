@@ -70,6 +70,10 @@ SHELL_OPS = ("&&", "||", "|", ";", "cd")
 RESERVED = "subagent"  # the review record's word for a review by a fresh-context subagent
 ASSIGNMENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
 WORKER_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
+# An allow rule for this launcher: a Bash rule whose command is python running a file
+# named worker.py. A rule that only mentions the file, such as a Read rule or
+# `Bash(cat .../worker.py)`, allows a different command and does not count.
+ALLOW_RULE = re.compile(r"Bash\(\s*python3?\s+(?:\S*/)?worker\.py(?=[\s:*)])")
 
 
 class Fault(Exception):
@@ -298,8 +302,8 @@ def pick_reviewer(data, writer_family, skip=(), probe=live_probe, quiet=False):
 
 
 def allow_rule_present() -> bool:
-    """True when a permissions.allow string naming this launcher exists in the user's
-    Claude Code settings or the current repo's. A fact only: it says nothing about
+    """True when a permissions.allow rule that lets python run this launcher exists in
+    the user's Claude Code settings or the current repo's. A fact only: it says nothing about
     what a permission mode will do with the launch."""
     files = [Path.home() / ".claude" / "settings.json"]
     try:
@@ -314,7 +318,7 @@ def allow_rule_present() -> bool:
             allow = json.loads(f.read_text())["permissions"]["allow"]
         except (OSError, ValueError, KeyError, TypeError):
             continue
-        if isinstance(allow, list) and any(isinstance(s, str) and "worker.py" in s for s in allow):
+        if isinstance(allow, list) and any(isinstance(s, str) and ALLOW_RULE.match(s) for s in allow):
             return True
     return False
 
