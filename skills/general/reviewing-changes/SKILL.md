@@ -41,31 +41,15 @@ Present under `## Standards` and `## Spec`, verbatim or lightly cleaned. Do **no
 
 **Invariant:** An axis with provenance `(none)` must **never** be reported as passed or omitted. If an axis returns no result, explicitly say so: "Standards (none): No output — this axis could not be evaluated." This prevents silent gaps from appearing as if they passed review.
 
-Then record the decision — **but only if this branch already has a marker.** Check first, using the three separate reads below and then your file-*reading* tool on the resulting path. Do not compose them into one shell command: this repo has already found that the classifier refuses a compound command that builds this path, including a read-only one (see `CLAUDE.md`).
+Then check whether the branch has a review marker. This skill reads the marker and never writes it. Use the two separate reads below, then your file-*reading* tool on the resulting path. Do not compose them into one shell command: this repo has already found that the classifier refuses a compound command that builds this path, even a read-only one (see `CLAUDE.md`).
 
 ```bash
 git rev-parse --abbrev-ref HEAD           # the branch; replace every / with - for the slug
 git worktree list --porcelain | head -1   # prints `worktree <path>`
 ```
 
-Read `<path>/.magito/review-<branch-slug>`. **No such file: you are done. Do not create one.** Most reviews end here. A marker exists only on a branch created for an unsupervised executor, where `gitflow.sh worktree add` wrote it; ordinary work is not gated and needs no record (ADR 0013). Creating one here would be worse than pointless: it would newly gate a branch that was never meant to be gated, and the very next commit would block the merge.
+Read `<path>/.magito/review-<branch-slug>`.
 
-If the file does exist, overwrite it with `<sha> reviewed`. The marker holds `<sha> <decision>`; this skill only ever records `reviewed` (a deliberate skip is recorded separately, by implement). It pins that decision to this branch at this exact commit; any later commit makes it stale and the gate will ask for a fresh decision.
+**No marker file:** you are done, and you create no file. Most reviews end here. Every branch that `implement` builds has a marker (ADR 0014, ADR 0020). A branch with no marker was made outside `implement`, and it meets no gate. Creating a marker here would gate a branch that was never meant to be gated, and the very next commit would block the merge.
 
-**Write the marker with your file-writing tool, not a shell one-liner.** Claude Code's auto-mode classifier refuses the compound shell command below, while a plain file write to the same path succeeds. Read the three values with separate commands — each is allowed on its own — then write the file:
-
-```bash
-git rev-parse HEAD                        # the sha
-git rev-parse --abbrev-ref HEAD           # the branch; replace every / with - for the slug
-git worktree list --porcelain | head -1   # prints `worktree <path>`
-```
-
-Write one line, `<sha> reviewed`, to `<path>/.magito/review-<branch-slug>`. Resolve against that **main** worktree path rather than the current directory: otherwise every linked worktree gets its own `.magito/`, and a review run inside a worktree will not count at merge time.
-
-Fallback, where there is no file-writing tool or a human is running it at a prompt:
-
-```bash
-d="$(git worktree list --porcelain | head -1 | cut -d' ' -f2-)/.magito" && mkdir -p "$d" && printf '%s reviewed\n' "$(git rev-parse HEAD)" >| "$d/review-$(git rev-parse --abbrev-ref HEAD | tr '/' '-')"
-```
-
-(`>|` forces the overwrite even under zsh's `noclobber`, so a re-review can refresh an existing marker.)
+**A marker file exists:** `implement` built this branch. Do not write to the file and do not delete it. Tell the user, in one line, that this review does not satisfy the gate, and that `worker.py record` writes this branch's record after the review in steps 6 to 8 of `pipeline.md`. That review is run by a roster worker through `worker.py review`, or by a fresh-context subagent when no roster worker of another family answers. Both paths end in `worker.py record`.
