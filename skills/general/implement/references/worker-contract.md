@@ -54,8 +54,34 @@ a named path just fine.
 
 This does not change how work is judged.
 
-The report is not the result. Judge a worker by `git -C <dir> diff --cached` — review
-examines the staged diff regardless of what the worker claimed.
+The report is not the result. A worker that did the work and forgot to stage it did not
+fail the build. After a worker reports, the driver judges what the worker left in the
+assigned directory:
+
+1. The driver runs `git -C <dir> status --porcelain` in the assigned directory. That lists
+   every change the worker left: staged, unstaged, and untracked.
+2. The driver judges all of it by content, not by whether it is staged. It reads the staged
+   diff (`git -C <dir> diff --cached`), the unstaged diff (`git -C <dir> diff`), and each
+   untracked file.
+3. A change that belongs to the ticket is kept, staged or not. The driver commits it by
+   naming the files: `gitflow.sh commit "<message>" <file>...`. It never runs `git add -A`
+   or `git add .`.
+4. A change that does not belong to the ticket is not committed. The driver discards it or
+   leaves it out, and names it in its last message to the user.
+5. Files left unstaged are never, alone, a reason to mark the worker failed or `BLOCKED`,
+   and never a reason to rebuild the work. The driver says in one line that it staged the
+   files itself.
+6. The brief still tells the worker to stage the files it changed. That instruction does
+   not change: this rule is what the driver does when the worker did not follow it.
+
+Three cases show the rule at work:
+
+- The worker changed the right files and staged none of them. The driver stages them by
+  name and commits them. It does not mark the worker failed.
+- The worker also changed a file outside the ticket. The driver does not commit that file,
+  and it names the file to the user.
+- The worker left nothing at all, staged or not. This rule changes nothing there: the
+  result is `DONE (no-op)` when the change is already in place, and `BLOCKED` otherwise.
 
 Write the brief to a file and hand the path to the launcher — it passes the content
 to the worker as a single argument, so long briefs survive without shell-quoting.

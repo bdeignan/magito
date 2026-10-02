@@ -87,7 +87,8 @@ Read local ticket files from the main root before preparing worker briefs.
    each executor's `DONE` (with its staged files) or `BLOCKED`. Background executors notify
    on completion — never poll, busy-wait, or schedule wakeups while one runs.
 
-   After the executor reports, work inside that worktree: commit its staged work as
+   After the executor reports, work inside that worktree: commit the work the executor
+   left, staged or not, as [worker-contract.md](./worker-contract.md) says, as
    conventional commits, then go on from step 4 of `pipeline.md` — the check, the commit
    test, the review with the reviewer from that ticket's start line, the fix rounds, the
    record with `worker.py record`, the push, and the pull request. Those steps live in
