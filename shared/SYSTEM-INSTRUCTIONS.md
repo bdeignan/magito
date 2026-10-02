@@ -39,7 +39,7 @@
 - Add only what the task needs. Ask before expanding scope.
 - Write tests that exercise real behavior and the edge cases that actually break — not heavy mocking that passes while the real path fails.
 - Stage only the files you changed. Never `git add -A`, `--all`, `.`, or `git commit -a`.
-- Decide about reviewing before you land: run the review, or knowingly skip it. What matters is that the choice is made, not that it is recorded — when you are driving by hand, deciding to skip is a legitimate answer. Work nobody watched is the exception: every branch from a fan-out or from the pipeline (the path that runs from an accepted intent to a pull request) gets a real review, because a worker's own claim to have reviewed cannot be trusted.
+- Decide about reviewing before you land: run the review, or knowingly skip it. What matters is that the choice is made, not that it is recorded — when you are driving by hand, deciding to skip is a legitimate answer. Work nobody watched is the exception: every change that `implement` makes gets a real review, because a worker's own claim to have reviewed cannot be trusted.
 
 ## Session journal
 

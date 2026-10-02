@@ -27,7 +27,9 @@ take on the governed multi-agent idea — not a framework built for anyone else 
 - **Gates only where supervision is absent.** magito assumes a human in the loop and active.
   A gate that blocks that person to collect an attestation nobody reads is ceremony. It still
   earns its cost where nobody watches: the parallel fan-out, and the pipeline between
-  accepting an intent and merging its pull request (ADR 0018).
+  accepting an intent and merging its pull request (ADR 0018). A ticket a person starts by
+  hand is unsupervised too, once its plan is approved, so the same review and gate apply
+  there (ADR 0020).
 - **It has to degrade cleanly when switched off.** Removing magito should leave a
   well-documented repo, not a broken one — which makes the claim testable when a new model
   lands.

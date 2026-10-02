@@ -104,19 +104,21 @@ merge the pull request on GitHub
 /handoff             end: one short journal entry
 ```
 
-- **Already know exactly what to build?** Skip `/intent`. Run `/to-issues` with your plan, or `/implement 42` on one clear issue. Those ask you to approve the plan and say "ship it" before the pull request.
-- **Several unrelated issues at once?** `/implement 12 13 14` builds each in its own worktree, in parallel, and opens one pull request each.
+- **Already know exactly what to build?** Skip `/intent`. Run `/to-issues` with your plan, which asks you to approve the breakdown. Or run `/implement 42` on one clear issue: it stops once for you to approve its plan, unless the change is small, then builds, reviews, and opens the pull request on its own.
+- **A quick fix?** Ask the agent directly and call no skill. That work gets no worktree and no paid review, and you decide yourself whether to review it.
+- **Several unrelated issues at once?** `/implement 12 13 14` builds each in its own worktree and opens one pull request each. It stops once for the whole batch when a ticket needs a plan.
 - **Interrupted?** Start a new session and run the same `/implement <tickets>` again. For tickets from one intent, it skips any ticket already merged into the run's integration branch and carries on.
 
 ### What stops for you
 
-Only these: accepting an intent, answering an **escalation**, and merging. An escalation is one of six named reasons to stop:
+Only these: accepting an intent, approving the plan for a ticket with no accepted intent, answering an **escalation**, and merging. An escalation is one of seven named reasons to stop:
 1. the ticket is ambiguous;
 2. three review rounds end without a pass;
 3. a locked test or out-of-scope work must change;
 4. the red check passes before any change;
 5. no check command exists;
-6. a merge turns the check red.
+6. a merge turns the check red;
+7. no reviewer is available: no roster worker of another family answers and the tool cannot start a subagent.
 
 The agent quotes the evidence each time. Everything else it decides alone and lists in the pull request body for you to overrule at the merge.
 
@@ -164,7 +166,10 @@ escalation, and the merge.
 6. **`/handoff`** ends the session with one entry in `.magito/journal/`.
 
 Work with no accepted intent can still enter at `/to-issues` (a plan) or `/implement` (one clear
-issue). Those tickets keep the older steps: plan approval before code and "ship it" before the pull request.
+issue). `/to-issues` asks you to approve its breakdown. `/implement` runs the same steps for
+that ticket as for any other, with one stop in front: you approve its plan, unless the change
+is small. It never asks whether to review. A branch with no commit ahead of its base holds no
+change, so it gets no review and no pull request, and the run posts its findings on the ticket.
 
 ### Every other skill
 
@@ -187,15 +192,16 @@ issue). Those tickets keep the older steps: plan approval before code and "ship 
 ### What magito promises
 
 1. **You own every merge.** Agents branch, commit, and open pull requests. You merge a pull request yourself. In a repo with no remote, an agent merges only after your explicit approval.
-2. **Nothing lands unreviewed by accident.** Work on the pipeline path gets an automatic review, from a different model family when the roster has one. Any other pull request or merge reaches a deliberate choice first: a full review, a lightweight pass, or a knowing skip.
-3. **Delegation is explicit.** Reviews on the pipeline path go to a roster worker from a different model family, chosen by `worker.py reviewer`. When no such worker answers, a fresh-context subagent reviews instead, and the pull request says so. Builds delegate only to a worker you name ("via omp"). Thrifty mode limits every step to cheap models.
+2. **Nothing lands unreviewed by accident.** Every change `implement` makes gets an automatic review, from a different model family when the roster has one. A branch with no commit ahead of its base holds no change, so it gets no review and no pull request. Work you ask an agent for directly, outside `implement`, reaches a deliberate choice first: a full review, a lightweight pass, or a knowing skip.
+3. **Delegation is explicit.** Every `implement` run opens with one line that names who builds and who reviews. The review goes to a roster worker from a different model family, chosen by `worker.py start`. When no such worker answers, a fresh-context subagent reviews instead, and the run's last message to you says so. A pull request never says who reviewed. Builds delegate only to a worker you name ("via omp"); in a batch, tickets built at the same time go to a worker or a subagent, and the batch stop names each one. Thrifty mode limits every step to cheap models. `/workers` shows which workers this machine can use.
 4. **Worker failures are loud.** A named build worker that is dead or denied stops the run instead of quietly handing the work to your subscription. Your tool's own permission prompts still apply to each worker launch.
 5. **Machine-local files are yours.** `~/.magito/` is bootstrapped once with your consent and never overwritten on an agent's own initiative. `bin/` is the exception: `install.py` owns it.
 6. **Staging is always explicit.** No agent bulk-stages files. A hook blocks `git add -A` everywhere.
 7. **Costs are stated before they are incurred.** A fan-out declares its executor count and workers up front. Magi deliberate mode asks before it convenes.
 
-You stay in the loop at these moments only: accepting an intent, answering an escalation, the
-one-time roster bootstrap, magi deliberate cost consent, and every merge. Everything else runs
+You stay in the loop at these moments only: accepting an intent, approving the plan for a
+ticket with no accepted intent, answering an escalation, the one-time roster bootstrap, magi
+deliberate cost consent, and every merge. Everything else runs
 without you and stops loudly when it cannot continue.
 
 ---

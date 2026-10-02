@@ -45,11 +45,7 @@ decisions, and open questions. `/intent` writes it; the user's "accept" sets
 `Status: accepted`, and that acceptance is the human's sign-off for everything built from it.
 _Avoid_ "spec" or "PRD" for this doc.
 
-**pipeline ticket** — a ticket whose body links an accepted intent and carries a
-`Spec review:` line. `implement` builds it with no approval stops: it runs from build to an
-open pull request and stops only for an escalation. Any other ticket keeps plan approval
-and "ship it."
-
-**escalation** — one of the six named reasons the pipeline stops and asks the human, listed
-in `skills/general/implement/references/pipeline.md`. Anything else the agent decides alone
-and lists in the pull request body.
+**escalation** — one of the seven named reasons an `implement` run stops and asks the human,
+listed in `skills/general/implement/references/pipeline.md`. Anything else the agent decides
+alone, and it states each such decision in the pull request body in ordinary words, as
+"Chose X over Y because Z".
