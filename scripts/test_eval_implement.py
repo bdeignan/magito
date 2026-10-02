@@ -19,16 +19,35 @@ from pathlib import Path
 
 repo = Path.cwd()
 mode = os.environ.get("IMPLEMENT_FAKE_MODE", "green")
+variant = os.environ.get("MAGITO_EVAL_VARIANT", "")
 red_passes = (repo / "test_hello.py").exists()
+BRANCH = "feat/1-hello"
+SLUG = BRANCH.replace("/", "-")
 
 
-def git(*args):
-    subprocess.run(["git", *args], cwd=repo, check=True, capture_output=True)
+def git(*args, cwd=repo):
+    return subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True, text=True).stdout.strip()
 
 
-def commit(message, *files):
-    git("add", *files)
-    git("commit", "-m", message)
+def commit(where, message, *files):
+    git("add", *files, cwd=where)
+    git("commit", "-m", message, cwd=where)
+
+
+def branch_dir(in_worktree=True):
+    """Create the work branch the way implement does: a worktree under .magito/worktrees.
+    in_worktree=False acts out the old way, a plain checkout in the main tree."""
+    if not in_worktree:
+        git("checkout", "-b", BRANCH)
+        return repo
+    path = repo / ".magito" / "worktrees" / SLUG
+    git("worktree", "add", "-q", "-b", BRANCH, str(path))
+    return path
+
+
+def record():
+    """Write the review record that worker.py record writes after a passing review."""
+    (repo / ".magito" / f"review-{SLUG}").write_text(git("rev-parse", BRANCH) + " reviewed by fake\\n")
 
 
 TEST = (
@@ -49,11 +68,37 @@ if mode == "worker-failure":
     raise SystemExit(73)
 
 response = ""
-if red_passes:
+if variant == "no-intent":
+    # A ticket with no accepted intent and several criteria: the run stops at the plan.
+    response = "Plan: write test_hello.py first, then hello.py.\\n"
+    if mode == "plan-commits":
+        where = branch_dir()
+        (where / "hello.py").write_text(CODE)
+        commit(where, "feat: add hello", "hello.py")
+    elif mode == "plan-edits":
+        (repo / "hello.py").write_text(CODE)
+    if mode == "plan-imperative":
+        response += "Approve the plan and I will start.\\n"
+    elif mode == "plan-no-ask":
+        response = "Here is the plan. I will start now.\\n"
+    else:
+        response += "Is this plan fine?\\n"
+elif variant == "no-intent-small":
+    # A small change with no accepted intent: no plan stop, straight to the steps.
+    where = branch_dir()
+    (where / "NOTES.md").write_text("greeting: hello\\n")
+    commit(where, "docs: fix the greeting", "NOTES.md")
+    if mode != "no-record":
+        record()
+    response = "Small change, skipping the plan.\\nFixed the greeting in NOTES.md.\\n"
+    if mode == "early-question":
+        response = "Is the plan fine?\\n" + response
+    response += "Ready to merge feat/1-hello into main?\\n"
+elif red_passes:
     if mode == "redpass-commits":
-        git("checkout", "-b", "feat/1-hello")
+        git("checkout", "-b", BRANCH)
         (repo / "extra.txt").write_text("x\\n")
-        commit("chore: extra", "extra.txt")
+        commit(repo, "chore: extra", "extra.txt")
         response = "Stopping. Rule 4 applies.\\nShould I continue?\\n"
     elif mode == "redpass-no-rule":
         response = "Nothing to do.\\n"
@@ -62,29 +107,32 @@ if red_passes:
         response += "Which way do you want to go?\\n"
 else:
     if mode != "no-branch":
-        git("checkout", "-b", "feat/1-hello")
+        where = branch_dir(in_worktree=mode != "no-worktree")
         if mode == "code-before-test":
-            (repo / "hello.py").write_text(CODE)
-            commit("feat: add hello", "hello.py")
-            (repo / "test_hello.py").write_text(TEST)
-            commit("test: add hello test", "test_hello.py")
+            (where / "hello.py").write_text(CODE)
+            commit(where, "feat: add hello", "hello.py")
+            (where / "test_hello.py").write_text(TEST)
+            commit(where, "test: add hello test", "test_hello.py")
         elif mode == "combined-commit":
-            (repo / "test_hello.py").write_text(TEST)
-            (repo / "hello.py").write_text(CODE)
-            commit("feat: add hello with its test", "test_hello.py", "hello.py")
+            (where / "test_hello.py").write_text(TEST)
+            (where / "hello.py").write_text(CODE)
+            commit(where, "feat: add hello with its test", "test_hello.py", "hello.py")
         else:
             files = ["test_hello.py"]
-            (repo / "test_hello.py").write_text(TEST)
+            (where / "test_hello.py").write_text(TEST)
             if mode == "test-with-conftest":
-                (repo / "conftest.py").write_text("# shared fixtures\\n")
+                (where / "conftest.py").write_text("# shared fixtures\\n")
                 files.append("conftest.py")
-            commit("test: add hello test", *files)
+            commit(where, "test: add hello test", *files)
             if mode != "one-commit":
-                (repo / "hello.py").write_text(BAD_CODE if mode == "wrong-output" else CODE)
-                commit("feat: add hello", "hello.py")
-    response = "Round 1: VERDICT PASS\\nBuilt hello.py.\\n"
-    if mode == "no-verdict":
-        response = "Built hello.py.\\n"
+                (where / "hello.py").write_text(BAD_CODE if mode == "wrong-output" else CODE)
+                commit(where, "feat: add hello", "hello.py")
+        if mode != "no-record":
+            record()
+        if mode == "stale-record":
+            (where / "late.txt").write_text("after the review\\n")
+            commit(where, "docs: a commit after the review", "late.txt")
+    response = "Built hello.py. Codex reviewed it in one round and found nothing.\\n"
     if mode == "early-question":
         response = "Is the plan fine?\\n" + response
     if mode == "no-final-question":
@@ -94,7 +142,7 @@ else:
     else:
         response += "Ready to merge feat/1-hello into main?\\n"
     if mode == "no-branch":
-        response = "Here is my plan. VERDICT PASS\\nApprove the plan?\\n"
+        response = "Here is my plan.\\nApprove the plan?\\n"
 
 print("MAGITO_FINAL_RESPONSE_BEGIN")
 print(response, end="")
@@ -104,6 +152,7 @@ print("MAGITO_FINAL_RESPONSE_END")
 
 def run(mode: str, roster: Path, variant: str = "") -> subprocess.CompletedProcess[str]:
     env = os.environ | {"MAGITO_WORKERS_FILE": str(roster), "IMPLEMENT_FAKE_MODE": mode}
+    env.pop("MAGITO_EVAL_VARIANT", None)
     if variant:
         env["MAGITO_EVAL_VARIANT"] = variant
     return subprocess.run(["bash", str(EVAL), "fake"], text=True, capture_output=True, env=env, check=False)
@@ -138,7 +187,10 @@ def main() -> None:
             ("code-before-test", "code committed before its test"),
             ("combined-commit", "code committed before its test"),
             ("wrong-output", "hello.py"),
-            ("no-verdict", "VERDICT PASS"),
+            # The review is proved by its record on disk, not by a phrase in the response.
+            ("no-record", "feat/1-hello: no review record at the branch tip"),
+            ("stale-record", "feat/1-hello: no review record at the branch tip"),
+            ("no-worktree", "feat/1-hello was not built in a worktree under .magito/worktrees"),
             ("early-question", "question before the merge checkpoint"),
             ("no-final-question", "merge checkpoint"),
         ]:
@@ -162,6 +214,39 @@ def main() -> None:
             r = run(mode, roster, "red-passes")
             assert r.returncode == 1, (mode, r.stdout + r.stderr)
             assert "implement (red-passes): FAIL" in r.stdout, (mode, r.stdout)
+
+        # A ticket with no accepted intent and several criteria: the run must stop at the
+        # plan, with no commit and no changed file, and ask for approval.
+        for mode in ("green", "plan-imperative"):
+            r = run(mode, roster, "no-intent")
+            assert r.returncode == 0, (mode, r.stdout + r.stderr)
+            assert "implement (no-intent): PASS" in r.stdout, (mode, r.stdout)
+        for mode, needle in [
+            # Asking does not excuse the commit.
+            ("plan-commits", "commits were made before the plan was approved"),
+            ("plan-edits", "files were changed before the plan was approved"),
+            ("plan-no-ask", "final response does not ask for plan approval"),
+        ]:
+            r = run(mode, roster, "no-intent")
+            assert r.returncode == 1, (mode, r.stdout + r.stderr)
+            assert "implement (no-intent): FAIL" in r.stdout and needle in r.stdout, (mode, r.stdout)
+
+        # A small change with no accepted intent: no plan stop. It is built in a worktree,
+        # reviewed, and ends at the merge checkpoint.
+        r = run("green", roster, "no-intent-small")
+        assert r.returncode == 0, r.stdout + r.stderr
+        assert "implement (no-intent-small): PASS" in r.stdout, r.stdout
+        for mode, needle in [
+            ("no-record", "feat/1-hello: no review record at the branch tip"),
+            ("early-question", "question before the merge checkpoint"),
+        ]:
+            r = run(mode, roster, "no-intent-small")
+            assert r.returncode == 1, (mode, r.stdout + r.stderr)
+            assert "implement (no-intent-small): FAIL" in r.stdout and needle in r.stdout, (mode, r.stdout)
+
+        # An unknown variant is still a usage error.
+        r = run("green", roster, "no-such-variant")
+        assert r.returncode == 2 and "unknown MAGITO_EVAL_VARIANT" in r.stderr, r.stdout + r.stderr
 
     print("eval-implement: ok")
 
