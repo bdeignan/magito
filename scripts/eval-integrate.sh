@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
-# eval-integrate.sh — headless check that `implement`, handed two pipeline tickets from
-# one intent, builds them in order onto one integration branch and stops at one pull
-# request (or the no-PR checkpoint). Run as:
+# eval-integrate.sh — headless check that `implement`, handed two tickets from one
+# accepted intent, builds them in order onto one integration branch, records the final
+# review for that branch, and stops at one pull request (or the no-PR checkpoint). The
+# review is proved by its record on disk; the pull request body must name no review
+# result. Run as:
 #   bash scripts/eval-integrate.sh <worker>
 # where <worker> names a roster worker. Not part of scripts/check.sh: it calls a paid
 # model. Set MAGITO_EVAL_VARIANT to run another case:
@@ -392,6 +394,19 @@ test_first() {
   [[ $later_src -eq 1 ]] || fail "$branch: code committed before its test"
 }
 
+# review_recorded <branch>: worker.py record wrote `<sha> reviewed by <name>` for the
+# branch, both on its first line, and the sha is the branch tip. A commit after the review makes it
+# stale. Only the integration branch gets a record; ticket branches get none.
+review_recorded() {
+  local marker="$REPO/.magito/review-${1//\//-}" sha line=""
+  sha="$(git -C "$REPO" rev-parse "$1")"
+  [[ -f "$marker" ]] && line="$(head -1 "$marker")"
+  # The first line is the record: its first word is the branch tip, and the same line
+  # says who reviewed. Words after the reviewer do not matter.
+  [[ "${line%% *}" == "$sha" && "$line" == *" reviewed by "* ]] \
+    || fail "$1: no review record at the branch tip"
+}
+
 # Nothing merges into main, and no worktree sits inside the repo outside .magito/worktrees.
 [[ "$(git -C "$REPO" rev-parse main)" == "$BASE_SHA" ]] || fail "main moved"
 REPO_REAL="$(cd "$REPO" && pwd -P)"
@@ -405,7 +420,7 @@ git -C "$REPO" show-ref --verify --quiet "refs/heads/$INT" || fail "integration 
 
 # Pull requests: only the pr variant opens one, and it opens exactly one.
 python3 - "$GH_CALLS" "$VARIANT" >"$TMP_BASE/pr.reason" <<'PYEOF'
-import json, os, sys
+import json, os, re, sys
 
 path, variant = sys.argv[1], sys.argv[2]
 calls = []
@@ -429,8 +444,9 @@ if lines.count("Closes #101") != 1:
     print(f"'Closes #101' appears {lines.count('Closes #101')} times in the body, expected once")
 elif "Closes #102" not in lines:
     print("the body has no 'Closes #102' line for the second ticket")
-elif "COVERAGE PASS" not in body:
-    print("the body does not carry the final coverage verdict")
+elif re.search(r"verdict|coverage", body, re.IGNORECASE):
+    # A pull request body never says anything about its review.
+    print("the pull request body names a review result")
 PYEOF
 [[ -z "$(cat "$TMP_BASE/pr.reason")" ]] || fail "$(cat "$TMP_BASE/pr.reason")"
 
@@ -485,7 +501,9 @@ else
   OUT="$(cd "$CHECKOUT" && python3 hello.py Ada 2>&1)" || fail "hello.py Ada failed on $INT"
   [[ "$OUT" == "hello, Ada" ]] || fail "hello.py Ada printed '$OUT', expected 'hello, Ada'"
 
-  grep -Eq '(^|[[:space:]`])COVERAGE PASS' "$RESPONSE" || fail "final response has no COVERAGE PASS line"
+  # The final review is proved by its record on disk, not by a phrase in the response:
+  # the run's last message is the model's own wording.
+  review_recorded "$INT"
 
   if [[ "$VARIANT" == "pr" ]]; then
     grep -q '?' "$RESPONSE" && fail "final response asks a question although a pull request was opened"

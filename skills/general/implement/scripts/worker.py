@@ -11,28 +11,46 @@ runs the worker with its working directory set, and enforces a timeout.
     python3 worker.py probe <worker>
     python3 worker.py run   <worker> <dir> <brief-file> [timeout-seconds]
     python3 worker.py review <worker> <dir> <brief-file> [timeout-seconds]
-    python3 worker.py reviewer <writer-family>
+    python3 worker.py reviewer <writer-family> [--skip <worker>]...
+    python3 worker.py ready [--family <family>]
+    python3 worker.py start (--family <family> [--label <text>] | --builder <worker>)
+                            [--intent <path>] [--small]
+    python3 worker.py record <worktree> <builder-family> <reviewer|subagent>
     python3 worker.py thrifty
     python3 worker.py workers
 
 probe strips approval-bypass flags (a ping needs no permissions) and checks the
 worker answers VERDICT-OK. reviewer picks a working worker whose family differs
 from the writer's, trying the top-level `reviewers` list first (or the older
-`spec_reviewer` name). Judgement (bootstrap, fallback choice) stays with the driver;
-this script only fails loudly. Thrifty mode (env MAGITO_THRIFTY=1, or `thrifty = true`
+`spec_reviewer` name); --skip passes over a named candidate, for a run whose
+reviewer failed in the middle of a review. It also passes over a candidate whose
+`requires_env` names an unset variable, and any entry it cannot use. ready reports,
+one line per roster worker, whether its program is installed, its `requires_env`
+variables are set, and its probe answers; then whether an allow rule for this
+launcher exists; then, with --family, which worker reviewer would pick. start prints
+the one line that opens a run: who builds, who reviews (the same pick as reviewer, or
+the subagent fallback whenever that pick fails), and whether a plan stop comes. record
+writes the review record that gitflow.sh pr and merge require, `<sha> reviewed by <name>`,
+into the marker that gitflow.sh worktree add created. `record ... subagent` runs the
+reviewer pick again first and refuses (exit 6) when a roster worker answers. Judgement
+(bootstrap, fallback choice) stays with the driver; this script only fails loudly. Thrifty mode (env MAGITO_THRIFTY=1, or `thrifty = true`
 in the roster; MAGITO_THRIFTY=0 forces it off) limits reviewer to workers whose `tier`
 is `cheap`, with no tier counting as `strong`. thrifty prints on or off. workers prints
 the roster's worker names in file order, only cheap ones when thrifty is on, no probe.
 review runs one review round: it snapshots <dir> (plus <dir>/.scratch), runs the worker,
 snapshots again, saves the full output to a file named on stderr, and prints only the
-VERDICT and COVERAGE lines. Exit: 0 ok, 2 config error, 3 probe fail or no reviewer
-found, 4 the reviewer changed files, 5 no verdict line, 124 timeout, otherwise the
+VERDICT and COVERAGE lines. ready exits 0 whenever the roster parsed as TOML, whatever
+is wrong with a single entry or setting. Exit: 0 ok, 2 config error, 3 probe fail or no reviewer
+found, 4 the reviewer changed files, 5 no verdict line, 6 a subagent record refused
+because a roster reviewer is available, 124 timeout, otherwise the
 worker's own exit code. Stdlib only,
 by design.
 """
+import json
 import os
 import re
 import shlex
+import shutil
 import signal
 import subprocess
 import sys
@@ -48,6 +66,18 @@ BYPASS_SINGLE = {
     "--dangerously-skip-permissions", "--dangerously-bypass-approvals-and-sandbox",
 }
 PROBE_PROMPT = "Reply with exactly: VERDICT-OK"
+SHELL_OPS = ("&&", "||", "|", ";", "cd")
+RESERVED = "subagent"  # the review record's word for a review by a fresh-context subagent
+ASSIGNMENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
+WORKER_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
+# An allow rule for this launcher: a Bash rule whose command is python running a file
+# named worker.py. A rule that only mentions the file, such as a Read rule or
+# `Bash(cat .../worker.py)`, allows a different command and does not count.
+ALLOW_RULE = re.compile(r"Bash\(\s*python3?\s+(?:\S*/)?worker\.py(?=[\s:*)])")
+
+
+class Fault(Exception):
+    """A top-level roster setting that the reviewer pick rejects."""
 
 
 def die(code, msg):
@@ -55,17 +85,32 @@ def die(code, msg):
     sys.exit(code)
 
 
-def load_roster():
+def read_roster():
+    """(data, None), or (None, why it could not be read). Never exits."""
     if not ROSTER.exists():
-        die(2, f"{ROSTER} not found — bootstrap it per worker-contract.md")
+        return None, f"{ROSTER} not found — bootstrap it per worker-contract.md"
     try:
         with open(ROSTER, "rb") as f:
-            return tomllib.load(f)
+            return tomllib.load(f), None
     except tomllib.TOMLDecodeError as e:
-        die(2, f"{ROSTER} is not valid TOML: {e}")
+        return None, f"{ROSTER} is not valid TOML: {e}"
+    except Exception as e:
+        # Every other way a load can fail: a directory at the roster path, a file this
+        # user cannot read, bytes that are not UTF-8. None of them may end in a traceback.
+        return None, f"{ROSTER} cannot be read: {e}"
+
+
+def load_roster():
+    data, problem = read_roster()
+    if problem:
+        die(2, problem)
+    return data
 
 
 def resolve(name):
+    fault = name_fault(name)
+    if fault:
+        die(2, f"worker {name!r} cannot be used: {fault}")
     data = load_roster()
     entry = data.get("workers", {}).get(name)
     if entry is None:
@@ -76,7 +121,7 @@ def resolve(name):
     return entry
 
 
-def thrifty_on(data) -> bool:
+def thrifty_state(data) -> bool:
     env = os.environ.get("MAGITO_THRIFTY")
     if env == "0":
         return False
@@ -84,12 +129,417 @@ def thrifty_on(data) -> bool:
         return True
     flag = data.get("thrifty", False)
     if not isinstance(flag, bool):
-        die(2, f"thrifty in {ROSTER} must be true or false, got: {flag!r}")
+        raise Fault(f"thrifty in {ROSTER} must be true or false, got: {flag!r}")
     return flag
+
+
+def thrifty_on(data) -> bool:
+    try:
+        return thrifty_state(data)
+    except Fault as e:
+        die(2, str(e))
 
 
 def is_cheap(entry) -> bool:
     return isinstance(entry, dict) and entry.get("tier") == "cheap"
+
+
+def program_of(tokens):
+    """The program a cmd runs: its first token that is not `env`, an option, the
+    argument of `-u`, or a NAME=value assignment. None when nothing is left."""
+    after_u = False
+    for tok in tokens:
+        if after_u:
+            after_u = False
+        elif tok == "-u":
+            after_u = True
+        elif tok != "env" and not tok.startswith("-") and not ASSIGNMENT.match(tok):
+            return tok
+    return None
+
+
+def name_fault(name):
+    """Why a worker name cannot be used, or None. The rule holds for every command:
+    no worker with such a name is listed, probed, launched, picked, or recorded."""
+    if name == RESERVED:
+        return f"the name {RESERVED} is reserved"
+    # A name is printed on one line and written into the review record, so it is one
+    # plain word. An allowed set, not a list of banned characters: every space, line
+    # break, and control character in any alphabet is out by construction.
+    if not WORKER_NAME.fullmatch(name):
+        return "the name must be one word of letters, digits, '.', '_', or '-'"
+    return None
+
+
+def entry_fault(name, entry):
+    """Why a roster entry cannot be used at all, or None. probe and run keep their
+    own messages for a faulty cmd; ready and the reviewer pick turn it into a skip."""
+    fault = name_fault(name)
+    if fault:
+        return fault
+    if not isinstance(entry, dict):
+        return "not a table"
+    if "cmd" not in entry:
+        return "no cmd"
+    if not isinstance(entry["cmd"], str):
+        return "cmd is not a string"
+    try:
+        tokens = shlex.split(entry["cmd"])
+    except ValueError:
+        return "cmd cannot be parsed"
+    for bad in SHELL_OPS:
+        if bad in tokens:
+            return f"cmd contains shell operator '{bad}'"
+    if any("{model}" in tok for tok in tokens):
+        if not entry.get("model"):
+            return "cmd uses {model} but declares no model"
+        if not isinstance(entry["model"], str):
+            return "model is not a string"
+    if program_of(tokens) is None:
+        return "cmd names no program"
+    return None
+
+
+def env_state(entry):
+    """('ok' | 'invalid' | 'missing', the missing names) for an entry's requires_env.
+    A variable counts as set only when it is present and not the empty string."""
+    need = entry.get("requires_env")
+    if need is None:
+        return "ok", []
+    if not isinstance(need, list) or not all(isinstance(n, str) for n in need):
+        return "invalid", []
+    missing = [n for n in need if not os.environ.get(n)]
+    return ("missing", missing) if missing else ("ok", [])
+
+
+def workers_table(data):
+    workers = data.get("workers", {})
+    if not isinstance(workers, dict):
+        raise Fault(f"'workers' in {ROSTER} must be a table of [workers.<name>] entries")
+    return workers
+
+
+def reviewer_order(data, workers, quiet=False):
+    """Candidate names in pick order: the `reviewers` list (or the older
+    `spec_reviewer`), then every other worker in file order."""
+    ranked = data.get("reviewers")
+    spec_name = data.get("spec_reviewer")
+    if ranked is not None:
+        if (not isinstance(ranked, list)
+                or not all(isinstance(n, str) for n in ranked)):
+            raise Fault(f"reviewers in {ROSTER} must be a list of worker name strings, "
+                        f"got: {ranked!r}")
+        for n in ranked:
+            if n not in workers:
+                raise Fault(f"reviewers names '{n}', which is not in {ROSTER}")
+    if ranked:
+        if spec_name is not None and not quiet:
+            print("worker.py: spec_reviewer ignored; reviewers is set", file=sys.stderr)
+        names = list(dict.fromkeys(ranked))
+    else:
+        # Absent or empty reviewers: the old single-name key counts as a list of one.
+        if spec_name is not None and not isinstance(spec_name, str):
+            raise Fault(f"spec_reviewer in {ROSTER} must be a worker name string")
+        if spec_name is not None and spec_name not in workers:
+            raise Fault(f"spec_reviewer '{spec_name}' is not in {ROSTER}")
+        names = [spec_name] if spec_name is not None else []
+    for name in workers:
+        if name not in names:
+            names.append(name)
+    return names
+
+
+def skip_reason(name, entry, writer_family, thrifty, skip):
+    """Why the pick passes over a candidate without probing it, or None."""
+    if name in skip:
+        return "excluded by the caller"
+    fault = entry_fault(name, entry)
+    if fault:
+        return f"invalid entry ({fault})"
+    if thrifty and not is_cheap(entry):
+        return "thrifty mode, tier is not cheap"
+    family = entry.get("family")
+    # An empty family must never count as "a different family".
+    if family is None or family == "":
+        return "no family"
+    if not isinstance(family, str):
+        return "family is not a string"
+    if family.lower() == writer_family.lower():
+        return f"same family ({family})"
+    state, missing = env_state(entry)
+    if state == "invalid":
+        return "requires_env is not a list of strings"
+    if missing:
+        return f"missing {','.join(missing)}"
+    return None
+
+
+def live_probe(name) -> bool:
+    # A dead candidate (missing binary, probe timeout) makes probe_ok die(); for
+    # a pick or a report that is a failed probe, not the end of the search. The
+    # same holds for any error one entry can raise while its command is built.
+    try:
+        return probe_ok(name)
+    except (Exception, SystemExit):
+        return False
+
+
+def pick_reviewer(data, writer_family, skip=(), probe=live_probe, quiet=False):
+    """The first candidate from another family that answers its probe, or None.
+    Raises Fault for a roster setting it cannot use. The one pick every caller shares."""
+    workers = workers_table(data)
+    names = reviewer_order(data, workers, quiet)
+    thrifty = thrifty_state(data)
+    for name in names:
+        reason = skip_reason(name, workers[name], writer_family, thrifty, skip)
+        if reason is None:
+            if probe(name):
+                return name
+            reason = "probe failed"
+        if not quiet:
+            print(f"worker.py: skip {name}: {reason}", file=sys.stderr)
+    return None
+
+
+def allow_rule_present() -> bool:
+    """True when a permissions.allow rule that lets python run this launcher exists in
+    the user's Claude Code settings or the current repo's. A fact only: it says nothing about
+    what a permission mode will do with the launch."""
+    files = [Path.home() / ".claude" / "settings.json"]
+    try:
+        r = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True)
+        if r.returncode == 0 and r.stdout.strip():
+            root = Path(r.stdout.strip())
+            files += [root / ".claude" / "settings.json", root / ".claude" / "settings.local.json"]
+    except OSError:
+        pass
+    for f in files:
+        try:
+            allow = json.loads(f.read_text())["permissions"]["allow"]
+        except (OSError, ValueError, KeyError, TypeError):
+            continue
+        if isinstance(allow, list) and any(isinstance(s, str) and ALLOW_RULE.match(s) for s in allow):
+            return True
+    return False
+
+
+def ready_line(name, entry):
+    """One worker's report line, and whether its probe answered."""
+    fault = entry_fault(name, entry)
+    if fault:
+        return f"{name}: invalid entry ({fault})", False
+    family = entry.get("family")
+    if family is None or family == "":
+        shown = "none"
+    else:
+        shown = family if isinstance(family, str) else "invalid"
+    installed = shutil.which(program_of(shlex.split(entry["cmd"]))) is not None
+    state, missing = env_state(entry)
+    for var in missing:
+        print(f"worker.py: {name} needs {var}: export it from ~/.zshenv "
+              "(a non-interactive shell does not read .zshrc)", file=sys.stderr)
+    env = f"missing {','.join(missing)}" if missing else state
+    if installed and state == "ok":
+        probe = "ok" if live_probe(name) else "failed"
+    else:
+        probe = "skipped"
+    line = f"{name}: family={shown} installed={'yes' if installed else 'no'} env={env} probe={probe}"
+    return line, probe == "ok"
+
+
+def ready(family):
+    """Report every roster worker. Exits 0 whenever the roster parsed as TOML."""
+    data = load_roster()
+    # A fault in a top-level setting is reported with or without --family, and
+    # never ends the report.
+    settings_ok = True
+    try:
+        workers = workers_table(data)
+    except Fault as e:
+        print(f"worker.py: {e}", file=sys.stderr)
+        workers, settings_ok = {}, False
+    if settings_ok:
+        try:
+            reviewer_order(data, workers)
+            thrifty_state(data)
+        except Fault as e:
+            print(f"worker.py: {e}", file=sys.stderr)
+            settings_ok = False
+    answered = {}
+    for name, entry in workers.items():
+        # One entry's fault must never end the report.
+        # One line per worker: a name outside the allowed set is shown quoted and
+        # escaped, so a line break or control character in it cannot break the line.
+        shown = name if WORKER_NAME.fullmatch(name) else json.dumps(name)
+        try:
+            line, answered[name] = ready_line(name, entry)
+            line = shown + line[len(name):]
+        except (Exception, SystemExit) as e:
+            line, answered[name] = f"{shown}: invalid entry ({e})", False
+        print(line)
+    print(f"launcher allow rule: {'present' if allow_rule_present() else 'absent'}")
+    if family is not None:
+        name = None
+        if settings_ok:
+            # Reuse the probe results gathered above; never probe a second time.
+            name = pick_reviewer(data, family, probe=lambda n: answered.get(n, False), quiet=True)
+        print(f"reviewer for {family}: {name or 'none'}")
+    sys.exit(0)
+
+
+NO_REVIEWER = "reviewer: none from another family, using a subagent"
+START_USAGE = ("usage: worker.py start (--family <family> [--label <text>] | --builder <worker>) "
+               "[--intent <path>] [--small]")
+
+
+def no_reviewer_message(data, writer_family) -> str:
+    """What reviewer says when no candidate passed. Call only after a pick returned None."""
+    if thrifty_state(data):
+        return f"thrifty mode: no cheap reviewer outside family '{writer_family}' passed its probe"
+    return f"no reviewer outside family '{writer_family}' passed its probe"
+
+
+def start_reviewer(builder_family) -> str:
+    """The reviewer part of the start line. Every failure of the pick that reviewer
+    runs becomes the subagent fallback: a fault here is never an error for start."""
+    data, problem = read_roster()
+    if data is None:
+        if not ROSTER.exists():
+            problem = f"no roster at {ROSTER}: run the workers skill to create one"
+        print(f"worker.py: {problem}", file=sys.stderr)
+        return NO_REVIEWER
+    try:
+        name = pick_reviewer(data, builder_family)
+        if name is None:
+            print(f"worker.py: {no_reviewer_message(data, builder_family)}", file=sys.stderr)
+            return NO_REVIEWER
+    except Fault as e:
+        print(f"worker.py: {e}", file=sys.stderr)
+        return NO_REVIEWER
+    return f"reviewer: {name} ({data['workers'][name]['family']})"
+
+
+def start_plan(intent, small) -> str:
+    """The plan part of the start line. An accepted intent wins over --small."""
+    if intent is not None:
+        path = Path(intent)
+        try:
+            with open(path, encoding="utf-8") as f:
+                head = [f.readline() for _ in range(5)]
+        except (OSError, UnicodeDecodeError) as e:
+            print(f"worker.py: cannot read intent file {path}: {e}", file=sys.stderr)
+            head = []
+        if any(line.startswith("Status: accepted") for line in head):
+            digits = re.match(r"\d+", path.name)
+            number = digits.group(0) if digits else path.name.removesuffix(".md")
+            return f"plan: already approved (intent {number})"
+    if small:
+        return "plan: skipped, small change"
+    return "plan: I will show it and wait for you"
+
+
+def start(args):
+    """Print the one line that opens a run: who builds, who reviews, and the plan stop."""
+    opts, small, rest = {}, False, list(args)
+    while rest:
+        flag = rest.pop(0)
+        if flag == "--small" and not small:
+            small = True
+        elif flag in ("--family", "--label", "--builder", "--intent") and flag not in opts \
+                and rest and rest[0] and not rest[0].startswith("--") and len(rest[0].splitlines()) == 1:
+            # A value is one non-empty line: the output is one line, whatever it is given.
+            opts[flag] = rest.pop(0)
+        else:
+            die(2, START_USAGE)
+    family, label, builder = opts.get("--family"), opts.get("--label"), opts.get("--builder")
+    if (family is None) == (builder is None) or (label is not None and family is None):
+        die(2, START_USAGE)
+    if builder is not None:
+        # A person named this worker, so the run must not go on without it.
+        fault = name_fault(builder)
+        if fault:
+            die(2, f"worker {builder!r} cannot build: {fault}")
+        try:
+            entry = workers_table(load_roster()).get(builder)
+        except Fault as e:
+            die(2, str(e))
+        if entry is None:
+            die(2, f"no worker '{builder}' in {ROSTER}")
+        family = entry.get("family") if isinstance(entry, dict) else None
+        if not isinstance(family, str) or not family:
+            die(2, f"worker '{builder}' in {ROSTER} needs a family that is a non-empty string")
+        who = f"builder: {builder} ({family})"
+    else:
+        who = f"builder: {label or 'this session'} ({family})"
+    line = " · ".join([who, start_reviewer(family), start_plan(opts.get("--intent"), small)])
+    # Exactly one line on stdout, even when a roster family or a file name holds a line break.
+    print(" ".join(line.splitlines()))
+    sys.exit(0)
+
+
+def git_fact(worktree, *args):
+    """One line of git output for a worktree, or None when git cannot answer."""
+    try:
+        r = subprocess.run(["git", "-C", worktree, *args], capture_output=True, text=True)
+    except OSError:
+        return None
+    out = r.stdout.strip()
+    return out if r.returncode == 0 and out else None
+
+
+def record(worktree, builder_family, reviewer):
+    """Write the review record for the branch checked out in <worktree>.
+
+    The marker lives in the MAIN worktree's .magito/, where gitflow.sh reads it, and
+    is never created here: only a branch made by gitflow.sh worktree add has one.
+    gitflow.sh reads the first word only, so the words after the sha are for people."""
+    if not Path(worktree).is_dir():
+        die(2, f"worktree does not exist: {worktree}")
+    branch = git_fact(worktree, "rev-parse", "--abbrev-ref", "HEAD")
+    sha = git_fact(worktree, "rev-parse", "HEAD")
+    listing = git_fact(worktree, "worktree", "list", "--porcelain")
+    if not branch or not sha or not listing or not listing.startswith("worktree "):
+        die(2, f"not a git worktree with a commit: {worktree}")
+    root = listing.splitlines()[0][len("worktree "):]
+    marker = Path(root) / ".magito" / f"review-{branch.replace('/', '-')}"
+    if not marker.is_file():
+        die(2, f"no review marker for {branch}: create the branch with gitflow.sh worktree add")
+    if reviewer == RESERVED:
+        # A subagent review can be recorded only when the roster has no reviewer to
+        # offer: the same pick that `reviewer` runs, run again here.
+        data, problem = read_roster()
+        name = None
+        if data is None:
+            print(f"worker.py: {problem}", file=sys.stderr)
+        else:
+            try:
+                name = pick_reviewer(data, builder_family)
+            except Fault as e:
+                print(f"worker.py: {e}", file=sys.stderr)
+        if name is not None:
+            die(6, f"{name} ({data['workers'][name]['family']}) answers its probe: "
+                   "review with it, not a subagent")
+    else:
+        try:
+            entry = workers_table(load_roster()).get(reviewer)
+        except Fault as e:
+            die(2, str(e))
+        if entry is None:
+            die(2, f"no worker '{reviewer}' in {ROSTER}")
+        fault = entry_fault(reviewer, entry)
+        if fault:
+            die(2, f"worker {reviewer!r} in {ROSTER} cannot review: invalid entry ({fault})")
+        family = entry.get("family")
+        if not isinstance(family, str) or not family:
+            die(2, f"worker '{reviewer}' in {ROSTER} needs a family that is a non-empty string")
+        if family.lower() == builder_family.lower():
+            die(2, f"worker '{reviewer}' is the same family as the builder ({family}): "
+                   "a review must come from another family")
+    line = f"{sha} reviewed by {reviewer}"
+    marker.write_text(line + "\n")
+    print(marker)
+    print(line)
+    sys.exit(0)
 
 
 def probe_ok(name, echo_failure=False) -> bool:
@@ -110,7 +560,7 @@ def probe_ok(name, echo_failure=False) -> bool:
 
 def build_argv(entry, name, cwd, brief):
     tokens = shlex.split(entry["cmd"])
-    for bad in ("&&", "||", "|", ";", "cd"):
+    for bad in SHELL_OPS:
         if bad in tokens:
             die(2, f"worker '{name}' cmd contains shell operator '{bad}' — "
                    "cmd is an argv template; drop it (worker.py sets the cwd itself)")
@@ -239,6 +689,8 @@ def review(name, cwd, brief_file, timeout):
 
 def main():
     args = sys.argv[1:]
+    if "--skip" in args and args[:1] != ["reviewer"]:
+        die(2, "--skip is an option of `worker.py reviewer` only")
     if len(args) >= 2 and args[0] == "probe":
         name = args[1]
         if probe_ok(name, echo_failure=True):
@@ -246,64 +698,32 @@ def main():
             sys.exit(0)
         die(3, f"probe failed for '{name}' (no VERDICT-OK)")
     elif len(args) >= 2 and args[0] == "reviewer":
-        writer_family = args[1]
+        writer_family, rest, skip = args[1], args[2:], []
+        while rest:
+            # A name is required after each --skip, and another option is not a name.
+            if rest[0] != "--skip" or len(rest) < 2 or rest[1].startswith("--"):
+                die(2, "usage: worker.py reviewer <writer-family> [--skip <worker>]...")
+            skip.append(rest[1])
+            rest = rest[2:]
         data = load_roster()
-        workers = data.get("workers", {})
-        if not isinstance(workers, dict):
-            die(2, f"'workers' in {ROSTER} must be a table of [workers.<name>] entries")
-        ranked = data.get("reviewers")
-        spec_name = data.get("spec_reviewer")
-        if ranked is not None:
-            if (not isinstance(ranked, list)
-                    or not all(isinstance(n, str) for n in ranked)):
-                die(2, f"reviewers in {ROSTER} must be a list of worker name strings, "
-                       f"got: {ranked!r}")
-            for n in ranked:
-                if n not in workers:
-                    die(2, f"reviewers names '{n}', which is not in {ROSTER}")
-        if ranked:
-            if spec_name is not None:
-                print("worker.py: spec_reviewer ignored; reviewers is set", file=sys.stderr)
-            names = list(dict.fromkeys(ranked))
-        else:
-            # Absent or empty reviewers: the old single-name key counts as a list of one.
-            if spec_name is not None and not isinstance(spec_name, str):
-                die(2, f"spec_reviewer in {ROSTER} must be a worker name string")
-            if spec_name is not None and spec_name not in workers:
-                die(2, f"spec_reviewer '{spec_name}' is not in {ROSTER}")
-            names = [spec_name] if spec_name is not None else []
-        for name in workers:
-            if name not in names:
-                names.append(name)
-        thrifty = thrifty_on(data)
-        for name in names:
-            entry = workers[name]
-            if thrifty and not is_cheap(entry):
-                print(f"worker.py: skip {name}: thrifty mode, tier is not cheap", file=sys.stderr)
-                continue
-            family = entry.get("family") if isinstance(entry, dict) else None
-            if family is None:
-                print(f"worker.py: skip {name}: no family", file=sys.stderr)
-                continue
-            if not isinstance(family, str):
-                print(f"worker.py: skip {name}: family is not a string", file=sys.stderr)
-                continue
-            if family.lower() == writer_family.lower():
-                print(f"worker.py: skip {name}: same family ({family})", file=sys.stderr)
-                continue
-            # A dead candidate (missing binary, no cmd, probe timeout) makes
-            # probe_ok die(); that must skip to the next candidate, not end the search.
-            try:
-                ok = probe_ok(name)
-            except SystemExit:
-                ok = False
-            if ok:
-                print(name)
-                sys.exit(0)
-            print(f"worker.py: skip {name}: probe failed", file=sys.stderr)
-        if thrifty:
-            die(3, f"thrifty mode: no cheap reviewer outside family '{writer_family}' passed its probe")
-        die(3, f"no reviewer outside family '{writer_family}' passed its probe")
+        try:
+            name = pick_reviewer(data, writer_family, skip)
+        except Fault as e:
+            die(2, str(e))
+        if name is not None:
+            print(name)
+            sys.exit(0)
+        die(3, no_reviewer_message(data, writer_family))
+    elif args[:1] == ["ready"]:
+        if args[1:] and (args[1] != "--family" or len(args) != 3):
+            die(2, "usage: worker.py ready [--family <family>]")
+        ready(args[2] if args[1:] else None)
+    elif args[:1] == ["start"]:
+        start(args[1:])
+    elif args[:1] == ["record"]:
+        if len(args) != 4:
+            die(2, "usage: worker.py record <worktree> <builder-family> <reviewer|subagent>")
+        record(args[1], args[2], args[3])
     elif args[:1] == ["thrifty"]:
         print("on" if thrifty_on(load_roster()) else "off")
         sys.exit(0)
@@ -314,7 +734,11 @@ def main():
             die(2, f"'workers' in {ROSTER} must be a table of [workers.<name>] entries")
         thrifty = thrifty_on(data)
         for name, entry in workers.items():
-            if not thrifty or is_cheap(entry):
+            fault = name_fault(name)
+            if fault:
+                # Never offer a name that no other command accepts.
+                print(f"worker.py: skip {name!r}: {fault}", file=sys.stderr)
+            elif not thrifty or is_cheap(entry):
                 print(name)
         sys.exit(0)
     elif len(args) >= 4 and args[0] == "run":
@@ -345,7 +769,11 @@ def main():
         review(name, cwd, brief_file, timeout)
     else:
         die(2, "usage: worker.py probe <worker> | "
-               "worker.py reviewer <writer-family> | "
+               "worker.py reviewer <writer-family> [--skip <worker>]... | "
+               "worker.py ready [--family <family>] | "
+               "worker.py start (--family <family> [--label <text>] | --builder <worker>) "
+               "[--intent <path>] [--small] | "
+               "worker.py record <worktree> <builder-family> <reviewer|subagent> | "
                "worker.py thrifty | worker.py workers | "
                "worker.py run <worker> <dir> <brief-file> [timeout] | "
                "worker.py review <worker> <dir> <brief-file> [timeout]")

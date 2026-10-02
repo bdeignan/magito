@@ -75,7 +75,38 @@ main_worktree() { git worktree list --porcelain | awk 'NR==1{sub(/^worktree /,""
 
 marker_path() { local slug="${1//\//-}"; echo "$(main_worktree)/.magito/review-${slug}"; }
 
-# require_review_decision: the fan-out gate (ADR 0014).
+# require_clean_tree <verb>: refuse a working tree with uncommitted changes.
+# <verb> is the subcommand that asked (ahead, push, pr) and ends the message.
+# An untracked file that git does not ignore counts. The commit test below
+# rests on this: a run that built a change and never committed it has no commit
+# ahead of the base, and would otherwise read as "nothing to merge".
+require_clean_tree() {
+  local dirty
+  dirty="$(git status --porcelain)"
+  [ -z "$dirty" ] && return 0
+  echo "working tree dirty — commit or discard every change before $1" >&2
+  printf '%s\n' "$dirty" >&2
+  exit 1
+}
+
+# commits_ahead [base]: how many commits HEAD has that the base lacks. The base
+# is the local branch when it exists, else origin/<base>. Echoes "<count> <base>".
+commits_ahead() {
+  local base="${1:-}" ref
+  [ -n "$base" ] || base="$(default_branch)"
+  if git show-ref --verify --quiet "refs/heads/$base"; then
+    ref="refs/heads/$base"
+  elif git show-ref --verify --quiet "refs/remotes/origin/$base"; then
+    ref="refs/remotes/origin/$base"
+  else
+    echo "base branch '$base' not found" >&2
+    exit 1
+  fi
+  echo "$(git rev-list --count "$ref..HEAD") $base"
+}
+
+# require_review_decision: the review gate (ADR 0014). It applies to every
+# branch that `worktree add` created.
 #
 # A marker's PRESENCE is what makes a branch gated. `worktree add` writes one
 # when it creates a branch for an unsupervised executor, so only those branches
@@ -94,7 +125,7 @@ require_review_decision() {
   [ "$recorded" = "$sha" ] && return 0
   echo "magito review gate: branch '$branch' was created for an unsupervised executor," >&2
   echo "and has no review decision at the current commit ($marker)." >&2
-  echo "Run the reviewing-changes skill against this worktree, which records the decision." >&2
+  echo "Review the branch, then record it: python3 <skills>/implement/scripts/worker.py record <worktree> <builder-family> <reviewer|subagent>" >&2
   echo "Do not record 'reviewed' unless a review actually ran." >&2
   exit 1
 }
@@ -146,13 +177,30 @@ case "$cmd" in
     done
     git commit -m "$msg"
     ;;
+  ahead)
+    # ahead [base]   the commit test: print how many commits this branch has that
+    # the base lacks. 0 means the run made no change to merge. Exits 0 either way;
+    # refuses the base branch itself and a tree with uncommitted changes.
+    guard_not_base
+    require_clean_tree ahead
+    counted="$(commits_ahead "${1:-}")"
+    echo "${counted%% *}"
+    ;;
   push)
     guard_not_base
+    require_clean_tree push
     git push -u origin "$(current_branch)"
     ;;
   worktree)
-    # worktree add <branch> [path]   create a worktree for an unsupervised executor
+    # worktree add <branch> [path] [--from <ref>]   create a worktree for a run
     # worktree remove <path> [--force]
+    #
+    # A new branch starts from the base branch, never from wherever the caller
+    # happens to stand: a run started on another branch must not inherit its
+    # commits. `--from <ref>` names another start point, as an integrated run does
+    # for a ticket branch that starts from the integration branch. A branch that is
+    # already checked out in a worktree is reused: `add` prints that worktree's
+    # path and creates nothing, so a resumed run can call it again.
     #
     # `add` also records that this branch is fan-out work, by writing `pending`
     # as its review decision. Nothing else marks a branch that way, which is how
@@ -170,7 +218,16 @@ case "$cmd" in
     sub="${1:?worktree needs a subcommand — add or remove}"; shift
     case "$sub" in
       add)
-        branch="${1:?branch required}"; path="${2:-}"
+        branch="${1:?branch required}"; shift
+        path=""; from=""
+        while [ "$#" -gt 0 ]; do
+          case "$1" in
+            --from) from="${2:?--from needs a branch or a commit}"; shift 2 ;;
+            *)
+              [ -z "$path" ] || { echo "usage: worktree add <branch> [path] [--from <ref>]" >&2; exit 1; }
+              path="$1"; shift ;;
+          esac
+        done
         root="$(main_worktree)"
         # Probe the real paths `add` creates. A directory-only pattern cannot match
         # a folder that does not exist yet, so probe a path inside the worktree.
@@ -189,14 +246,35 @@ case "$cmd" in
           [ -n "$dir" ] || dir="$root/.magito/worktrees"
           path="${dir}/${slug}"
         fi
+        marker="$(marker_path "$branch")"
+        mkdir -p "$(dirname "$marker")"
+        # A branch already checked out in a worktree is reused as it is. Its marker
+        # keeps whatever a review recorded; only a missing one is written. No
+        # `exit` in the awk: see main_worktree above.
+        existing="$(git worktree list --porcelain | awk -v b="branch refs/heads/${branch}" \
+          '/^worktree /{p=substr($0,10)} $0==b{print p}')"
+        if [ -n "$existing" ]; then
+          [ -f "$marker" ] || printf 'pending\n' > "$marker"
+          echo "$existing"
+          exit 0
+        fi
         # `add -b` fails outright when the branch exists, so don't assume it's new.
         if git show-ref --verify --quiet "refs/heads/${branch}"; then
           git worktree add "$path" "$branch"
         else
-          git worktree add -b "$branch" "$path"
+          if [ -z "$from" ]; then
+            base="$(default_branch)"
+            if git show-ref --verify --quiet "refs/heads/${base}"; then from="$base"
+            elif git show-ref --verify --quiet "refs/remotes/origin/${base}"; then from="origin/${base}"
+            else
+              # Never fall back to the caller's HEAD: that is the branch the run
+              # must not inherit commits from.
+              echo "gitflow.sh worktree add: base branch '${base}' not found — set git config magito.baseBranch <branch>, or pass --from <ref>" >&2
+              exit 1
+            fi
+          fi
+          git worktree add --no-track -b "$branch" "$path" "$from"
         fi
-        marker="$(marker_path "$branch")"
-        mkdir -p "$(dirname "$marker")"
         printf 'pending\n' > "$marker"
         echo "$path"
         ;;
@@ -213,7 +291,7 @@ case "$cmd" in
         git worktree prune
         ;;
       *)
-        echo "usage: worktree {add <branch> [path]|remove <path> [--force]}" >&2
+        echo "usage: worktree {add <branch> [path] [--from <ref>]|remove <path> [--force]}" >&2
         exit 1
         ;;
     esac
@@ -221,6 +299,14 @@ case "$cmd" in
   pr)
     # pr <issue> "<title>" "<body>"   the body precedes the Closes line
     guard_not_base
+    require_clean_tree pr
+    # A branch with no commit ahead of the base holds no change: the run reports
+    # its findings on the ticket instead. Same base as `ahead` with no argument.
+    counted="$(commits_ahead)"
+    if [ "${counted%% *}" -eq 0 ]; then
+      echo "gitflow.sh pr: no commit ahead of '${counted#* }' — nothing to open; report the findings instead" >&2
+      exit 1
+    fi
     require_review_decision "$(current_branch)"
     issue="${1:?issue required}"; title="${2:?title required}"; body="${3:-}"
     # The body must say something beyond Closes lines, in every mode. #206
@@ -272,6 +358,12 @@ case "$cmd" in
     #             commit, so this path makes the commit itself
     #   ff-only — fails loudly when a fast-forward isn't possible; that failure
     #             is correct behaviour, not a bug to route around
+    #
+    # A run builds in a linked worktree while the main checkout sits on the base
+    # branch, and git refuses to check a branch out twice. So when the base is
+    # already checked out in another worktree, the merge runs there. Untracked
+    # files in that worktree are the user's own and do not block the merge;
+    # uncommitted changes to tracked files do.
     guard_not_base
     require_review_decision "$(current_branch)"
     [ -z "$(git status --porcelain)" ] || { echo "working tree dirty — commit or stash before merging" >&2; exit 1; }
@@ -285,7 +377,18 @@ case "$cmd" in
         ;;
     esac
     base="$(default_branch)"; branch="$(current_branch)"
-    git checkout "$base"
+    # No `exit` in the awk: see main_worktree above.
+    base_dir="$(git worktree list --porcelain | awk -v b="branch refs/heads/${base}" \
+      '/^worktree /{p=substr($0,10)} $0==b{print p}')"
+    if [ -n "$base_dir" ]; then
+      if ! git -C "$base_dir" diff --quiet || ! git -C "$base_dir" diff --cached --quiet; then
+        echo "the worktree that holds '$base' has uncommitted changes to tracked files — commit or stash them before merging: $base_dir" >&2
+        exit 1
+      fi
+      cd "$base_dir"
+    else
+      git checkout "$base"
+    fi
     case "$strategy" in
       no-ff)
         git merge --no-ff --no-edit "$branch"
@@ -306,7 +409,7 @@ case "$cmd" in
     esac
     ;;
   *)
-    echo "usage: gitflow.sh {branch <issue> <slug> [kind]|commit <msg> <file>...|push|pr <issue> <title> <body>|merge|worktree add <branch> [path]|worktree remove <path> [--force]}" >&2
+    echo "usage: gitflow.sh {branch <issue> <slug> [kind]|commit <msg> <file>...|ahead [base]|push|pr <issue> <title> <body>|merge|worktree add <branch> [path] [--from <ref>]|worktree remove <path> [--force]}" >&2
     exit 1
     ;;
 esac

@@ -1,9 +1,9 @@
 # Worker contract
 
-The delegable build-slice of an issue: what a driver hands to an executor — a Claude
-subagent or a headless shell CLI — and what comes back. The `implement` single-issue path
-(SKILL.md step 4) and the parallel fan-out (`references/parallel.md` step 3) both delegate
-against this contract. The worker implements and stages; the driver owns branch, commit,
+The delegable build-slice of a ticket: what a driver hands to an executor — a Claude
+subagent or a headless shell CLI — and what comes back. The build step of `implement`
+([pipeline.md](./pipeline.md) step 3) and a batch run ([parallel.md](./parallel.md)) both
+delegate against this contract. The worker implements and stages; the driver owns branch, commit,
 review, merge, and PR.
 
 ## The brief
@@ -15,8 +15,8 @@ standing docs are the only thing that may be named by exact repo-relative path.
 
 Every brief carries:
 
-1. **The assigned directory** — a worktree path (the parallel fan-out) or the repo tree on its
-   feature branch (implement). The worker never touches files outside it.
+1. **The assigned directory** — always the ticket's worktree path. Every build happens in
+   a worktree. The worker never touches files outside it.
 2. **The full issue spec, pasted in** — body, acceptance criteria, any repo
    conventions the work needs. Never a bare issue number or URL.
 3. **The verification floor, in full** (workers cannot load `verifying`):
@@ -72,7 +72,30 @@ through the launcher script, never a hand-built command line:
 ```bash
 python3 <skills>/implement/scripts/worker.py probe <worker>
 python3 <skills>/implement/scripts/worker.py run <worker> <dir> <brief-file> [timeout]
+python3 <skills>/implement/scripts/worker.py ready [--family <family>]
+python3 <skills>/implement/scripts/worker.py start (--family <family> [--label <text>] | --builder <worker>) [--intent <path>] [--small]
+python3 <skills>/implement/scripts/worker.py record <worktree> <builder-family> <reviewer|subagent>
 ```
+
+`record` writes the review record for the branch in `<worktree>` as `<sha> reviewed by <name>`,
+into the marker that `gitflow.sh worktree add` created; it never creates a marker. With the
+word `subagent` it runs the reviewer pick again first, and exit 6 means a roster worker
+answers its probe: review with the worker it names, not with a subagent.
+
+`start` prints the one line that opens a run, for example
+`builder: this session (anthropic) · reviewer: codex (openai) · plan: already approved (intent 0005)`.
+The builder part names this session, a labelled builder such as a subagent, or the roster
+worker given with `--builder`. The reviewer part is the same pick `reviewer` makes for the
+builder's family. Whenever that pick fails, for a missing roster as for a failed probe, the
+part reads `reviewer: none from another family, using a subagent`, the reason goes to stderr,
+and the command still exits 0. The plan part says whether the run stops for plan approval: no
+stop for an accepted intent given with `--intent`, none for `--small`, and a stop otherwise.
+
+`ready` reports every roster worker on one line each: its family, whether its program is
+installed, whether its required variables are set, and whether its probe answers. A last line
+says whether an allow rule for this launcher exists in the Claude Code settings. With
+`--family`, it also names the worker that `reviewer` would pick for that family. It exits 0
+whenever the roster parses, whatever is wrong with one entry.
 
 (`<skills>` is your tool's installed skills directory — `~/.claude/skills` for Claude
 Code, `~/.agents/skills` for most others.)
@@ -90,7 +113,12 @@ documentation otherwise. An optional `family` field is a free lowercase string t
 names the model family (`openai`, `google`, `anthropic`, ...). Two workers are the
 same family when their `family` strings are equal after lowercasing. An optional `tier` field
 labels how strong the pinned model is; a worker with no `tier` counts as
-`strong`. A top-level `reviewers` key is a list of worker names, ranked: the
+`strong`. An optional `requires_env` field is a list of environment variable names the tool
+needs, such as `requires_env = ["GOOGLE_CLOUD_PROJECT"]`. When one is unset or empty, `ready`
+names it and the reviewer pick passes over that worker without probing it. A worker cannot
+be named `subagent`: the review record keeps that word for a fresh-context subagent. A
+worker name is one plain word of letters, digits, `.`, `_`, or `-`. No command lists,
+probes, launches, picks, or records a worker with any other name. A top-level `reviewers` key is a list of worker names, ranked: the
 pipeline tries them in that order when it asks for a spec reviewer from a different family,
 then every other worker in file order. Each candidate must pass the family rule and its
 probe, so when the first reviewer is out of quota the next one takes over. The older
@@ -145,34 +173,25 @@ no `{cwd}` at all — the launcher sets the working directory itself.
 
 ## Bootstrap
 
-### Example roster
+The `workers` skill creates and checks the roster. It reports which workers on the machine
+are ready, and when `~/.magito/workers.toml` does not exist it offers to copy
+[`workers.toml.example`](./workers.toml.example) there. Never write that file from here, and
+never overwrite an existing one: it is the user's file. Expect the driver's permission system
+to ask once before the file is written: the entries are templates that launch agents with
+approval prompts bypassed, so a flag on persisting them is correct behavior, not an error.
 
-When seeding a roster, start from [`workers.toml.example`](./workers.toml.example). Every
-entry there is commented out. Uncomment the entries for the tools installed on the machine,
-then run `python3 <skills>/implement/scripts/worker.py probe <name>` for each one. Existing
-rosters receive an entry only when the user asks; keep their active settings and avoid
-duplicates.
-
-Each comment above an entry records the date its model id was checked, or says
+Every entry in the example is commented out, and the user turns on the ones for the tools
+they have. Each comment above an entry records the date its model id was checked, or says
 `unverified: check with <command>`. Treat an unverified id as a guess until that command
 confirms it. A newer model elsewhere does not establish availability in a given tool. The
 Cursor entries need `agent login` first, and `agent models` is the authority for the exact
 ids on the installed CLI and account. The Cursor and omp entries take their family from the
 pinned model, not from the tool. A different model means a separate entry with its own name.
 
-### First roster
-
-First time a worker is named and `~/.magito/workers.toml` does not exist: create it.
-Probe the installed candidates — omp, codex, claude, gemini; **never agy**. It earns
-its magi seat behind a pty wrapper, but a worker needs what it lacks: reliable
-non-TTY output (open stdout-drop bug, google-antigravity/antigravity-cli#76),
-structured completion, and session isolation — its `-c` resumes globally and
-cross-contaminates concurrent workers. Write live
-candidates as entries, comment out the dead, tell the user what you wrote, proceed.
-Never overwrite an existing `workers.toml` — it is the user's file. Expect the
-driver's permission system to ask once before the file is written: the entries are
-templates that launch agents with approval prompts bypassed, so a flag on persisting
-them is correct behavior, not an error.
+**agy is never a worker candidate.** It earns its magi seat behind a pty wrapper, but a
+worker needs what it lacks: reliable non-TTY output (open stdout-drop bug,
+google-antigravity/antigravity-cli#76), structured completion, and session isolation — its
+`-c` resumes globally and cross-contaminates concurrent workers.
 
 ## Probe and fallback
 
@@ -189,23 +208,28 @@ does not need them.
 - **Dies mid-run** (timeout, nonzero exit, garbage output): that issue reports
   `BLOCKED` like any executor failure. No automatic retry on another worker or model.
 
-Picking a spec reviewer is the one exception to "stop and ask." The user named no single
-worker for it, so there is no spend choice to override. `python3
+Picking a reviewer is the one exception to "stop and ask." The user named no single
+worker for it, so there is no spend choice to override. For a run, `worker.py start` makes
+this pick and prints it in the start line, and `worker.py record` runs it again before a
+subagent review can be recorded. `python3
 <skills>/implement/scripts/worker.py reviewer <writer-family>` tries the workers named in
 `reviewers`, in that order, then every other worker in file order. When `reviewers` is
 absent or empty, `spec_reviewer` counts as a list of one. It skips any worker with no `family`, a
-family equal to the writer's, or a failed probe, and says so on stderr. It prints the
+family equal to the writer's, a missing required variable, an entry it cannot use, or a failed
+probe, and says so on stderr. `--skip <worker>`, which can be repeated, passes over a named
+candidate: use it to reach another reviewer after one failed in the middle of a review. It prints the
 name of the first worker that passes, alone on stdout. It exits 3 when none passes.
 
-### Reviewer replies on the pipeline path
+### Reviewer replies in a run
 
-The pipeline path in [pipeline.md](./pipeline.md) picks its code reviewer with the same
-`worker.py reviewer <builder-family>` call. The brief carries the ticket body and
-`git diff <base>...HEAD`, and tells the reviewer to change no files and to answer with
-`VERDICT PASS` or one or more `VERDICT FIX: <finding>` lines. Reading a reply: any
-`VERDICT FIX` line means FIX, even beside a `VERDICT PASS`. A reply with neither token, or a
-nonzero exit, counts as a failed review, so run it again. You verify the no-write rule with
-`worktree_snapshot.py`, never by trusting the reviewer's word.
+The review step in [pipeline.md](./pipeline.md) uses the reviewer that the start line names:
+the same pick as `worker.py reviewer <builder-family>`, made by `worker.py start`. The brief
+carries the ticket body and `git diff <base>...HEAD`, and tells the reviewer to change no
+files and to answer with `VERDICT PASS` or one or more `VERDICT FIX: <finding>` lines.
+Reading a reply: any `VERDICT FIX` line means FIX, even beside a `VERDICT PASS`. A reply with
+neither token, or a nonzero exit, counts as a failed review, so run it again, as
+pipeline.md step 6 says. `worker.py review` verifies the no-write rule with
+`worktree_snapshot.py`; never trust the reviewer's word for it.
 
 ## Nested-CLI gotchas (verified July 2026)
 

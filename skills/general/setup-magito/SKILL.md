@@ -103,7 +103,7 @@ If missing, recommend the `contextFileName` setting over a second file: it point
 
 ### Review gate + base branch
 
-- Run `git config magito.reviewGate true` — opts the repo into the merge/PR review gate. The gate applies only to branches the `/implement` fan-out created, since those alone carry a review-decision marker (ADR 0014); work done by hand lands with no gate. On a marked branch, landing is blocked until a fresh decision is recorded — a completed review, or a deliberate skip with a reason.
+- Run `git config magito.reviewGate true` — opts the repo into the merge/PR review gate. The gate applies to every branch that `implement` built, since `gitflow.sh worktree add` gives each one a review-decision marker (ADR 0014, ADR 0020); work done outside `implement` has no marker and lands with no gate. On a marked branch, landing is blocked until a fresh decision is recorded: a completed review, recorded with `worker.py record`.
 - If this repo merges into a trunk other than its GitHub default branch (e.g. a `develop`-based migration workflow), also run `git config magito.baseBranch <branch>` — do NOT set this by default.
 
 ### Pull request title
@@ -144,15 +144,10 @@ If something is found, offer to bring it into the session journal as entries. **
 
 ### Delegation workers and magi seats
 
-`~/.magito/workers.toml` (the `/implement` delegation roster) and `~/.magito/bench.toml` (the magi seat roster) are **the user's machine-local files**. Report each as present or missing. Never write or overwrite either without explicit confirmation (the convention is in `CLAUDE.md`). If one is missing, say so and point at where it bootstraps — `bench.toml` self-creates on the first `/magi` run and is repaired by `/magi config`; `workers.toml` self-creates the first time a worker is named during `/implement`. Offer to seed a missing `bench.toml` only if the user asks; do not fill it silently.
+`~/.magito/workers.toml` (the `/implement` delegation roster) and `~/.magito/bench.toml` (the magi seat roster) are **the user's machine-local files**. Report each as present or missing. Never write or overwrite either without explicit confirmation (the convention is in `CLAUDE.md`). If one is missing, say so and point at where it bootstraps — `bench.toml` self-creates on the first `/magi` run and is repaired by `/magi config`; `workers.toml` is created and checked by the `workers` skill (`/workers`). Offer to seed a missing `bench.toml` only if the user asks; do not fill it silently.
 
-For `workers.toml`: when the file is missing, offer to copy
-[`workers.toml.example`](../implement/references/workers.toml.example) to `~/.magito/workers.toml`,
-and copy it only after the user says yes. Never overwrite an existing roster. When one exists,
-list the example's entries that it lacks (by `[workers.<name>]` name, whether the entry is
-commented or not) so the user can copy any they want. The
-[worker contract](../implement/references/worker-contract.md#example-roster) owns activation
-and model verification.
+For `workers.toml`, report present or missing and stop there. The `workers` skill creates a
+missing roster and checks an existing one: send the user to `/workers`.
 
 ### Python toolchain
 

@@ -20,9 +20,13 @@
 #      cannot see, including ignored drafts and already-dirty tracked files.
 #   7. The paid to-issues evaluator checks its complete final response and
 #      preserves a worker failure.
-#   8. The paid implement evaluator passes and fails as its fake workers dictate.
+#   8. The paid implement evaluator passes and fails as its fake workers dictate,
+#      in its default case and in the red-passes, no-intent, and no-intent-small
+#      variants. It proves a review by the record on disk, not by the response.
 #   9. The paid integrate evaluator (two tickets, resume, closing rule, semantic
-#      conflict) passes and fails as its fake workers dictate.
+#      conflict) passes and fails as its fake workers dictate. It proves the
+#      final review by the record on disk and fails a pull request body that
+#      names a review result.
 #  10. `install.py` links and registers the Codex hooks with a fail-open command, and
 #      installs clean when a stanza has no hooks keys.
 #  11. `gitflow.sh pr` refuses an empty body and a title that does not match
@@ -30,7 +34,33 @@
 #  12. `worker.py review` runs one review round, fails a reviewer that changed a
 #      file, and prints only the verdict lines. See issue #209.
 #  13. `gitflow.sh worktree add` puts worktrees in .magito/worktrees and keeps
-#      them out of git status. See issue #209 and ADR 0019.
+#      them out of git status. A new branch starts from the base branch,
+#      `--from` names another start point, and a branch already checked out is
+#      reused. See issue #209 and ADR 0019.
+#  14. `worker.py ready` reports each roster worker without ending on a bad
+#      entry, `requires_env` is honored, and `reviewer --skip` passes over a
+#      named worker. A second script counts worker starts: a passed-over
+#      worker is never started, and `ready` probes each worker once. See
+#      issue #213.
+#  15. `worker.py start` prints one line that names the builder, the reviewer,
+#      and the plan stop, and agrees with `worker.py reviewer` on every roster.
+#      A second script covers a roster that cannot be loaded and values with
+#      line breaks. A third compares the whole line and stderr against
+#      `worker.py reviewer`. See issue #214.
+#  16. `worker.py record` writes the review record into an existing marker,
+#      and refuses a subagent record exactly when `worker.py reviewer` names a
+#      worker. A second script covers worker names that are not one word, which
+#      no command may pick or record. See issue #215.
+#  17. `gitflow.sh ahead` counts the commits a branch has that its base lacks,
+#      and `ahead`, `push`, and `pr` refuse a tree with uncommitted changes;
+#      `pr` refuses a branch with no commit ahead. See issue #216.
+#  18. `gitflow.sh merge` lands a branch built in a linked worktree by merging
+#      where the base branch is already checked out.
+#
+# Not run here, because they start real tools and can cost money: the three paid
+# evals (eval-to-issues.sh, eval-implement.sh, eval-integrate.sh) and
+# eval-workers.sh, which runs the worker commands against the real roster and a
+# real reviewer from another model family.
 #
 # Collects all failures instead of stopping at the first one, prints a summary,
 # and exits 1 if anything failed, 0 otherwise. Bash and the stdlib Python
@@ -233,7 +263,8 @@ check_eval_to_issues() {
 
 check_eval_implement() {
   local out
-  if out=$(python3 "$REPO_ROOT/scripts/test_eval_implement.py" 2>&1); then
+  if out=$(python3 "$REPO_ROOT/scripts/test_eval_implement.py" 2>&1 \
+      && python3 "$REPO_ROOT/scripts/test_eval_implement_more.py" 2>&1); then
     echo "eval-implement: ok"
   else
     echo "eval-implement: FAILED"
@@ -244,7 +275,8 @@ check_eval_implement() {
 
 check_eval_integrate() {
   local out
-  if out=$(python3 "$REPO_ROOT/scripts/test_eval_integrate.py" 2>&1); then
+  if out=$(python3 "$REPO_ROOT/scripts/test_eval_integrate.py" 2>&1 \
+      && python3 "$REPO_ROOT/scripts/test_eval_integrate_more.py" 2>&1); then
     echo "eval-integrate: ok"
   else
     echo "eval-integrate: FAILED"
@@ -297,6 +329,67 @@ check_gitflow_worktree() {
   fi
 }
 
+check_worker_ready() {
+  local out
+  if out=$(python3 "$REPO_ROOT/scripts/test_worker_ready.py" 2>&1 \
+      && python3 "$REPO_ROOT/scripts/test_worker_probe_count.py" 2>&1 \
+      && python3 "$REPO_ROOT/scripts/test_worker_allow_rule.py" 2>&1); then
+    echo "worker-ready: ok"
+  else
+    echo "worker-ready: FAILED"
+    echo "$out" | sed 's/^/    /'
+    FAILURES+=("worker.py ready report and reviewer --skip")
+  fi
+}
+
+check_worker_start() {
+  local out
+  if out=$(python3 "$REPO_ROOT/scripts/test_worker_start.py" 2>&1 \
+      && python3 "$REPO_ROOT/scripts/test_worker_start_roster.py" 2>&1 \
+      && python3 "$REPO_ROOT/scripts/test_worker_start_strict.py" 2>&1); then
+    echo "worker-start: ok"
+  else
+    echo "worker-start: FAILED"
+    echo "$out" | sed 's/^/    /'
+    FAILURES+=("worker.py start line")
+  fi
+}
+
+check_worker_record() {
+  local out
+  if out=$(python3 "$REPO_ROOT/scripts/test_worker_record.py" 2>&1 \
+      && python3 "$REPO_ROOT/scripts/test_worker_names.py" 2>&1); then
+    echo "worker-record: ok"
+  else
+    echo "worker-record: FAILED"
+    echo "$out" | sed 's/^/    /'
+    FAILURES+=("worker.py record")
+  fi
+}
+
+check_gitflow_ahead() {
+  local out
+  if out=$(python3 "$REPO_ROOT/scripts/test_gitflow_ahead.py" 2>&1 \
+      && python3 "$REPO_ROOT/scripts/test_gitflow_ahead_strict.py" 2>&1); then
+    echo "gitflow-ahead: ok"
+  else
+    echo "gitflow-ahead: FAILED"
+    echo "$out" | sed 's/^/    /'
+    FAILURES+=("gitflow.sh commit test and clean-tree check")
+  fi
+}
+
+check_gitflow_merge() {
+  local out
+  if out=$(python3 "$REPO_ROOT/scripts/test_gitflow_merge.py" 2>&1); then
+    echo "gitflow-merge: ok"
+  else
+    echo "gitflow-merge: FAILED"
+    echo "$out" | sed 's/^/    /'
+    FAILURES+=("gitflow.sh merge from a linked worktree")
+  fi
+}
+
 # --- run everything, then summarize ------------------------------------------
 check_install
 check_anti_slop
@@ -311,6 +404,11 @@ check_install_codex_hooks
 check_gitflow_pr
 check_worker_review
 check_gitflow_worktree
+check_worker_ready
+check_worker_start
+check_worker_record
+check_gitflow_ahead
+check_gitflow_merge
 
 echo
 if [[ ${#FAILURES[@]} -eq 0 ]]; then

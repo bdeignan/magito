@@ -116,6 +116,66 @@ def main() -> None:
         check(r.returncode == 0 and (elsewhere / "feat-4-w").is_dir(),
               f"worktreeDir: the override still wins (got {r.stdout!r})")
 
+    # A new branch starts from the base branch, wherever the caller stands.
+    with tempfile.TemporaryDirectory() as t:
+        repo = Repo(Path(t))
+        base = repo.git("rev-parse", "main").strip()
+        repo.git("checkout", "-q", "-b", "elsewhere")
+        (repo.root / "stray.txt").write_text("unrelated\n")
+        repo.git("add", "stray.txt")
+        repo.git("commit", "-q", "-m", "unrelated work on another branch")
+        r = repo.add("feat/8-s")
+        wt = repo.root / ".magito/worktrees/feat-8-s"
+        check(r.returncode == 0 and repo.git("rev-parse", "feat/8-s").strip() == base
+              and not (wt / "stray.txt").exists(),
+              f"start point: a new branch starts from the base, not from the caller's branch (stderr {r.stderr.strip()!r})")
+
+        # --from names another start point, as a ticket branch off an integration branch.
+        repo.git("branch", "integrate/0001-x", "elsewhere")
+        r = subprocess.run(["bash", str(GITFLOW), "worktree", "add", "feat/9-r", "--from", "integrate/0001-x"],
+                           cwd=repo.root, env=repo.env, capture_output=True, text=True)
+        check(r.returncode == 0
+              and repo.git("rev-parse", "feat/9-r").strip() == repo.git("rev-parse", "integrate/0001-x").strip()
+              and (repo.root / ".magito/worktrees/feat-9-r/stray.txt").exists(),
+              f"--from: the branch starts from the ref given (stderr {r.stderr.strip()!r})")
+        r = subprocess.run(["bash", str(GITFLOW), "worktree", "add", "feat/10-q", "--from"],
+                           cwd=repo.root, env=repo.env, capture_output=True, text=True)
+        check(r.returncode != 0 and not (repo.root / ".magito/worktrees/feat-10-q").exists(),
+              "--from with no ref: exits non-zero and creates nothing")
+
+        # A branch already checked out in a worktree is reused: same path, nothing new,
+        # and a recorded review is kept.
+        marker = repo.root / ".magito/review-feat-8-s"
+        check(marker.read_text() == "pending\n", "new worktree: the marker starts as pending")
+        marker.write_text("abc123 reviewed by codex\n")
+        before = repo.git("worktree", "list", "--porcelain")
+        r = repo.add("feat/8-s")
+        check(r.returncode == 0 and r.stdout.strip().splitlines()[-1:] == [str(wt)]
+              and repo.git("worktree", "list", "--porcelain") == before,
+              f"resume: an existing worktree is reused and its path printed (got {r.stdout!r} {r.stderr.strip()!r})")
+        check(marker.read_text() == "abc123 reviewed by codex\n", "resume: a recorded review is kept")
+        marker.unlink()
+        r = repo.add("feat/8-s", cwd=wt)
+        check(r.returncode == 0 and marker.read_text() == "pending\n",
+              "resume: a missing marker is written as pending")
+
+    # No base branch to be found: never fall back to the caller's branch.
+    with tempfile.TemporaryDirectory() as t:
+        repo = Repo(Path(t))
+        repo.git("branch", "-m", "main", "trunk")
+        (repo.root / "wip.txt").write_text("caller's work\n")
+        repo.git("add", "wip.txt")
+        repo.git("commit", "-q", "-m", "work on the caller's branch")
+        r = repo.add("feat/11-p")
+        check(r.returncode != 0 and "base branch 'main' not found" in r.stderr
+              and not (repo.root / ".magito/worktrees/feat-11-p").exists()
+              and repo.git("branch", "--list", "feat/11-p").strip() == "",
+              f"no base: exits non-zero, names the base, and creates nothing (got {r.returncode} {r.stderr.strip()!r})")
+        repo.git("config", "magito.baseBranch", "trunk")
+        r = repo.add("feat/11-p")
+        check(r.returncode == 0 and (repo.root / ".magito/worktrees/feat-11-p/wip.txt").exists(),
+              f"magito.baseBranch: the configured base is the start point (stderr {r.stderr.strip()!r})")
+
     if failures:
         raise SystemExit(1)
     print("test_gitflow_worktree: ok")

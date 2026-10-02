@@ -24,8 +24,8 @@ changes. Intent-specific overrides use the selection contract in
 adapter owns that run's operations. Do not restate commands in workflow skills.
 
 The repo is opted into the merge/PR review gate (`git config magito.reviewGate true`),
-which since ADR 0014 and ADR 0018 applies only to branches created by `gitflow.sh worktree add`:
-the `/implement` fan-out and every pipeline branch. Ordinary work lands with no gate and no marker. By default `gitflow.sh pr` targets the
+which since ADR 0014 and ADR 0020 applies only to branches created by `gitflow.sh worktree add`:
+that is every branch `implement` builds. Work done outside `implement` lands with no gate and no marker. By default `gitflow.sh pr` targets the
 repo's GitHub default branch (main); `gitflow.sh
 merge` never consults GitHub — it detects the base locally instead (`origin/HEAD`, then
 `init.defaultBranch`, then local `main`/`master`). Set `git config magito.baseBranch
@@ -162,8 +162,8 @@ committed here:
   repaired with `/magi config`.
 - `workers.toml` — the delegation worker roster for `/implement`:
   named headless CLI commands (`cmd` templates with `{cwd}`, `{brief}`, and optional
-  `{model}` placeholders). Self-bootstraps the first time a worker is named
-  ("via omp"). Contract: `skills/general/implement/references/worker-contract.md`.
+  `{model}` placeholders). The `workers` skill (`/workers`) creates it and reports which
+  workers are ready. Contract: `skills/general/implement/references/worker-contract.md`.
 - `handoffs/<repo-slug>.md` — legacy session handoffs, superseded first by the SQLite
   session ledger (#64) and now by the in-repo session journal (`.magito/journal/`,
   see below). Existing files stay on disk until a later migration step retires them.
@@ -216,22 +216,27 @@ absent** (ADR 0013). magito assumes an active human, so blocking that person to 
 attestation nobody reads is ceremony. The exception is the work no one watches. That was the
 `/implement` fan-out, and ADR 0018 adds the pipeline path: the human acts only at accepting an
 intent and merging a pull request, so every pipeline branch gets a marker and an automatic
-review from a different model family. The manual path keeps the rule of no gate.
+review from a different model family. ADR 0020 extends the gate to a ticket a person starts
+by hand: after its plan is approved nobody watches that build either, so every branch
+`implement` builds gets the marker, and every change on it is reviewed before it lands. A
+branch with no commit ahead of its base holds no change, so it gets no review. Work done outside `implement` keeps the
+rule of no gate.
 
 **Hooks** (Claude Code and Codex; Gemini CLI and omp run none), as they stand today:
 - `staging-guard.py` — denies `git add -A`/`--all`/`.` and `git commit -a` in every repo.
-- `review-gate.py` — denies landing unreviewed **fan-out and pipeline** work (ADR 0018): `gitflow.sh merge|pr`
+- `review-gate.py` — denies landing unreviewed work on **any branch `implement` built** (ADR 0018, ADR 0020): `gitflow.sh merge|pr`
   always; raw `git merge` (on the base branch) and `gh pr create` only in repos opted in
   via `git config magito.reviewGate true` (set by `setup-magito`). The gate checks the
   marker at `<main-worktree-root>/.magito/review-<branch>`. It holds `<sha> <decision>` once
-  a decision exists — either a completed review or a deliberate skip with a reason — so any
+  a decision exists — `worker.py record` writes it after a completed review — so any
   commit after it goes stale and re-blocks. Before then it holds the single word `pending`,
   written by `gitflow.sh worktree add`, which matches no sha and so blocks until reviewed.
   The main worktree is resolved explicitly (not derived
   from cwd), so a decision recorded inside a linked worktree still counts at merge time.
-  **A missing marker allows** (ADR 0014). Only `gitflow.sh worktree add` writes a marker,
-  when it creates a branch for an unsupervised executor, so a branch without one is work
-  someone did by hand and meets no gate. Do not "fix" the missing case into a denial: that
+  **A missing marker allows** (ADR 0014). `gitflow.sh worktree add` creates the marker, when
+  it creates a branch for an `implement` run, and `worker.py record` writes the review
+  decision into it. So a branch without a marker is work done outside `implement`, and it
+  meets no gate. Do not "fix" the missing case into a denial: that
   restores the blanket gate ADR 0013 removed and blocks every merge in the repo. The real
   floor is the same check in `gitflow.sh pr|merge`, which runs where hooks are banned;
   this hook is the insurance copy for the raw commands a script cannot see.
