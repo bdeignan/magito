@@ -14,7 +14,7 @@ The title uses [Conventional Commits](https://www.conventionalcommits.org/): `ty
 
 In guest mode (`mode = "guest"` in `.magito/config.toml`), the repo belongs to a team, and its house style wins:
 
-- **Body:** when the repo has `.github/pull_request_template.md`, fill in that template instead of the skeleton below. Keep the pipeline record from §Pipeline tickets, under the template's closest heading.
+- **Body:** when the repo has `.github/pull_request_template.md`, fill in that template instead of the skeleton below. The rules in §What the body never says apply inside the team's template too.
 - **Title:** follow `magito.prTitlePattern`. When it is `off`, match the titles of the repo's recent merged pull requests. `setup-magito` sets the pattern in guest mode.
 
 ## Right-sized structure
@@ -36,17 +36,15 @@ Example:
 >
 > **How it was verified:** `grep` found no repo-dependent merge framing in `skills/`; `python install.py --dry-run` completed cleanly.
 
-## Pipeline tickets
+## What the body never says
 
-A PR for a pipeline ticket (see the first rule of `SKILL.md`) has no human approval in front
-of it, so the body carries the record the reviewer did not watch happen. In
-addition to the sections above, list:
+These rules hold for every pull request an agent opens. A teammate reads the body to judge the change. How the change was produced is not their concern, and the run's last message to the user carries it.
 
-- The red run: the command and its failing output.
-- Every review round: the verdict lines, and the check result after each fix.
-- The reviewer's name and model family. When you used a fresh-context subagent because no
-  reviewer from another family was available, say so.
-- Every decision you made alone, one line each, so the human can overrule it at the merge.
+1. **No reviewer.** The body never says who or what reviewed the change: no reviewer name, no model family, and no note that a subagent reviewed.
+2. **No review rounds.** The body never lists review rounds or their results.
+3. **No magito vocabulary and no magito bookkeeping, of any kind.** The body never describes how magito produced the change: which skills ran, which steps or stops happened, which files under `.magito/` were written, or which intent doc or ticket draft the work came from. Test every sentence: a teammate who has never heard of magito can read it and loses nothing. These words are examples of what the rule rules out, not the full list: pipeline, roster, worker, verdict, marker, subagent, escalation, intent doc, spec review. One exception: when the change itself is about one of these things, as in the magito repo, the body can name it as the subject of the change.
+4. **A test that failed before and passes now goes under "How it was verified", in ordinary words:** the command, and that it failed before the change and passes after it. When the work had no such test, add nothing for it.
+5. **Each choice you made alone stays in the body,** one line each, in the form "Chose X over Y because Z". A code reviewer can overrule a choice only when they can see it.
 
 ## Closing issues
 
