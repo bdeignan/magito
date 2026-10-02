@@ -63,7 +63,8 @@
 #  20. `gitflow.sh commit` refuses when a file is staged that the caller did not
 #      name, lists the unnamed staged files, and makes no commit. A second
 #      script covers names spelled with `./`, `../`, or an absolute path, and
-#      runs under /bin/bash (3.2 on macOS). See issue #229.
+#      runs under /bin/bash (3.2 on macOS). A third covers file names that hold
+#      a line break. See issue #229.
 #
 # Not run here, because they start real tools and can cost money: the three paid
 # evals (eval-to-issues.sh, eval-implement.sh, eval-integrate.sh) and
@@ -413,7 +414,8 @@ check_worker_env() {
 check_gitflow_commit() {
   local out
   if out=$(python3 "$REPO_ROOT/scripts/test_gitflow_commit.py" 2>&1 \
-      && python3 "$REPO_ROOT/scripts/test_gitflow_commit_more.py" 2>&1); then
+      && python3 "$REPO_ROOT/scripts/test_gitflow_commit_more.py" 2>&1 \
+      && python3 "$REPO_ROOT/scripts/test_gitflow_commit_names.py" 2>&1); then
     echo "gitflow-commit: ok"
   else
     echo "gitflow-commit: FAILED"

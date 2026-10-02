@@ -168,17 +168,29 @@ case "$cmd" in
     msg="${1:?message required}"; shift
     [ "$#" -gt 0 ] || { echo "commit needs explicit files — never git add -A" >&2; exit 1; }
     export GIT_LITERAL_PATHSPECS=1
-    named_staged=$'\n'
+    # Paths are compared whole, one array element each, so a name that holds a
+    # line break never matches part of another. Bash 3.2 has no associative arrays.
+    named_staged=()
     while IFS= read -r -d '' p; do
-      named_staged+="$p"$'\n'
+      named_staged+=("$p")
     done < <(git diff --cached --name-only --no-renames -z -- "$@")
     unnamed=()
     while IFS= read -r -d '' p; do
-      case "$named_staged" in *$'\n'"$p"$'\n'*) ;; *) unnamed+=("$p") ;; esac
+      found=0
+      for q in ${named_staged[@]+"${named_staged[@]}"}; do
+        [ "$p" = "$q" ] && { found=1; break; }
+      done
+      [ "$found" = 1 ] || unnamed+=("$p")
     done < <(git diff --cached --name-only --no-renames -z)
     if [ "${#unnamed[@]}" -gt 0 ]; then
       echo "gitflow.sh commit: these files are staged but were not named:" >&2
-      printf '  %s\n' "${unnamed[@]}" >&2
+      for p in "${unnamed[@]}"; do
+        # One line per path: a name with a line break prints quoted, as $'a\nb'.
+        case "$p" in
+          *$'\n'*) printf '  %q\n' "$p" >&2 ;;
+          *) printf '  %s\n' "$p" >&2 ;;
+        esac
+      done
       echo 'Name each one in the command to commit it, or run `git restore --staged <path>` to leave it out.' >&2
       exit 1
     fi
