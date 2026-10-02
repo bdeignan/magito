@@ -74,7 +74,13 @@ python3 <skills>/implement/scripts/worker.py probe <worker>
 python3 <skills>/implement/scripts/worker.py run <worker> <dir> <brief-file> [timeout]
 python3 <skills>/implement/scripts/worker.py ready [--family <family>]
 python3 <skills>/implement/scripts/worker.py start (--family <family> [--label <text>] | --builder <worker>) [--intent <path>] [--small]
+python3 <skills>/implement/scripts/worker.py record <worktree> <builder-family> <reviewer|subagent>
 ```
+
+`record` writes the review record for the branch in `<worktree>` as `<sha> reviewed by <name>`,
+into the marker that `gitflow.sh worktree add` created; it never creates a marker. With the
+word `subagent` it runs the reviewer pick again first, and exit 6 means a roster worker
+answers its probe: review with the worker it names, not with a subagent.
 
 `start` prints the one line that opens a run, for example
 `builder: this session (anthropic) · reviewer: codex (openai) · plan: already approved (intent 0005)`.
