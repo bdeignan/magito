@@ -20,16 +20,19 @@ decide. Where one skill needs another, ask: **does the user have a decision to m
 | No, and it is non-negotiable | **Invoke** | Skill A calls skill B. |
 
 **Ask, then invoke** is the fourth shape, and it is the right one when the decision is real
-but the next move belongs to the same skill. `implement` names its recommendation,
-asks, and then runs `reviewing-changes` or records the skip. That is not a recommend — the
-user never leaves the skill — and it is not a bare invoke, because the choice was surfaced.
+but the next move belongs to the same skill. `to-issues` shows its breakdown and asks the
+user to approve it when the input is not an accepted intent, and then goes on to publish.
+That is not a recommend — the user never leaves the skill — and it is not a bare invoke,
+because the choice was surfaced.
 Reach for it when handing the user back to the prompt would only make them type their way
 back in.
 
-**Invoke is the default inside the pipeline, and recommend is the default outside it.** The `implement` fan-out invokes
-`reviewing-changes` on every worktree and calls it non-negotiable — there is no decision to
-make, and turning it into a recommendation would make it skippable, which is the whole reason
-it is not one. `implement` reaching `verifying` is the same shape.
+**Invoke is the default inside any `implement` run, as it is inside the pipeline, and recommend stays the default between skills that the user starts by hand.** `implement` reviews
+every change it makes with no question, whether or not an accepted intent covers the ticket
+— there is no decision to make, and turning the review into a recommendation makes it
+skippable, which is the whole reason it is not one (ADR 0020). The one branch it does not
+review is a branch with no commit ahead of its base, which holds no change. `implement` reaching
+`verifying` is the same shape.
 
 **The failure mode Invoke has to guard against** is the seam that is none of the three: an
 automatic invocation the user did not choose and cannot see. Every skill is model-invocable

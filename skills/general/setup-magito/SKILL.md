@@ -103,7 +103,7 @@ If missing, recommend the `contextFileName` setting over a second file: it point
 
 ### Review gate + base branch
 
-- Run `git config magito.reviewGate true` — opts the repo into the merge/PR review gate. The gate applies only to branches the `/implement` fan-out created, since those alone carry a review-decision marker (ADR 0014); work done by hand lands with no gate. On a marked branch, landing is blocked until a fresh decision is recorded — a completed review, or a deliberate skip with a reason.
+- Run `git config magito.reviewGate true` — opts the repo into the merge/PR review gate. The gate applies to every branch that `implement` built, since `gitflow.sh worktree add` gives each one a review-decision marker (ADR 0014, ADR 0020); work done outside `implement` has no marker and lands with no gate. On a marked branch, landing is blocked until a fresh decision is recorded: a completed review, recorded with `worker.py record`.
 - If this repo merges into a trunk other than its GitHub default branch (e.g. a `develop`-based migration workflow), also run `git config magito.baseBranch <branch>` — do NOT set this by default.
 
 ### Pull request title

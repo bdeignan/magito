@@ -29,8 +29,9 @@ currently deferred, see the file.)
 | Designing or changing a skill — seams, invocation, the spine | [CONVENTIONS.md](./CONVENTIONS.md) |
 | Skill, hook, and agent design conventions | `CLAUDE.md` — "Skill and Agent Design Notes" |
 | Why hooks are optional and what enforces rules instead | `docs/adr/0012`, `docs/adr/0013`, `docs/adr/0018` |
-| Why the review gate fires on a fan-out and the pipeline but not on your own work | `docs/adr/0014`, `docs/adr/0018` |
-| Why every pipeline branch is reviewed automatically, by a different model family when the roster has one | `docs/adr/0018` |
+| Why every change `implement` makes is reviewed before it lands, while work done outside `implement` meets no gate | `docs/adr/0014`, `docs/adr/0018`, `docs/adr/0020` |
+| Why that review is automatic, and comes from a different model family when the roster has one | `docs/adr/0018`, `docs/adr/0020` |
+| Which workers and reviewers this machine can use | `skills/general/workers/SKILL.md` |
 | Why skills name tracker operations instead of `gh`, including intent overrides | `docs/adr/0015`, `docs/adr/0017` |
 | Delegating a build (shell workers, worktrees) | `skills/general/implement/references/worker-contract.md` |
 | Why worktrees live in `.magito/worktrees/` inside the repo | `docs/adr/0019` |
