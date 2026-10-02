@@ -74,7 +74,10 @@ run from your working directory; `<skills>` is your tool's installed skills dire
      `gitflow.sh worktree remove <path>`, so that the run leaves no worktree behind, and end
      with the last message in its "No commit" form, covering every ticket.
    - `1` or more: review the whole branch, even when no ticket in this run added a commit.
-     Use the reviewer from the start line and run the round as pipeline.md step 6 describes,
+     First run the full check in the integration worktree, whatever earlier steps ran: the
+     final review and the record in step 6 rest on a green check run after the last commit
+     on the branch. A red check here, with no merge left to undo, is a semantic conflict from
+     an earlier merge: stop with escalation 6. Then use the reviewer from the start line and run the round as pipeline.md step 6 describes,
      against the integration worktree. Give it the whole intent doc and the output of
      `git diff <base>...integrate/<NNNN>-<slug>`. It answers exactly one of these lines, plus
      any `VERDICT FIX: <defect>` lines:
@@ -111,6 +114,10 @@ run from your working directory; `<skills>` is your tool's installed skills dire
 
 A rerun with the integration branch present picks up where the last run stopped.
 
+- Before anything else, run the full check in the integration worktree. The earlier run can
+  have stopped between a merge and its check, so a merged branch does not prove a green
+  branch. When the check is red, the last merge is a semantic conflict: undo it as step 4
+  says and stop with escalation 6.
 - A ticket is done when `git branch --merged integrate/<NNNN>-<slug>` lists its branch. Skip
   done tickets entirely: no build, no review, no second merge.
 - A ticket branch that exists but is not merged resumes from its last commit. First run the
@@ -127,7 +134,8 @@ Pipeline.md lists every stop, and all of them apply to each ticket in the run. O
 arises only here:
 
 - **Escalation 6, semantic conflict.** A merge applied cleanly, but the check is red on the
-  integration branch. Name it "escalation 6" and "semantic conflict" in the message. Quote the
+  integration branch. That includes a red check found at the start of a resumed run, or just
+  before the final review. Name it "escalation 6" and "semantic conflict" in the message. Quote the
   ticket branch, the merge, and the failing check output. Open no pull request.
 
 An ambiguous coverage verdict is escalation 1 in pipeline.md, quoted with the reviewer's
