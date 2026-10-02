@@ -67,7 +67,10 @@ assigned directory:
    naming the files: `gitflow.sh commit "<message>" <file>...`. It never runs `git add -A`
    or `git add .`.
 4. A change that does not belong to the ticket is not committed. The driver discards it or
-   leaves it out, and names it in its last message to the user.
+   leaves it out, and names it in its last message to the user. When the worker staged such
+   a change, the driver first takes it out of the index with
+   `git -C <dir> restore --staged <file>`: `gitflow.sh commit` commits everything already
+   staged, beside the files it is given.
 5. Files left unstaged are never, alone, a reason to mark the worker failed or `BLOCKED`,
    and never a reason to rebuild the work. The driver says in one line that it staged the
    files itself.
@@ -79,7 +82,7 @@ Three cases show the rule at work:
 - The worker changed the right files and staged none of them. The driver stages them by
   name and commits them. It does not mark the worker failed.
 - The worker also changed a file outside the ticket. The driver does not commit that file,
-  and it names the file to the user.
+  unstages it first when the worker staged it, and names the file to the user.
 - The worker left nothing at all, staged or not. This rule changes nothing there: the
   result is `DONE (no-op)` when the change is already in place, and `BLOCKED` otherwise.
 

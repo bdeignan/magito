@@ -91,8 +91,8 @@ directory, as in `SKILL.md`.
    builder's family, and that pick covers nothing another family writes. So fix the
    findings yourself only when you built, or when your family equals the builder's. When a
    worker of another family built, send the findings back to that worker with a new brief
-   per [worker-contract.md](./worker-contract.md), and commit what it stages. Write no fix
-   yourself on that branch.
+   per [worker-contract.md](./worker-contract.md), and commit the fix it left, staged or
+   not, as that file says. Write no fix yourself on that branch.
    On a FIX verdict, do these in order: fix the findings, commit the fix with
    `gitflow.sh commit`, run the check again as in step 4, and only when the check is green
    run the next review round on that commit. Never carry a check result across a fix: the
