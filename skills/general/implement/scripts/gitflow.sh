@@ -358,6 +358,12 @@ case "$cmd" in
     #             commit, so this path makes the commit itself
     #   ff-only — fails loudly when a fast-forward isn't possible; that failure
     #             is correct behaviour, not a bug to route around
+    #
+    # A run builds in a linked worktree while the main checkout sits on the base
+    # branch, and git refuses to check a branch out twice. So when the base is
+    # already checked out in another worktree, the merge runs there. Untracked
+    # files in that worktree are the user's own and do not block the merge;
+    # uncommitted changes to tracked files do.
     guard_not_base
     require_review_decision "$(current_branch)"
     [ -z "$(git status --porcelain)" ] || { echo "working tree dirty — commit or stash before merging" >&2; exit 1; }
@@ -371,7 +377,18 @@ case "$cmd" in
         ;;
     esac
     base="$(default_branch)"; branch="$(current_branch)"
-    git checkout "$base"
+    # No `exit` in the awk: see main_worktree above.
+    base_dir="$(git worktree list --porcelain | awk -v b="branch refs/heads/${base}" \
+      '/^worktree /{p=substr($0,10)} $0==b{print p}')"
+    if [ -n "$base_dir" ]; then
+      if ! git -C "$base_dir" diff --quiet || ! git -C "$base_dir" diff --cached --quiet; then
+        echo "the worktree that holds '$base' has uncommitted changes to tracked files — commit or stash them before merging: $base_dir" >&2
+        exit 1
+      fi
+      cd "$base_dir"
+    else
+      git checkout "$base"
+    fi
     case "$strategy" in
       no-ff)
         git merge --no-ff --no-edit "$branch"

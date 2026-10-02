@@ -54,6 +54,8 @@
 #  17. `gitflow.sh ahead` counts the commits a branch has that its base lacks,
 #      and `ahead`, `push`, and `pr` refuse a tree with uncommitted changes;
 #      `pr` refuses a branch with no commit ahead. See issue #216.
+#  18. `gitflow.sh merge` lands a branch built in a linked worktree by merging
+#      where the base branch is already checked out.
 #
 # Not run here, because they start real tools and can cost money: the three paid
 # evals (eval-to-issues.sh, eval-implement.sh, eval-integrate.sh) and
@@ -377,6 +379,17 @@ check_gitflow_ahead() {
   fi
 }
 
+check_gitflow_merge() {
+  local out
+  if out=$(python3 "$REPO_ROOT/scripts/test_gitflow_merge.py" 2>&1); then
+    echo "gitflow-merge: ok"
+  else
+    echo "gitflow-merge: FAILED"
+    echo "$out" | sed 's/^/    /'
+    FAILURES+=("gitflow.sh merge from a linked worktree")
+  fi
+}
+
 # --- run everything, then summarize ------------------------------------------
 check_install
 check_anti_slop
@@ -395,6 +408,7 @@ check_worker_ready
 check_worker_start
 check_worker_record
 check_gitflow_ahead
+check_gitflow_merge
 
 echo
 if [[ ${#FAILURES[@]} -eq 0 ]]; then
