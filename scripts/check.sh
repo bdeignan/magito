@@ -38,8 +38,9 @@
 #      issue #213.
 #  15. `worker.py start` prints one line that names the builder, the reviewer,
 #      and the plan stop, and agrees with `worker.py reviewer` on every roster.
-#      A second script covers a roster path that cannot be read as a file.
-#      See issue #214.
+#      A second script covers a roster that cannot be loaded and values with
+#      line breaks. A third compares the whole line and stderr against
+#      `worker.py reviewer`. See issue #214.
 #
 # Collects all failures instead of stopping at the first one, prints a summary,
 # and exits 1 if anything failed, 0 otherwise. Bash and the stdlib Python
@@ -321,7 +322,8 @@ check_worker_ready() {
 check_worker_start() {
   local out
   if out=$(python3 "$REPO_ROOT/scripts/test_worker_start.py" 2>&1 \
-      && python3 "$REPO_ROOT/scripts/test_worker_start_roster.py" 2>&1); then
+      && python3 "$REPO_ROOT/scripts/test_worker_start_roster.py" 2>&1 \
+      && python3 "$REPO_ROOT/scripts/test_worker_start_strict.py" 2>&1); then
     echo "worker-start: ok"
   else
     echo "worker-start: FAILED"
