@@ -24,7 +24,13 @@ worker answers VERDICT-OK. reviewer picks a working worker whose family differs
 from the writer's, trying the top-level `reviewers` list first (or the older
 `spec_reviewer` name); --skip passes over a named candidate, for a run whose
 reviewer failed in the middle of a review. It also passes over a candidate whose
-`requires_env` names an unset variable, and any entry it cannot use. ready reports,
+`requires_env` names an unset variable, and any entry it cannot use. An entry's
+optional `env` table holds variable names and string values. probe, run, and review
+start that worker with the launcher's own environment plus the table, and a table
+entry wins over an inherited variable of the same name. The table is set for that
+worker alone, and a name it sets to a non-empty string counts as set for
+`requires_env`. An `env` that is not a table of strings makes the entry unusable.
+ready reports,
 one line per roster worker, whether its program is installed, its `requires_env`
 variables are set, and its probe answers; then whether an allow rule for this
 launcher exists; then, with --family, which worker reviewer would pick. start prints
@@ -70,6 +76,8 @@ SHELL_OPS = ("&&", "||", "|", ";", "cd")
 RESERVED = "subagent"  # the review record's word for a review by a fresh-context subagent
 ASSIGNMENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
 WORKER_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
+ENV_NAME = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
+ENV_FAULT = "env is not a table of strings"
 # An allow rule for this launcher: a Bash rule whose command is python running a file
 # named worker.py. A rule that only mentions the file, such as a Read rule or
 # `Bash(cat .../worker.py)`, allows a different command and does not count.
@@ -118,6 +126,8 @@ def resolve(name):
         die(2, f"no worker '{name}' in {ROSTER} (live: {live})")
     if "cmd" not in entry:
         die(2, f"worker '{name}' declares no cmd")
+    if isinstance(entry, dict) and entry_env(entry) is None:
+        die(2, f"worker '{name}' cannot be used: {ENV_FAULT}")
     return entry
 
 
@@ -197,18 +207,38 @@ def entry_fault(name, entry):
             return "model is not a string"
     if program_of(tokens) is None:
         return "cmd names no program"
+    if entry_env(entry) is None:
+        return ENV_FAULT
     return None
+
+
+def entry_env(entry):
+    """The entry's `env` table as a dict of variable names and values, or None when
+    it is not a table of strings. No table and an empty table are both {}."""
+    table = entry.get("env")
+    if table is None:
+        return {}
+    if not isinstance(table, dict):
+        return None
+    for key, value in table.items():
+        # A value the operating system cannot pass (a NUL byte) is no usable string.
+        if not ENV_NAME.fullmatch(key) or not isinstance(value, str) or "\0" in value:
+            return None
+    return table
 
 
 def env_state(entry):
     """('ok' | 'invalid' | 'missing', the missing names) for an entry's requires_env.
-    A variable counts as set only when it is present and not the empty string."""
+    A variable counts as set only when the worker will receive it and it is not the
+    empty string. It reads worker_env, the environment the worker starts with, so
+    this report and the launch can never disagree."""
     need = entry.get("requires_env")
     if need is None:
         return "ok", []
     if not isinstance(need, list) or not all(isinstance(n, str) for n in need):
         return "invalid", []
-    missing = [n for n in need if not os.environ.get(n)]
+    received = worker_env(entry)
+    missing = [n for n in need if not received.get(n)]
     return ("missing", missing) if missing else ("ok", [])
 
 
@@ -549,7 +579,7 @@ def probe_ok(name, echo_failure=False) -> bool:
     entry = resolve(name)
     here = str(Path.cwd())
     argv = strip_bypass(build_argv(entry, name, here, PROBE_PROMPT))
-    r = run(argv, here, 90, capture=True)
+    r = run(argv, here, 90, capture=True, entry=entry)
     ok = r.returncode == 0 and "VERDICT-OK" in r.stdout
     if not ok and echo_failure:
         print(r.stdout, end="")
@@ -593,25 +623,30 @@ def strip_bypass(argv):
     return out
 
 
-def worker_env():
-    """The environment a delegated worker runs in. Drops CLAUDE_CODE_SESSION_ID so
-    a worker can't inherit the driver's Claude Code session identity — retained as
+def worker_env(entry):
+    """The environment a delegated worker runs in: a copy of the launcher's own,
+    with the entry's `env` table added on top. The copy is per worker, so a table
+    never changes the launcher's environment and never reaches another worker.
+    Drops CLAUDE_CODE_SESSION_ID last, so a worker can't inherit the driver's
+    Claude Code session identity and a table can't put it back — retained as
     hygiene for subprocess workers, even though nothing currently reads it."""
     env = dict(os.environ)
+    env.update(entry_env(entry) or {})
     env.pop("CLAUDE_CODE_SESSION_ID", None)
     return env
 
 
-def run(argv, cwd, timeout, capture, keep_on_timeout=False):
-    """Run a worker. On timeout, kill its process group and die with 124 — or, with
-    keep_on_timeout, return code 124 and whatever it printed before the kill."""
+def run(argv, cwd, timeout, capture, entry, keep_on_timeout=False):
+    """Run the worker that roster entry `entry` describes. On timeout, kill its
+    process group and die with 124 — or, with keep_on_timeout, return code 124 and
+    whatever it printed before the kill."""
     pipe = subprocess.PIPE if capture else None
     try:
         # New session = own process group, so a timeout kill reaps the worker's
         # children too, not just the CLI process itself.
         p = subprocess.Popen(
             argv, cwd=cwd, stdin=subprocess.DEVNULL, stdout=pipe, stderr=pipe,
-            text=True, start_new_session=True, env=worker_env(),
+            text=True, start_new_session=True, env=worker_env(entry),
         )
     except FileNotFoundError:
         die(2, f"binary not found: {argv[0]}")
@@ -645,7 +680,8 @@ def review(name, cwd, brief_file, timeout):
         brief = Path(brief_file).read_text()
     except OSError as e:
         die(2, f"cannot read brief file: {e}")
-    argv = build_argv(resolve(name), name, cwd, brief)
+    entry = resolve(name)
+    argv = build_argv(entry, name, cwd, brief)
     work = Path(tempfile.mkdtemp(prefix="magito-review-"))
 
     def snapshot(label):
@@ -659,7 +695,7 @@ def review(name, cwd, brief_file, timeout):
     before = snapshot("before")
     # A timeout still gets the file check: a reviewer that edited files and then
     # hung must exit 4, not 124. Its partial output is saved like any other.
-    r = run(argv, cwd, timeout, capture=True, keep_on_timeout=True)
+    r = run(argv, cwd, timeout, capture=True, entry=entry, keep_on_timeout=True)
     output = work / "review.txt"
     output.write_text(r.stdout + r.stderr)
     print(f"review output: {output}", file=sys.stderr)
@@ -758,7 +794,7 @@ def main():
             die(2, f"cannot read brief file: {e}")
         entry = resolve(name)
         argv = build_argv(entry, name, cwd, brief)
-        r = run(argv, cwd, timeout, capture=False)
+        r = run(argv, cwd, timeout, capture=False, entry=entry)
         sys.exit(r.returncode)
     elif len(args) >= 4 and args[0] == "review":
         name, cwd, brief_file = args[1], args[2], args[3]
