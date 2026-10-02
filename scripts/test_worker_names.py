@@ -15,7 +15,8 @@ WORKER = SCRIPTS / "worker.py"
 GITFLOW = SCRIPTS / "gitflow.sh"
 GIT_ENV = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@example.invalid",
            "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@example.invalid"}
-BAD = ['""', '"two words"', '"line\\nbreak"', '" padded"']
+BAD = ['""', '"two words"', '"line\\nbreak"', '" padded"', '"del\\u007Fchar"', '"nel\\u0085char"',
+       '"nbsp\\u00A0char"', '"tab\\tchar"', '"-dash-first"', '"slash/inside"']
 RESULTS: list[bool] = []
 
 
@@ -64,8 +65,9 @@ def main() -> int:
               "start falls back to a subagent for such a roster", s.stdout + s.stderr)
         r = run("ready", "--family", "anthropic")
         lines = r.stdout.splitlines()
-        check(r.returncode == 0 and len(lines) == len(BAD) + 2
-              and all("invalid entry (the name must be one word" in ln for ln in lines[:len(BAD)])
+        check(r.returncode == 0 and len(lines) == len(BAD) + 2 and r.stdout.count("\n") == len(BAD) + 2
+              and all(ln.startswith('"') and "invalid entry (the name must be one word" in ln
+                      and ln.isascii() and ln.isprintable() for ln in lines[:len(BAD)])
               and lines[-1] == "reviewer for anthropic: none",
               "ready gives each badly named entry exactly one line", r.stdout + r.stderr)
         r = run("record", worktree, "anthropic", "subagent")
@@ -74,7 +76,8 @@ def main() -> int:
               "record subagent agrees with reviewer: no worker, so the record is written", r.stdout + r.stderr)
 
         # Recording a badly named worker is refused, and the marker stays one line.
-        for name in ("", "two words", "line\nbreak", " padded"):
+        for name in ("", "two words", "line\nbreak", " padded", "del\x7fchar", "nel\x85char",
+                     "nbsp\xa0char", "tab\tchar", "-dash-first", "slash/inside"):
             marker.write_text("pending\n")
             r = run("record", worktree, "anthropic", name)
             check(r.returncode == 2 and r.stdout == "" and marker.read_text() == "pending\n"

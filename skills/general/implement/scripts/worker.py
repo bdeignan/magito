@@ -69,6 +69,7 @@ PROBE_PROMPT = "Reply with exactly: VERDICT-OK"
 SHELL_OPS = ("&&", "||", "|", ";", "cd")
 RESERVED = "subagent"  # the review record's word for a review by a fresh-context subagent
 ASSIGNMENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
+WORKER_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
 
 
 class Fault(Exception):
@@ -156,9 +157,10 @@ def entry_fault(name, entry):
     if name == RESERVED:
         return f"the name {RESERVED} is reserved"
     # A name is printed on one line and written into the review record, so it is one
-    # word: not empty, no space, no line break, no control character.
-    if not name or len(name.split()) != 1 or name != name.strip() or any(ord(c) < 32 for c in name):
-        return "the name must be one word with no spaces or line breaks"
+    # plain word. An allowed set, not a list of banned characters: every space, line
+    # break, and control character in any alphabet is out by construction.
+    if not WORKER_NAME.fullmatch(name):
+        return "the name must be one word of letters, digits, '.', '_', or '-'"
     if not isinstance(entry, dict):
         return "not a table"
     if "cmd" not in entry:
@@ -350,12 +352,15 @@ def ready(family):
     answered = {}
     for name, entry in workers.items():
         # One entry's fault must never end the report.
+        # One line per worker: a name outside the allowed set is shown quoted and
+        # escaped, so a line break or control character in it cannot break the line.
+        shown = name if WORKER_NAME.fullmatch(name) else json.dumps(name)
         try:
             line, answered[name] = ready_line(name, entry)
+            line = shown + line[len(name):]
         except (Exception, SystemExit) as e:
-            line, answered[name] = f"{name}: invalid entry ({e})", False
-        # One line per worker, even for a name that holds a line break or nothing.
-        print(" ".join(line.split("\n")) if name.strip() else '""' + line)
+            line, answered[name] = f"{shown}: invalid entry ({e})", False
+        print(line)
     print(f"launcher allow rule: {'present' if allow_rule_present() else 'absent'}")
     if family is not None:
         name = None
