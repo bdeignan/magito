@@ -285,9 +285,13 @@ also carries these standing rules for the reviewer:
 
 1. Report every defect you find now, in this one reply. Do not hold any back for a later
    round.
-2. A `VERDICT FIX` must name the "Done when" item or the "Behavior" sentence of the ticket
-   that the change breaks, or a check that cannot work as written. Anything else is a
-   `NOTE: <remark>` line. A NOTE never blocks.
+2. A `VERDICT FIX` must be substantial and on target for the ticket's goal. It names the
+   "Done when" item or the "Behavior" sentence of the ticket that the change breaks, or a
+   check that cannot work as written, in a case the change can meet in ordinary use: input
+   an agent or a person types, files a build creates or deletes. A failure that needs a
+   contrived input or setup no build produces, and that fails safe, is a NOTE. Fails safe
+   means the change refuses or stops and does no harm. The NOTE says why the case is
+   contrived. Anything else is a `NOTE: <remark>` line. A NOTE never blocks.
 3. Wording taste is a NOTE. For a ticket that changes only prose, no test pins wording, so
    do not ask for one.
 4. "Touches" in a ticket is a hint, not a lock. A changed file that "Touches" does not list
@@ -298,6 +302,9 @@ also carries these standing rules for the reviewer:
    A test case found later is in a second test file, such as `test_<name>_more.py`. That
    file is the ticket's own test: judge what it tests. A branch with no red-step commit gets
    no rule 5.
+6. From the second round on: the brief lists each finding of the earlier rounds with its
+   fix, and says what changed since the last round. Do not repeat a finding unless its fix
+   does not work.
 
 Reading a reply:
 

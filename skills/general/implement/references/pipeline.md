@@ -73,7 +73,8 @@ directory, as in `SKILL.md`.
    wrote the code. The brief holds the ticket body, the output of `git diff <base>...HEAD`,
    the reply format in [worker-contract.md](./worker-contract.md), and the reviewer rules from
    that file. When step 2 ran, the brief also names the red-step commit and the locked test
-   files. The reviewer answers `VERDICT PASS`, or one or more `VERDICT FIX: <finding>` lines,
+   files. From the second round on, it also lists each earlier finding with its fix, and
+   what changed since the last round. The reviewer answers `VERDICT PASS`, or one or more `VERDICT FIX: <finding>` lines,
    and changes no files. Write the brief to a file outside the worktree with your file-writing
    tool.
    - **A roster worker reviews.** Run the round as one command:
