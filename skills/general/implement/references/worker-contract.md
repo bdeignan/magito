@@ -69,8 +69,8 @@ assigned directory:
 4. A change that does not belong to the ticket is not committed. The driver discards it or
    leaves it out, and names it in its last message to the user. When the worker staged such
    a change, the driver first takes it out of the index with
-   `git -C <dir> restore --staged <file>`: `gitflow.sh commit` commits everything already
-   staged, beside the files it is given.
+   `git -C <dir> restore --staged <file>`: `gitflow.sh commit` refuses to run when any
+   file is staged that the driver does not name, and lists each such file.
 5. Files left unstaged are never, alone, a reason to mark the worker failed or `BLOCKED`,
    and never a reason to rebuild the work. The driver says in one line that it staged the
    files itself.

@@ -75,6 +75,45 @@ main_worktree() { git worktree list --porcelain | awk 'NR==1{sub(/^worktree /,""
 
 marker_path() { local slug="${1//\//-}"; echo "$(main_worktree)/.magito/review-${slug}"; }
 
+# root_path <name>   sets $root_path to the name's exact path from the repository
+# root, $top. No path goes through a bare $(...), which would strip a trailing
+# line break from a file name. The nearest folder that exists is resolved
+# physically, so a symlink such as /tmp still matches. The parts below it, which
+# a staged deletion can remove, are resolved by hand: `.` is dropped and `..`
+# climbs one level.
+root_path() {
+  local f="$1" b d rest="" norm="" c
+  case "$f" in
+    */*) b="${f##*/}"; d="${f%/*}"; [ -n "$d" ] || d=/ ;;
+    *) b="$f"; d=. ;;
+  esac
+  while [ ! -d "$d" ]; do
+    case "$d" in
+      */*) rest="${d##*/}/$rest"; d="${d%/*}"; [ -n "$d" ] || d=/ ;;
+      *) rest="$d/$rest"; d=. ;;
+    esac
+  done
+  d="$(CDPATH= cd -- "$d" && pwd -P && echo x)" || d="x"
+  d="${d%$'\n'x}"
+  while [ -n "$rest" ]; do
+    c="${rest%%/*}"; rest="${rest#*/}"
+    case "$c" in
+      ""|.) ;;
+      ..)
+        if [ -n "$norm" ]; then
+          case "$norm" in */*/) norm="${norm%/*/}/" ;; *) norm="" ;; esac
+        else
+          d="${d%/*}"
+        fi
+        ;;
+      *) norm="$norm$c/" ;;
+    esac
+  done
+  d="${d%/}"   # the root folder "/" joins as "/name", not "//name"
+  root_path="$d/$norm$b"
+  root_path="${root_path#"$top"/}"
+}
+
 # require_clean_tree <verb>: refuse a working tree with uncommitted changes.
 # <verb> is the subcommand that asked (ahead, push, pr) and ends the message.
 # An untracked file that git does not ignore counts. The commit test below
@@ -159,10 +198,45 @@ case "$cmd" in
     #                          the index held: " D", "MD", "AD")
     #   gone, only in HEAD  -> already staged as deleted; nothing to do
     #   none of these       -> the path matches nothing; fail loudly
+    #
+    # A file already staged but not named would ride along, since `git commit`
+    # takes the whole index. So before staging anything, refuse when one is
+    # there: a refusal leaves the index as it was. Each name becomes its exact
+    # path from the repository root (see root_path), so `./x`, `../x`, and an
+    # absolute path all count. A directory names no file: git's own path matching
+    # would expand it, so it is not used here.
     guard_not_base
     msg="${1:?message required}"; shift
     [ "$#" -gt 0 ] || { echo "commit needs explicit files — never git add -A" >&2; exit 1; }
     export GIT_LITERAL_PATHSPECS=1
+    top="$(git rev-parse --show-toplevel && echo x)"; top="${top%$'\n'x}"
+    named=()
+    for f in "$@"; do
+      root_path "$f"
+      named+=("$root_path")
+    done
+    # Paths are compared whole, one array element each, so a name that holds a
+    # line break never matches part of another. Bash 3.2 has no associative arrays.
+    unnamed=()
+    while IFS= read -r -d '' p; do
+      found=0
+      for q in "${named[@]}"; do
+        [ "$p" = "$q" ] && { found=1; break; }
+      done
+      [ "$found" = 1 ] || unnamed+=("$p")
+    done < <(git diff --cached --name-only --no-renames -z)
+    if [ "${#unnamed[@]}" -gt 0 ]; then
+      echo "gitflow.sh commit: these files are staged but were not named:" >&2
+      for p in "${unnamed[@]}"; do
+        # One line per path: a name with a line break prints quoted, as $'a\nb'.
+        case "$p" in
+          *$'\n'*) printf '  %q\n' "$p" >&2 ;;
+          *) printf '  %s\n' "$p" >&2 ;;
+        esac
+      done
+      echo 'Name each one in the command to commit it, or run `git restore --staged <path>` to leave it out.' >&2
+      exit 1
+    fi
     for f in "$@"; do
       if [ -e "$f" ] || [ -L "$f" ]; then
         git add -- "$f"
