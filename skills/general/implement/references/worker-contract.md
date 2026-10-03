@@ -279,12 +279,48 @@ name of the first worker that passes, alone on stdout. It exits 3 when none pass
 
 The review step in [pipeline.md](./pipeline.md) uses the reviewer that the start line names:
 the same pick as `worker.py reviewer <builder-family>`, made by `worker.py start`. The brief
-carries the ticket body and `git diff <base>...HEAD`, and tells the reviewer to change no
-files and to answer with `VERDICT PASS` or one or more `VERDICT FIX: <finding>` lines.
-Reading a reply: any `VERDICT FIX` line means FIX, even beside a `VERDICT PASS`. A reply with
-neither token, or a nonzero exit, counts as a failed review, so run it again, as
-pipeline.md step 6 says. `worker.py review` verifies the no-write rule with
-`worktree_snapshot.py`; never trust the reviewer's word for it.
+carries the ticket body and `git diff <base>...HEAD`. It tells the reviewer to change no
+files and to answer with `VERDICT PASS` or one or more `VERDICT FIX: <finding>` lines. It
+also carries these standing rules for the reviewer:
+
+1. Report every defect you find now, in this one reply. Do not hold any back for a later
+   round.
+2. A `VERDICT FIX` must be substantial and on target for the ticket's goal. It names one of
+   two things:
+   - the "Done when" item or the "Behavior" sentence that the change breaks, or a check
+     that cannot work as written, in a case the change can meet in ordinary use: input an
+     agent or a person types, files a build creates or deletes;
+   - work that the ticket's "Out of scope" section names, as rule 4 says, whatever its size.
+
+   A failure that needs a contrived input or setup no build produces, and that fails safe,
+   is a NOTE. Fails safe means the change refuses or stops and does no harm. The NOTE says
+   why the case is contrived. Anything else is a `NOTE: <remark>` line. A NOTE never blocks.
+3. Wording taste is a NOTE. For a ticket that changes only prose, no test pins wording, so
+   do not ask for one.
+4. "Touches" in a ticket is a hint, not a lock. A changed file that "Touches" does not list
+   is not a defect by that fact alone. Work that the ticket's "Out of scope" section names
+   is a defect.
+5. Only when the branch has a red-step commit: the brief names that commit and its test
+   files, and says those files were committed before the code and must not change after it.
+   A test case found later is in a second test file, such as `test_<name>_more.py`. That
+   file is the ticket's own test: judge what it tests. A branch with no red-step commit gets
+   no rule 5.
+6. From the second round on: the brief lists each finding of the earlier rounds with its
+   fix, and says what changed since the last round. Do not repeat a finding unless its fix
+   does not work.
+
+Reading a reply:
+
+- Any `VERDICT FIX` line means FIX, even beside a `VERDICT PASS`.
+- A NOTE line is not a verdict. A reply with no `VERDICT` line counts as a failed review,
+  whatever NOTE lines it holds. So does a nonzero exit. Run the round again, as
+  pipeline.md step 6 says.
+- `worker.py review` prints only the verdict lines. The NOTE lines are in the full output
+  file that it names on stderr.
+- The driver never runs a fix round for a NOTE. It can act on one when the fix is plainly
+  right and small, and it says so in its last message.
+- `worker.py review` verifies the no-write rule with `worktree_snapshot.py`; never trust the
+  reviewer's word for it.
 
 ## Nested-CLI gotchas (verified July 2026)
 
