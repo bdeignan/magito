@@ -28,7 +28,7 @@ Read local ticket files from the main root before preparing worker briefs.
    - A ticket that runs at the same time as others is built by an executor. Pick it by the
      first of these that applies:
      1. The roster worker the user named for it.
-     2. In Claude Code, the `haiku-executor` subagent.
+     2. In Claude Code, the `executor` subagent.
      3. In any other tool that can start subagents, one subagent of that tool per ticket,
         given the same brief. Use it only when you know which model that subagent runs, and
         so its model family. When you cannot tell, treat the tool as case 4: the reviewer
@@ -42,15 +42,18 @@ Read local ticket files from the main root before preparing worker briefs.
    degrade loudly per [worker-contract.md](./worker-contract.md). When the user names no
    roster worker, do not run `worker.py workers` at all: a machine with no roster file still
    runs the batch. When `worker.py thrifty` prints `on`, use the cheapest subagent model for
-   in-session executors (`haiku` in Claude Code); when it exits non-zero because the machine
-   has no roster file, thrifty mode counts as off.
+   in-session executors. In Claude Code, pass `model: haiku` when you start `executor`. When
+   thrifty mode is off, or the command exits non-zero because the machine has no roster file,
+   pass no model, so the agent file's `sonnet` applies. One setting beats the model you pass:
+   on a machine that sets `CLAUDE_CODE_SUBAGENT_MODEL_FORCE=1`, thrifty mode cannot change
+   the executor's model.
 
 4. **Print a start line for every ticket.** Run `worker.py start` once per ticket and show
    each line to the user with its ticket. Pass `--family <your-family>` for a ticket you
    build, `--builder <worker>` for a roster worker, and `--family <executor-family> --label
    <executor-name>` for a subagent executor. The family is that of the model the subagent
    runs, which can differ from yours. In Claude Code that is `--family anthropic --label
-   haiku-executor`, so the line says `builder: haiku-executor (anthropic)`; in another tool
+   executor`, so the line says `builder: executor (anthropic)`; in another tool
    use `--label subagent` with that subagent's family. A subagent's line never says "this
    session". Add `--intent <path>` and `--small` for that ticket by the rules in `SKILL.md`.
    Each line names that ticket's builder, its reviewer, and whether it needs a plan.

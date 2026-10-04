@@ -1,10 +1,10 @@
 ---
-name: haiku-executor
-description: Use this agent when you need a fast, low-cost executor to implement a scoped coding task in an assigned worktree. The orchestrator passes a worktree path and issue spec; this agent implements the change, stages the modified files explicitly, and reports DONE.
-model: haiku
+name: executor
+description: Use this agent to implement a scoped coding task in an assigned worktree. It runs on Sonnet by default and on Haiku in thrifty mode. The orchestrator passes a worktree path and issue spec; this agent implements the change, stages the modified files explicitly, and reports DONE.
+model: sonnet
 tools: Read, Write, Edit, Bash, Glob, Grep, LS
 permissionMode: acceptEdits
-effort: low
+effort: medium
 color: cyan
 ---
 
