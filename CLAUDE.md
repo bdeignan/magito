@@ -71,7 +71,7 @@ magito/
 │   ├── staging-guard.py    # Blocks bulk staging (git add -A/. , commit -a)
 │   └── review-gate.py      # Blocks unreviewed merge/PR (recorded review decision)
 └── agents/
-    └── haiku-executor.md   # Symlinked to ~/.claude/agents/
+    └── executor.md         # Symlinked to ~/.claude/agents/
 ```
 
 ## Installing

@@ -70,8 +70,8 @@ def main() -> int:
             v = run(home, ["reviewer", "anthropic"], env)
             for label, args, who in (
                 ("start --family", ["start", "--family", "anthropic"], "builder: this session (anthropic)"),
-                ("start --label", ["start", "--family", "anthropic", "--label", "haiku-executor"],
-                 "builder: haiku-executor (anthropic)"),
+                ("start --label", ["start", "--family", "anthropic", "--label", "executor"],
+                 "builder: executor (anthropic)"),
             ):
                 s = run(home, args, env)
                 if v.returncode == 0:

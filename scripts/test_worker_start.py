@@ -112,8 +112,8 @@ def main() -> int:
                   f"start agrees with reviewer: {name}", f"start={s.stdout!r} reviewer={v.returncode} {v.stdout!r}")
 
         # --- the builder part -------------------------------------------------------------------
-        r = run(home(), ["start", "--family", "anthropic", "--label", "haiku-executor"], a_openai)
-        check(r.returncode == 0 and r.stdout.startswith("builder: haiku-executor (anthropic) · reviewer: a (openai) · "),
+        r = run(home(), ["start", "--family", "anthropic", "--label", "executor"], a_openai)
+        check(r.returncode == 0 and r.stdout.startswith("builder: executor (anthropic) · reviewer: a (openai) · "),
               "--label names a builder that is not this session", r.stdout + r.stderr)
         r = run(home(), ["start", "--builder", "a"], a_openai + b_google)
         check(r.returncode == 0 and one_line(r)
