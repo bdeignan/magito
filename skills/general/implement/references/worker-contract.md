@@ -91,8 +91,9 @@ to the worker as a single argument, so long briefs survive without shell-quoting
 
 ## Executors
 
-**Claude subagent** (Claude Code drivers only): `haiku-executor`, the default. Zero
-config; bills the Claude subscription.
+**Claude subagent** (Claude Code drivers only): `executor`, the default. Zero config;
+bills the Claude subscription. It runs on Sonnet by default and on Haiku in thrifty mode,
+as [parallel.md](./parallel.md) says.
 
 **Shell workers** (any driver): headless CLI commands resolved by name from
 `~/.magito/workers.toml` — machine-local, never synced. Always probe and launch
@@ -257,7 +258,7 @@ permissions, and permission tooling rightly balks at bypass flags on a command t
 does not need them.
 
 - **Dead at probe** (missing binary, auth failure, quota, timeout): stop and ask the
-  user — fall back to `haiku-executor`, or abort. Never substitute silently: the user
+  user — fall back to `executor`, or abort. Never substitute silently: the user
   named that worker to move spend off the Claude subscription, and a silent fallback
   moves it back.
 - **Dies mid-run** (timeout, nonzero exit, garbage output): that issue reports
@@ -342,7 +343,7 @@ Reading a reply:
 - **Claude Code permission modes**: run fan-out sessions in default (prompting)
   mode — the first `python3 .../scripts/worker.py` launch prompts once, and "do not ask again this
   session" covers the rest of the batch. Auto mode may deny the launch outright; if
-  you are then offered a fallback to `haiku-executor`, present it as a billing
+  you are then offered a fallback to `executor`, present it as a billing
   decision, never a convenience. The launcher's single stable prefix
   (`python3 .../scripts/worker.py`) is also what makes a tight allow rule possible
   if the user ever wants zero prompts.
