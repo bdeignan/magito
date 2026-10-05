@@ -60,6 +60,8 @@ run from your working directory; `<skills>` is your tool's installed skills dire
    - In pipeline.md step 6, the diff in a ticket's review brief is
      `git diff integrate/<NNNN>-<slug>...HEAD`, not the diff against the base branch. The
      reviewer then sees this ticket's change alone, without the tickets merged before it.
+     The same goes for the Standards check that step 6 carries: run
+     `worker.py standards integrate/<NNNN>-<slug>`, so its lists cover this ticket's diff.
    - Stop a ticket after a `VERDICT PASS` with a green check. Skip pipeline.md steps 8 to 10
      for the ticket: no record and no pull request per ticket.
 4. **Merge.** In the integration worktree, run `git merge --no-ff <ticket-branch>`, then run
@@ -83,7 +85,9 @@ run from your working directory; `<skills>` is your tool's installed skills dire
      on the branch. A red check here, with no merge left to undo, is a semantic conflict from
      an earlier merge: stop with escalation 6. Then use the reviewer from the start line and run the round as pipeline.md step 6 describes,
      against the integration worktree. Give it the whole intent doc and the output of
-     `git diff <base>...integrate/<NNNN>-<slug>`. It answers exactly one of these lines, plus
+     `git diff <base>...integrate/<NNNN>-<slug>`. The final review checks coverage against the
+     intent only. It carries no Standards part, because each ticket's review already checked
+     the standards against that ticket's diff. It answers exactly one of these lines, plus
      any `VERDICT FIX: <defect>` lines:
      - `COVERAGE PASS`
      - `COVERAGE FIX: <missing or wrong outcome>`

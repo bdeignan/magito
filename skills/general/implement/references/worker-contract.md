@@ -296,9 +296,11 @@ name of the first worker that passes, alone on stdout. It exits 3 when none pass
 
 The review step in [pipeline.md](./pipeline.md) uses the reviewer that the start line names:
 the same pick as `worker.py reviewer <builder-family>`, made by `worker.py start`. The brief
-carries the ticket body and `git diff <base>...HEAD`. It tells the reviewer to change no
-files and to answer with `VERDICT PASS` or one or more `VERDICT FIX: <finding>` lines. It
-also carries these standing rules for the reviewer:
+carries the ticket body and `git diff <base>...HEAD`. It also carries the output of
+`worker.py standards <base>` and the procedure in [standards-review.md](./standards-review.md),
+both pasted in, so the reviewer checks the change against the repo's written rules too. It
+tells the reviewer to change no files and to answer with `VERDICT PASS` or one or more
+`VERDICT FIX: <finding>` lines. It also carries these standing rules for the reviewer:
 
 1. Report every defect you find now, in this one reply. Do not hold any back for a later
    round.
@@ -307,7 +309,11 @@ also carries these standing rules for the reviewer:
    - the "Done when" item or the "Behavior" sentence that the change breaks, or a check
      that cannot work as written, in a case the change can meet in ordinary use: input an
      agent or a person types, files a build creates or deletes;
-   - work that the ticket's "Out of scope" section names, as rule 4 says, whatever its size.
+   - work that the ticket's "Out of scope" section names, as rule 4 says, whatever its size;
+   - a Standards finding, in one of the two forms that
+     [standards-review.md](./standards-review.md) gives: `VERDICT FIX: Standards — ...` for a
+     written rule the change breaks, or `VERDICT FIX: Stale — ...` for a doc line the change
+     made untrue.
 
    A failure that needs a contrived input or setup no build produces, and that fails safe,
    is a NOTE. Fails safe means the change refuses or stops and does no harm. The NOTE says
