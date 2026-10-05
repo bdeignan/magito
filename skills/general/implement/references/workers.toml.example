@@ -45,7 +45,7 @@
 # tier = "strong"
 # requires_env = ["GOOGLE_CLOUD_PROJECT"]
 # An `env` table sets plain variables for this worker alone. Never put a secret here: the
-# roster is a plain file on disk. An API key goes in ~/.zshenv or in the tool's own login.
+# roster is a plain file on disk. An API key goes in the environment the worker starts from (for zsh, ~/.zshenv) or in the tool's own login.
 # [workers.gemini.env]
 # GOOGLE_CLOUD_PROJECT = "your-project-id"
 

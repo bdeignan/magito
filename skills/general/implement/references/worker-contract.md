@@ -143,8 +143,7 @@ says whether an allow rule for this launcher exists in the Claude Code settings.
 `--family`, it also names the worker that `reviewer` would pick for that family. It exits 0
 whenever the roster parses, whatever is wrong with one entry.
 
-(`<skills>` is your tool's installed skills directory — `~/.claude/skills` for Claude
-Code, `~/.agents/skills` for most others.)
+(`<skills>` is the folder that holds this skill's own folder: the parent of the directory its `SKILL.md` is in.)
 
 `MAGITO_WORKERS_FILE` can select a separate roster for an isolated eval. When unset, the
 launcher uses `~/.magito/workers.toml`. The eval roster follows the same format.
@@ -187,7 +186,7 @@ a digit. An `env` that is not a table of strings makes the entry unusable: `read
 `invalid entry (env is not a table of strings)`, the reviewer pick passes over the worker,
 and `probe` and `run` exit 2. An `env KEY=value` prefix inside `cmd` keeps working. **The `env`
 table is not a place for a secret.** The roster is a plain file on disk. An API key or a
-token goes in `~/.zshenv` or in the tool's own login, never in `env`. A worker cannot
+token goes in the environment the worker starts from (for zsh, `~/.zshenv`) or in the tool's own login, never in `env`. A worker cannot
 be named `subagent`: the review record keeps that word for a fresh-context subagent. A
 worker name is one plain word of letters, digits, `.`, `_`, or `-`. No command lists,
 probes, launches, picks, or records a worker with any other name. A top-level `reviewers` key is a list of worker names, ranked: the
@@ -274,7 +273,7 @@ permissions, and permission tooling rightly balks at bypass flags on a command t
 does not need them.
 
 - **Dead at probe** (missing binary, auth failure, quota, timeout): stop and ask the
-  user — fall back to `executor`, or abort. Never substitute silently: the user
+  user — fall back to building yourself (with the `executor` subagent in Claude Code), or abort. Never substitute silently: the user
   named that worker to move spend off the Claude subscription, and a silent fallback
   moves it back.
 - **Dies mid-run** (timeout, nonzero exit, garbage output): that issue reports
@@ -375,6 +374,6 @@ Reading a reply:
   driver itself was launched. This hits any env prerequisite: BYOK keys like
   `OPENROUTER_API_KEY`, gemini's cloud-project variables, etc. Diagnose:
   `zsh -ic 'echo $VAR'` shows it, `zsh -c 'echo $VAR'` does not. Fix at the root, per
-  machine: export from `~/.zshenv` (read by every zsh) or use the tool's native auth
+  machine: set it in the environment the worker starts from (for zsh, `~/.zshenv`, read by every zsh) or use the tool's native auth
   store (`omp /login`, codex/claude/gemini logins). Never persist `zsh -ic` wrappers
   into `cmd` templates — that couples the roster to shell-init quirks.

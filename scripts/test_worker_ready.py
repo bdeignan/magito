@@ -81,8 +81,8 @@ def main() -> int:
               and lines(r)[0] == "a: family=openai installed=yes env=missing MAGITO_TEST_VAR,MAGITO_TEST_VAR2 probe=skipped"
               and lines(r)[1].endswith("probe=ok"),
               "an unset required variable shows env=missing and probe=skipped", r.stdout + r.stderr)
-        check("worker.py: a needs MAGITO_TEST_VAR: export it from ~/.zshenv" in r.stderr
-              and "worker.py: a needs MAGITO_TEST_VAR2: export it from ~/.zshenv" in r.stderr,
+        check("worker.py: a needs MAGITO_TEST_VAR: set it in the environment the worker starts from" in r.stderr
+              and "worker.py: a needs MAGITO_TEST_VAR2: set it in the environment the worker starts from" in r.stderr,
               "stderr names each missing variable and ~/.zshenv", r.stderr)
         check(not started.exists(), "a worker with a missing variable is never started")
         r = run(h, ["ready"], needs, env={"MAGITO_TEST_VAR": "", "MAGITO_TEST_VAR2": "x"})

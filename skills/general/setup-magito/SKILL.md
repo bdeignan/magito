@@ -28,11 +28,11 @@ Read the starting state and classify each item. **Configured** = present and cur
 | Gemini context | `GEMINI.md` exists, or `.gemini/settings.json` sets `contextFileName` to the repo's instruction file | `GEMINI.md`, `.gemini/settings.json` |
 | Guest excludes | Guest mode only: every path this skill created is in `.git/info/exclude` and none shows in `git status` | `.git/info/exclude` |
 | Audit version | `audited` matches the current magito commit. If older, newer checklist rows can be unchecked — re-run them | `.magito/config.toml` |
-| Issue tracker | `docs/agents/issue-tracker.md` present? | `docs/agents/issue-tracker.md` (see #112) |
+| Issue tracker | `docs/agents/issue-tracker.md` present? | `docs/agents/issue-tracker.md` |
 | Review gate + base branch | `git config magito.reviewGate`, `git config magito.baseBranch` | git config |
 | Pull request title | Guest mode only: `git config magito.prTitlePattern` is set when the repo's merged pull requests do not use Conventional Commits titles | git config |
 | Agent docs | `docs/agents/` files + the `@docs/agents/INDEX.md` import | `docs/agents/`, `CLAUDE.md`/`AGENTS.md` |
-| Permission allowlist | `.claude/settings.json` — has `allow`, has **no** `hooks` key | `.claude/settings.json` |
+| Permission allowlist | Claude Code only: `.claude/settings.json` — has `allow`, has **no** `hooks` key. Elsewhere: `skipped: not Claude Code` | `.claude/settings.json` |
 | Private-state excludes | `.magito/` and `.scratch/` in `.git/info/exclude` | `.git/info/exclude` |
 | Session journal | `.magito/journal/` present (self-creates on first `/handoff`) | `.magito/journal/` |
 | Legacy notes to import | scan for pre-magito notes (see §Legacy notes) | repo root, `docs/` |
@@ -85,9 +85,9 @@ The **other** template doubles as the canonical list of the named operations. Fi
 
 ### Check command
 
-`check` in `.magito/config.toml` names the one command that exits non-zero on failure — the floor the agentic pipeline trusts after every build step (`docs/intent/0001-agentic-pipeline.md`). Configured when `check` is set and running it now exits 0.
+`check` in `.magito/config.toml` names the one command that exits non-zero on failure — the floor the agentic pipeline trusts after every build step. Configured when `check` is set and running it now exits 0.
 
-If the repo has none, propose one from what already exists: a test runner (`pytest`, `npm test`, `cargo test`), a linter (`ruff check .`, `eslint .`), or a type checker, in that order, picking whichever one actually finds something to run. For magito itself, that command is `bash scripts/check.sh` (#173).
+If the repo has none, propose one from what already exists: a test runner (`pytest`, `npm test`, `cargo test`), a linter (`ruff check .`, `eslint .`), or a type checker, in that order, picking whichever one actually finds something to run. For magito itself, that command is `bash scripts/check.sh`.
 
 If nothing in the repo can serve as a check command, offer to write one. In owner mode it goes at `scripts/check.sh`. In guest mode it goes at `.magito/check.sh` and gets excluded in the same step it is created, per the guest-mode rule above.
 
@@ -108,9 +108,11 @@ If missing, recommend the `contextFileName` setting over a second file: it point
 
 ### Pull request title
 
-`gitflow.sh pr` refuses a title that does not match `git config magito.prTitlePattern`, and unset means Conventional Commits (see `skills/general/implement/references/pr-body.md`). Owner mode: leave it unset. Guest mode: read the titles of the last 20 merged pull requests with `gh pr list --state merged --limit 20 --json title`. If most of them already match `type(scope): summary`, leave the pattern unset. Otherwise recommend `git config magito.prTitlePattern off`, so the agent matches the house style by eye. When the titles follow one clear house pattern, such as a ticket key prefix, offer that pattern as an extended regular expression instead. Skip this step when the repo is not on GitHub, and say so in the report.
+`gitflow.sh pr` refuses a title that does not match `git config magito.prTitlePattern`, and unset means Conventional Commits (see `<skills>/implement/references/pr-body.md`, where `<skills>` is the folder that holds this skill's own folder: the parent of the directory its `SKILL.md` is in). Owner mode: leave it unset. Guest mode: read the titles of the last 20 merged pull requests with `gh pr list --state merged --limit 20 --json title`. If most of them already match `type(scope): summary`, leave the pattern unset. Otherwise recommend `git config magito.prTitlePattern off`, so the agent matches the house style by eye. When the titles follow one clear house pattern, such as a ticket key prefix, offer that pattern as an extended regular expression instead. Skip this step when the repo is not on GitHub, and say so in the report.
 
 ### Permission allowlist
+
+This section applies only when the user runs Claude Code. For any other tool, report `skipped: not Claude Code` and write nothing here.
 
 `.claude/settings.json` (committed) holds a read-only permission allowlist that cuts the approval prompts the workflow raises on every read-only `git` and `gh` call. Two rules, both from `CLAUDE.md`:
 
@@ -162,7 +164,7 @@ Templates live in [references/](./references/) — copy and adapt, never regener
 
 ### Managed symlinks
 
-`install.py` links this repo's skills, agents, hooks, and `bin/` into each tool's config dirs. A renamed or deleted skill can leave a **dangling** link behind (the old name still points at a file that is gone). Report any you find as **stale**, and offer to run `python install.py` — which prunes magito-owned dangling links as part of a normal run (`--dry-run` shows what it would remove first). Do not delete links here yourself; `install.py` owns its destinations.
+`install.py` links this repo's skills, agents, hooks, and `bin/` into each tool's config dirs. A renamed or deleted skill can leave a **dangling** link behind (the old name still points at a file that is gone). Report any you find as **stale**, and offer to run `python install.py` from the magito checkout (found as the Audit version section describes), not from this repo — which prunes magito-owned dangling links as part of a normal run (`--dry-run` shows what it would remove first). Do not delete links here yourself; `install.py` owns its destinations.
 
 ### Agent docs (`docs/agents/`)
 
@@ -202,7 +204,7 @@ Show a draft, let the user edit, then write only what the inventory marked missi
 - The review-gate, base-branch, and exclude git commands above.
 - The check command script, if the check-command section had to write one (`scripts/check.sh` in owner mode, `.magito/check.sh` in guest mode).
 - The Gemini context fix — a `contextFileName` setting in `.gemini/settings.json`, or a new `GEMINI.md`.
-- The `.claude/settings.json` permission allowlist, if it was missing or drifted — permissions only, no `hooks` key, no `deny` block.
+- The `.claude/settings.json` permission allowlist, if the user runs Claude Code and it was missing or drifted — permissions only, no `hooks` key, no `deny` block.
 - If the user accepted the agent-docs section, scaffold the four `docs/agents/` files, add the `@docs/agents/INDEX.md` import (or the `AGENTS.md` pointer), and give `INDEX.md` its `issue-tracker.md` routing row.
 
 Close by telling the user what changed and what was already fine. Name the skills that read this config, and that they name operations rather than backends — so switching trackers later means rewriting one file, not editing every skill. If you scaffolded `docs/agents/`, name the four files, note that the auto-load bundle (INDEX + OVERVIEW + GLOSSARY) loads via the `@-import`, and that `CONVENTIONS.md` / `GOTCHAS.md` / `flows/` grow lazily. Everything here is editable directly later — and this skill is safe to re-run any time, to change a choice or repair drift.

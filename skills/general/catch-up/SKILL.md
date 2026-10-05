@@ -38,7 +38,8 @@ did not check it, its status is `skipped`, not absent from the list.
    what comes back. If the file does not exist, status is
    `skipped: no tracker configured — run /setup-magito`.
 6. Git reality: the current branch, `git status`, and the last few commits.
-7. Open PRs (`gh pr list`).
+7. Open PRs. Run `gh pr list` only when `git remote -v` shows a GitHub remote. Otherwise the status is
+   `skipped: no GitHub remote`.
 
 Then give a tight **where we are / what is next**: the current branch and whether it is
 clean, the issue most likely in progress, what the recent journal entries flagged, and

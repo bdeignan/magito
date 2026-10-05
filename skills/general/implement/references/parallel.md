@@ -4,7 +4,7 @@ Read this only when `/implement` was handed **more than one** ticket and the tic
 all come from the same accepted intent. Tickets from one accepted intent follow
 [integrate.md](./integrate.md). A batch is the ordinary steps in [pipeline.md](./pipeline.md),
 run for several tickets at once: this file says only how to split the batch and run it.
-`<skills>` is your tool's installed skills directory, as in [SKILL.md](../SKILL.md).
+`<skills>` is the folder that holds this skill's own folder: the parent of the directory its `SKILL.md` is in, as in [SKILL.md](../SKILL.md).
 
 Carry the caller's selected tracker adapter and main worktree root through every ticket
 operation below. The adapter-selection contract in [SKILL.md](../SKILL.md) applies here too.

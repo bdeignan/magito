@@ -8,8 +8,8 @@ it is for and why it matters from the prose alone.
 This file is the one home for the summary-and-self-check standard. `to-issues` and
 `implement`'s `pr-body.md` both apply it. The word-level rules it leans on — plain words over
 technical ones, no stacked compound nouns, the AI-marker blocklist — have their canonical home
-in `shared/SYSTEM-INSTRUCTIONS.md`. The self-check below names a few of them as checkpoints, but
-that file stays authoritative: change a word-level rule there, not here.
+in the voice rules already loaded from the user's instruction file. The self-check below names a few of them as checkpoints, but
+those rules stay authoritative: change a word-level rule there, not here.
 
 ## Apply it in stages, never as one block
 
@@ -49,7 +49,7 @@ Six yes/no checks over the prose regions — never "is this clear?" Each is conc
 1. **Main point first** — the summary's opening sentence says what this is and why it matters.
 2. **One idea per paragraph** — each paragraph carries one idea and leads with it.
 3. **Plain words** — no stacked compound nouns, no AI-marker word (see
-   `shared/SYSTEM-INSTRUCTIONS.md`), the common word chosen over the technical synonym.
+   the voice rules already loaded from the user's instruction file), the common word chosen over the technical synonym.
 4. **Sentence length** — no sentence runs past about thirty words without a reason.
 5. **Technical detail follows the prose** — symbols, paths, and code sit below the sentence
    that explains them, never inside the human summary.

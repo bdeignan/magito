@@ -9,8 +9,7 @@ Report which workers on this machine are ready, and why the others are not. The 
 `~/.magito/workers.toml`: one entry per command-line coding tool that magito can launch to
 build or review. Its format lives in the
 [worker contract](../implement/references/worker-contract.md); this skill does not repeat it.
-`<skills>` is your tool's installed skills directory (`~/.claude/skills` for Claude Code,
-`~/.agents/skills` for most others).
+`<skills>` is the folder that holds this skill's own folder: the parent of the directory its `SKILL.md` is in.
 
 This skill reports. It writes one thing only, the copy in step 3. It never edits, overwrites,
 or deletes an existing `~/.magito/workers.toml`: that file is the user's. A second run
@@ -36,7 +35,7 @@ changes nothing.
      point at the line of that assignment. For a reason about the name, point at the header
      line and say the entry needs another name. Say what the reason means.
    - `installed=no`: the entry's `cmd` line. Install the tool, or correct the program name.
-   - `env=missing <VAR>`: no roster line changes. Export the variable from `~/.zshenv`. Name
+   - `env=missing <VAR>`: no roster line changes. Set the variable in the environment the worker starts from (for zsh, `~/.zshenv`). Name
      the entry's `requires_env` line so the user sees where the requirement comes from.
    - `env=invalid`: the entry's `requires_env` line. It must be a list of strings, such as
      `requires_env = ["GOOGLE_CLOUD_PROJECT"]`.

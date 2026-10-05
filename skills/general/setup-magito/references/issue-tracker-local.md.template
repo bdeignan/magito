@@ -120,5 +120,4 @@ this file, and PR creation stays on `gitflow.sh pr` either way (`docs/adr/0015`)
 Where there genuinely is no remote, `implement` stops at its own checkpoint instead: it shows
 the diff and the review summary and waits for explicit approval before
 `bash <skills>/implement/scripts/gitflow.sh merge`. That checkpoint *is* the human's gate.
-(`<skills>` is your tool's installed skills directory — `~/.claude/skills` for Claude Code,
-`~/.agents/skills` for most others.)
+(`<skills>` is the folder that holds this skill's own folder: the parent of the directory its `SKILL.md` is in.)
