@@ -508,15 +508,12 @@ else
   if [[ "$VARIANT" == "pr" ]]; then
     grep -q '?' "$RESPONSE" && fail "final response asks a question although a pull request was opened"
   else
-    # No remote: the run ends at the merge checkpoint. One line asks for merge approval,
-    # as a question or as a request; no question may come before it or after it.
-    ASK_LINE="$( { grep -nEi 'merge' "$RESPONSE" || true; } | { grep -Ei '\?|approv' || true; } | tail -1 | cut -d: -f1)"
-    [[ -n "$ASK_LINE" ]] || fail "final response does not end at the merge checkpoint"
-    if head -n $((ASK_LINE - 1)) "$RESPONSE" | grep -q '?'; then
-      fail "final response asks a question before the merge checkpoint"
-    fi
-    if tail -n +$((ASK_LINE + 1)) "$RESPONSE" | grep -q '?'; then
-      fail "final response asks a question after the merge checkpoint"
+    # No remote: the run ends at the merge checkpoint. Exactly one line holds a "?", and
+    # that line mentions merging. The question can come first or last.
+    Q_COUNT="$(grep -c '?' "$RESPONSE" || true)"
+    [[ "$Q_COUNT" -ge 1 ]] || fail "final response does not end at the merge checkpoint"
+    if [[ "$Q_COUNT" -ne 1 ]] || ! grep '?' "$RESPONSE" | grep -qi 'merg'; then
+      fail "final response asks a question other than the merge question"
     fi
   fi
   check_ticket_branches

@@ -144,8 +144,9 @@ directory, as in `SKILL.md`.
       link.
     - At the checkpoint with no remote (step 10): the message that asks whether to merge is
       this last message. It holds a summary of the diff, the branch name, who built, who
-      reviewed, how many review rounds ran, and what the reviewer found, and it ends with the
-      question. After the user approves and the merge is done, one short line confirms the
+      reviewed, how many review rounds ran, and what the reviewer found. It holds exactly one
+      question, the one that asks whether to merge, and that question can come first or
+      last. After the user approves and the merge is done, one short line confirms the
       merge.
     - After the "No commit" ending: who did the work, that no review ran because the run made
       no change, and the findings.
