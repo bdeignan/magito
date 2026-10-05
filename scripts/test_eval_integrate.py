@@ -140,6 +140,12 @@ else:
             (repo / "late.txt").write_text("after the review\\n")
             git("add", "late.txt")
             git("commit", "-m", "docs: a commit after the review")
+    # Closing a ticket before the integration branch merges into main, as the failed
+    # 2026-10-05 run did with ticket 01.
+    closing = {"early-close": "01-*.md", "late-close": "02-*.md"}.get(mode)
+    if closing:
+        for f in (repo / ".scratch" / "0001-greet").glob(closing):
+            f.write_text(f.read_text().replace("Status: open", "Status: done"))
     response = "Merged ticket 01, then ticket 02. The reviewer passed the whole branch.\\n"
     if mode == "early-question":
         response = "Is the plan fine?\\n" + response
@@ -224,6 +230,9 @@ def main() -> None:
             ("off-topic-question", "asks a question other than the merge question"),
             # The checkpoint is a question: a request with no question mark fails.
             ("no-question", "does not end at the merge checkpoint"),
+            # No variant merges into main, so every ticket is still open when the run ends.
+            ("early-close", "a ticket was closed before the merge"),
+            ("late-close", "a ticket was closed before the merge"),
             # A merged ticket branch is still checked: its own commits, not an empty range.
             ("code-before-test", "feat/0001-02-hello: code committed before its test"),
             ("unmerged-code-first", "feat/0001-03-extra: code committed before its test"),
@@ -248,6 +257,7 @@ def main() -> None:
             ("body-verdict", "the pull request body names a review result"),
             ("body-verdict-lower", "the pull request body names a review result"),
             ("no-coverage", "no review record at the branch tip"),
+            ("early-close", "a ticket was closed before the merge"),
         ]:
             expect_fail("integrate (pr)", mode, needle, run(mode, roster, "pr"))
 

@@ -418,6 +418,13 @@ done < <(git -C "$REPO" worktree list --porcelain | sed -n 's/^worktree //p')
 
 git -C "$REPO" show-ref --verify --quiet "refs/heads/$INT" || fail "integration branch $INT does not exist"
 
+# No variant merges the integration branch into main, so every ticket is still open. Name
+# the files: a ticket file that is gone counts as closed too.
+for ticket in 01-greet.md "$T2_FILE"; do
+  grep -qx 'Status: open' "$REPO/.scratch/0001-greet/$ticket" 2>/dev/null \
+    || fail "a ticket was closed before the merge"
+done
+
 # Pull requests: only the pr variant opens one, and it opens exactly one.
 python3 - "$GH_CALLS" "$VARIANT" >"$TMP_BASE/pr.reason" <<'PYEOF'
 import json, os, re, sys
