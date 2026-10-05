@@ -1,6 +1,6 @@
 ---
 name: domain-modeling
-description: Build and sharpen a project's domain model as you design — challenge terms against the glossary, sharpen fuzzy language, stress-test with edge-case scenarios, and write decisions down in docs/agents/GLOSSARY.md and ADRs the moment they are settled. Use when pinning down terminology or a ubiquitous language, recording an architectural decision, or when another skill needs to maintain the domain model.
+description: Builds and sharpens a project's domain model during design: challenges terms against the glossary, sharpens fuzzy language, stress-tests with edge-case scenarios, and writes settled decisions into docs/agents/GLOSSARY.md and ADRs. Use when pinning down terminology or a ubiquitous language, recording an architectural decision, or when another skill needs to maintain the domain model.
 ---
 
 # Domain Modeling

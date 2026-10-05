@@ -1,6 +1,6 @@
 ---
 name: to-questionnaire
-description: Turn a decision you cannot answer alone into a questionnaire for one person to fill in async or work through in a meeting.
+description: Turns a decision the agent cannot make alone into a questionnaire for one person to fill in async or work through in a meeting. Use when a decision depends on someone else's knowledge and needs their answers.
 ---
 
 Turn something the user cannot answer alone into a **questionnaire** — a Markdown document they hand to one person. The recipient holds knowledge the user lacks; the questionnaire pulls it out of them.

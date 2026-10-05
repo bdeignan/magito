@@ -1,6 +1,6 @@
 ---
 name: implement
-description: Implement one or more tickets end-to-end, whoever wrote them. Every ticket runs the same steps — a plan stop only when no accepted intent covers it, then a build in its own worktree, the check, a review by another model family, and an open pull request. When a ticket has no checkable "Done when", the plan stop states one for the user to approve. You own the git lifecycle; the human owns the merge. Do not use it to explore an idea that has no ticket yet — run intent first. Do not use it for a quick fix the user asks for directly with no ticket — that work needs no worktree and no paid review; when the user wants the full steps for it, they say "ticket it", and to-issues publishes one ticket that this skill then builds.
+description: Builds one or more tickets end to end, whoever wrote them: a plan stop when no accepted intent covers the ticket, a build in its own worktree, the check, a review by another model family, and an open pull request. The agent owns the git lifecycle; the human owns the merge. Not for exploring an idea with no ticket (run intent first). Not for a quick fix the user asks for directly; "ticket it" sends that work through these steps.
 argument-hint: "one ticket (number, URL, or path); several from one accepted intent land as one pull request; several others run as a batch"
 ---
 
