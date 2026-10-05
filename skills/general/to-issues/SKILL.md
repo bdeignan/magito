@@ -160,9 +160,9 @@ is a different folder.
    identifiers and these two named fields: `tracker_adapter: <absolute-path>` and
    `main_root: <absolute-path>`. `implement` uses that adapter for every ticket operation.
    When the user asked to "ticket it" (one bug or request they want built), hand that one
-   ticket to `implement` the same way: the request is a request to build. `implement` stops
-   at that ticket's plan, since no intent covers it. Otherwise, report the published tickets
-   and stop.
+   ticket to `implement` the same way: the request is a request to build. `implement` runs it
+   like any other ticket with no intent: it stops at the plan unless the change is small.
+   Otherwise, report the published tickets and stop.
 
 <issue-template>
 # <short title: what this ticket delivers>
