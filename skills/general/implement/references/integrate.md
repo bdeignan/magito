@@ -110,7 +110,9 @@ run from your working directory; `<skills>` is your tool's installed skills dire
      for every other ticket, as [pr-body.md](./pr-body.md) says. GitHub closes every issue
      named on a `Closes` line.
    - For a tracker that has no `Closes` lines, such as the local tracker, perform **close a ticket** for each ticket after
-     the merge instead.
+     the merge instead. "The merge" means merging the integration branch into the base branch.
+     It never means merging a ticket branch into the integration branch. Every ticket stays
+     open at the merge checkpoint, until the person approves and that merge is done.
    - Beyond the sections in pr-body.md, the body lists each ticket it delivers, and each
      merge conflict with how you resolved it. It lists nothing about the reviews: the rules
      in pr-body.md hold for this pull request too.
