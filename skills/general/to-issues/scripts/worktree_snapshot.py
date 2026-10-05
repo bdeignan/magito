@@ -56,12 +56,19 @@ def review_paths(root: Path, review_dir: Path) -> set[Path]:
     return paths
 
 
+CACHE_DIRS = {"__pycache__", ".pytest_cache"}
+
+
+def in_cache_dir(path: Path) -> bool:
+    return any(part in CACHE_DIRS for part in path.parts[:-1])
+
+
 def capture(root: Path, review_dir: Path, output: Path) -> None:
     root = root.resolve()
     tracked = git_paths(root)
     untracked = git_paths(root, "--others", "--exclude-standard")
     reviewed = review_paths(root, review_dir)
-    paths = tracked | untracked | reviewed
+    paths = {p for p in tracked | untracked | reviewed if not in_cache_dir(p)}
     content = {path.as_posix(): file_digest(root / path) for path in sorted(paths)}
     output.write_text(json.dumps(content, sort_keys=True, indent=2) + "\n")
 
