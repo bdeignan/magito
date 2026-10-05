@@ -15,7 +15,8 @@ directory, as in `SKILL.md`.
    can land among tracked files. Never run raw
    `git worktree add`: only `gitflow.sh` gives the branch a review marker (`docs/adr/0014`).
    The new branch starts from the base branch, wherever you run the command from.
-2. **Red run.** Only when the ticket names a red check. Before any code change, run it. Save
+2. **Red run.** Only when the ticket names a red check, or the "Done when" that the plan stop
+   stated does. Before any code change, run it. Save
    the command and its failing output. If it passes before any change, escalate with rule 4.
    Make no commits: the check proves nothing. A ticket with only a reviewable check skips
    this step.

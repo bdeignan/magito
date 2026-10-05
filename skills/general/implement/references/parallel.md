@@ -81,7 +81,8 @@ Read local ticket files from the main root before preparing worker briefs.
 
    For a ticket that an executor builds, the one change is who does the build in step 3 of
    `pipeline.md`: the executor. You do every other step yourself, in the order `pipeline.md`
-   gives. So before the executor starts, and when the ticket names a red check, you create
+   gives. So before the executor starts, and when the ticket (or the "Done when" its plan
+   stated) names a red check, you create
    the worktree, write the test files the red check needs, run it, save the failing output,
    and commit those test files in a commit of their own. That commit is the first on the
    branch, and the test files are locked from then on. A ticket with no red check skips this.
