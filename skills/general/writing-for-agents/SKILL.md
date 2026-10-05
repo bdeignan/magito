@@ -32,4 +32,4 @@ The default move is deletion, not explanation. Read the document sentence by sen
 
 ## Skill-specific mechanics
 
-For the rules that govern skills themselves — frontmatter, invocation and trigger descriptions, router skills, and seams between skills — see `docs/agents/CONVENTIONS.md`. Do not restate those rules inside a skill; point at that file and keep this one about writing.
+A skill's `description:` says what the skill does and when to use it, in the third person. Where a wrong trigger is disruptive, it also says when not to use the skill. In the magito repo, see also `docs/agents/CONVENTIONS.md` for the rules on invocation, router skills, and seams between skills.

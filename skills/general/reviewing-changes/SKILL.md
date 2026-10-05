@@ -41,7 +41,7 @@ Present under `## Standards` and `## Spec`, verbatim or lightly cleaned. Under `
 
 **Invariant:** An axis with provenance `(none)` must **never** be reported as passed or omitted. If an axis returns no result, explicitly say so: "Standards (none): No output — this axis could not be evaluated." This prevents silent gaps from appearing as if they passed review.
 
-Then check whether the branch has a review marker. This skill reads the marker and never writes it. Use the two separate reads below, then your file-*reading* tool on the resulting path. Do not compose them into one shell command: this repo has already found that the classifier refuses a compound command that builds this path, even a read-only one (see `CLAUDE.md`).
+Then check whether the branch has a review marker. This skill reads the marker and never writes it. Use the two separate reads below, then your file-*reading* tool on the resulting path. Do not compose them into one shell command.
 
 ```bash
 git rev-parse --abbrev-ref HEAD           # the branch; replace every / with - for the slug

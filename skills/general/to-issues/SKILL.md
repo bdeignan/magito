@@ -40,7 +40,7 @@ is a different folder.
 2. **Resolve the tracker adapter** through
    [tracker-selection.md](../setup-magito/references/tracker-selection.md). Keep its absolute
    path and the absolute main worktree root with the tickets throughout this run. Read that
-   adapter for every tracker operation below. `<skills>` means the installed skills directory.
+   adapter for every tracker operation below. `<skills>` is the folder that holds this skill's own folder: the parent of the directory its `SKILL.md` is in.
 
 3. **Draft the tickets** as files in `.scratch/<NNNN>-<slug>/drafts/`, one file per ticket,
    named `01-<slug>.md`, `02-<slug>.md`, in dependency order. With no intent doc, use a short

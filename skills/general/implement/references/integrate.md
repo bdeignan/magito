@@ -10,7 +10,7 @@ The human accepted one intent, so the human reviews one pull request that delive
 You build the tickets one at a time, merge each onto one integration branch, run the check
 after every merge, review the whole result once against the intent, and open one pull request.
 The run follows [pipeline.md](./pipeline.md) for each ticket, with the changes below. Commands
-run from your working directory; `<skills>` is your tool's installed skills directory.
+run from your working directory; `<skills>` is the folder that holds this skill's own folder: the parent of the directory its `SKILL.md` is in.
 
 ## The run
 
@@ -116,7 +116,7 @@ run from your working directory; `<skills>` is your tool's installed skills dire
    - Beyond the sections in pr-body.md, the body lists each ticket it delivers, and each
      merge conflict with how you resolved it. It lists nothing about the reviews: the rules
      in pr-body.md hold for this pull request too.
-   - With no remote (`git remote -v` prints nothing), stop at the merge checkpoint in
+   - With no GitHub remote (`git remote -v` prints nothing, or a remote that is not on GitHub), stop at the merge checkpoint in
      pipeline.md step 10, and ask about the merge of the integration branch.
 7. **Last message.** The run ends with one last message for the whole run, in the form
    pipeline.md step 12 gives.

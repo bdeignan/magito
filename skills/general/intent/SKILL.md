@@ -52,12 +52,12 @@ far"; an unsettled one goes into "Open questions." Never batch these edits to th
 ## Converse
 
 Ask one question at a time, waiting for an answer before the next. Give every question a
-recommended answer. Call `research`, `challenging-assumptions`, `magi`, or `domain-modeling`
+recommended answer. Call `research`, `challenging-assumptions`, `magi` (only where it is installed), or `domain-modeling`
 when a question needs one of them.
 
 Mark each open question **agent** (you can settle it alone) or **user** (only the user can
 answer it). While the user answers a live question, dispatch every agent question to a
-background subagent that runs `research` on it, and fold each answer into the doc as it lands.
+background subagent that runs `research` on it, and fold each answer into the doc as it lands. When the tool cannot run a background subagent, settle the agent questions yourself between the user's answers.
 
 An open question is one you can already state precisely, even without an answer. Something you
 can tell is coming but cannot yet phrase that precisely goes into "Not yet clear" instead, and

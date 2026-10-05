@@ -370,8 +370,8 @@ def ready_line(name, entry):
     installed = shutil.which(program_of(shlex.split(entry["cmd"]))) is not None
     state, missing = env_state(entry)
     for var in missing:
-        print(f"worker.py: {name} needs {var}: export it from ~/.zshenv "
-              "(a non-interactive shell does not read .zshrc)", file=sys.stderr)
+        print(f"worker.py: {name} needs {var}: set it in the environment the worker starts from "
+              "(for zsh, ~/.zshenv; a non-interactive shell does not read .zshrc)", file=sys.stderr)
     env = f"missing {','.join(missing)}" if missing else state
     if installed and state == "ok":
         probe = "ok" if live_probe(name) else "failed"

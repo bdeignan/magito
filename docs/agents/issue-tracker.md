@@ -17,8 +17,7 @@ file still reads correctly on a machine without magito installed either way.
 Skills never name a backend. They name one of the operations below and read this file to find
 out how to perform it here.
 
-`<skills>` below is your tool's installed skills directory — `~/.claude/skills` for Claude
-Code, `~/.agents/skills` for most others.
+`<skills>` is the folder that holds the installed skills: the parent of the `implement` skill's folder.
 
 ## Ticket identifiers
 

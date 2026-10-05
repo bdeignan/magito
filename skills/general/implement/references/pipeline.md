@@ -126,11 +126,11 @@ directory, as in `SKILL.md`.
    its probe: go back to step 6 and review with that worker. That review is the next round
    under the same limit of three. When the three rounds are already used, stop with
    escalation 2 and quote the exit 6 message.
-9. **Pull request.** When `git remote -v` prints a remote, run `gitflow.sh push` and
+9. **Pull request.** When `git remote -v` prints a GitHub remote, run `gitflow.sh push` and
    `gitflow.sh pr <issue> "<title>" "<body>"`. Write the body per [pr-body.md](./pr-body.md).
    PR creation stays on `gitflow.sh pr` and never routes through the tracker config
    (`docs/adr/0015`). Never merge: the merge button is the human's gate.
-10. **No remote.** When `git remote -v` prints nothing, skip step 9. There is no pull request
+10. **No GitHub remote.** When `git remote -v` prints nothing, or prints a remote that is not on GitHub, skip step 9. There is no pull request
     to gate, so this checkpoint is the human's merge gate, and it stays a question. Show the
     diff and the review summary, stop, and ask whether to merge. Only on explicit approval run
     `gitflow.sh merge`, a `--no-ff` merge into the base branch, then perform the **close a
@@ -146,7 +146,7 @@ directory, as in `SKILL.md`.
     - After a pull request: who built, who reviewed (the worker's name and family, or a
       subagent), how many review rounds ran, what the reviewer found, and the pull request
       link.
-    - At the checkpoint with no remote (step 10): the message that asks whether to merge is
+    - At the checkpoint with no GitHub remote (step 10): the message that asks whether to merge is
       this last message. It holds a summary of the diff, the branch name, who built, who
       reviewed, how many review rounds ran, and what the reviewer found. It holds exactly one
       question, the one that asks whether to merge, and that question can come first or
