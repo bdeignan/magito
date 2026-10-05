@@ -329,18 +329,14 @@ review_recorded() {
     || fail "$1: no review record at the branch tip"
 }
 
-# merge_checkpoint: the response ends at the merge checkpoint. One line asks for merge
-# approval, as a question or as a request ("Approve the merge and I will run..."). No
-# question may come before that line, and none after it.
+# merge_checkpoint: the response ends at the merge checkpoint. Exactly one line holds a
+# "?", and that line mentions merging. The question can come first or last.
 merge_checkpoint() {
-  local ask_line
-  ask_line="$( { grep -nEi 'merge' "$RESPONSE" || true; } | { grep -Ei '\?|approv' || true; } | tail -1 | cut -d: -f1)"
-  [[ -n "$ask_line" ]] || fail "final response does not end at the merge checkpoint"
-  if head -n $((ask_line - 1)) "$RESPONSE" | grep -q '?'; then
-    fail "final response asks a question before the merge checkpoint"
-  fi
-  if tail -n +$((ask_line + 1)) "$RESPONSE" | grep -q '?'; then
-    fail "final response asks a question after the merge checkpoint"
+  local q_count
+  q_count="$(grep -c '?' "$RESPONSE" || true)"
+  [[ "$q_count" -ge 1 ]] || fail "final response does not end at the merge checkpoint"
+  if [[ "$q_count" -ne 1 ]] || ! grep '?' "$RESPONSE" | grep -qi 'merg'; then
+    fail "final response asks a question other than the merge question"
   fi
 }
 
