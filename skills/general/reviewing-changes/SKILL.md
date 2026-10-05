@@ -1,6 +1,6 @@
 ---
 name: reviewing-changes
-description: Reviews a diff against a fixed point along two independent axes — Standards (does it follow the repo's documented conventions, domain language, and ADRs?) and Spec (does it faithfully implement the originating issue or PRD?). Runs the axes as parallel sub-agents when available and reports them side by side without reranking. Use on work done outside `implement` — a hand edit or quick fix before its PR, someone else's branch or PR, or changes made to address review feedback — or whenever asked to review a branch, diff, or work in progress. Do not use it inside an `implement` run: `implement` has its own review by another model family, and this review does not count toward that branch's review record.
+description: Reviews a diff on two independent axes, Standards (repo conventions and ADRs) and Spec (the originating ticket), and reports them side by side. Use on work done outside `implement`, such as a hand edit, another person's branch, or a requested branch review. Not inside an `implement` run, which has its own review. Not a pre-mortem of a plan (use `challenging-assumptions`).
 ---
 
 # Reviewing Changes

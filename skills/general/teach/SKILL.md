@@ -1,6 +1,6 @@
 ---
 name: teach
-description: Teach the user a new skill or concept, within this workspace. Use when the user asks to learn, or be taught, a topic — this is a stateful request that can span multiple sessions.
+description: Teaches the user a new skill or concept in a stateful workspace that can span multiple sessions. Use when the user asks to learn, or be taught, a topic. Do not use it to explain code or a repository during normal work; it sets up a teaching workspace with its own files.
 argument-hint: "What would you like to learn about?"
 ---
 <!-- Borrowed verbatim from matt-pocock-skills (MIT License, Copyright (c) 2026 Matt Pocock). -->

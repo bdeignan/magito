@@ -1,6 +1,6 @@
 ---
 name: verifying
-description: Disciplined testing for Python work — find the real seam, default to red-green for behavior you can specify up front and pin-and-guard (characterization, eval thresholds, smoke) for exploratory analysis, and always add invariant and schema checks at data boundaries. Use when adding tests, implementing a feature or fix that needs verification, working with dataframes, pipelines, or models, or when asked to test, verify, or harden code.
+description: Disciplined testing for Python work: find the real seam, default to red-green for behavior that can be specified up front and pin-and-guard (characterization, eval thresholds, smoke) for exploratory analysis, and always add invariant and schema checks at data boundaries. Use when adding tests, implementing a feature or fix that needs verification, working with dataframes, pipelines, or models, or when asked to test, verify, or harden code.
 ---
 
 # Verifying

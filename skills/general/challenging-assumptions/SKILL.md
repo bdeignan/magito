@@ -1,6 +1,6 @@
 ---
 name: challenging-assumptions
-description: Adversarially reviews a plan, design, spec, or code change before you commit to it. Surfaces hidden load-bearing assumptions, runs a pre-mortem and inversion to find failure modes, checks for AI-specific blind spots, and ends with a verdict (ship / ship with changes / rethink). Use when committing to a non-trivial decision, when an approach feels too smooth, or when asked to stress-test, pre-mortem, red-team, or challenge something.
+description: Adversarially reviews a plan, design, spec, or decision before the user commits to it. Surfaces hidden assumptions, runs a pre-mortem and inversion to find failure modes, and ends with a verdict (ship / ship with changes / rethink). Use when committing to a non-trivial decision, when an approach feels too smooth, or when asked to stress-test, pre-mortem, red-team, or challenge something. Not a line-level diff review (use `reviewing-changes`).
 ---
 
 # Challenging Assumptions

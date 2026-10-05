@@ -1,6 +1,6 @@
 ---
 name: speaking-plainly
-description: On-demand voice reset (snap-back) and STE deep rewriter. Re-asserts the baseline voice when it drifts, or rewrites text with full structural rules and linters.
+description: Rewrites dense text into plain language (Simplified Technical English rules, with linters) and resets a writing voice that has drifted. Use when asked to simplify or plainen prose, or when prose has gone dense.
 ---
 
 # Speaking Plainly

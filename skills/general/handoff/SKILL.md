@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: Close the session by writing one short entry to the project's session journal, so a fresh agent — or future you — can pick the work up. Use only when the session is wrapping up. Do not use it mid-session or as a running status update — an entry written before the session ends misses what still happens, and one written after every task turns the journal into noise.
+description: Closes the session by writing one short entry to the project's session journal, so a fresh agent, or the user later, can pick the work up. Use only when the session is wrapping up. Do not use it mid-session or as a running status update: an entry written early misses what still happens, and one per task turns the journal into noise.
 argument-hint: "what the next session will focus on"
 ---
 

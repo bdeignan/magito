@@ -1,6 +1,6 @@
 ---
 name: wait-what
-description: Re-pitch the last message when it did not land.
+description: Re-pitches the last message when it did not land. Use when the user says they do not follow, are lost, or asks what the last message meant.
 ---
 
 Wait — that last message did not land. Re-pitch it: give the context I was missing, use fewer words, and speak in this project's vocabulary.
