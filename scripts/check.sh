@@ -65,6 +65,9 @@
 #      script covers names spelled with `./`, `../`, or an absolute path, and
 #      runs under /bin/bash (3.2 on macOS). A third covers file names that hold
 #      a line break. See issue #229.
+#  21. `worker.py standards` prints the docs and ADRs a review checks a diff
+#      against, and the doc lines that name something the diff removed or
+#      renamed, including a rebuilt PR #224 case. See issue #241.
 #
 # Not run here, because they start real tools and can cost money: the three paid
 # evals (eval-to-issues.sh, eval-implement.sh, eval-integrate.sh) and
@@ -411,6 +414,17 @@ check_worker_env() {
   fi
 }
 
+check_worker_standards() {
+  local out
+  if out=$(python3 "$REPO_ROOT/scripts/test_worker_standards.py" 2>&1); then
+    echo "worker-standards: ok"
+  else
+    echo "worker-standards: FAILED"
+    echo "$out" | sed 's/^/    /'
+    FAILURES+=("worker.py standards inputs")
+  fi
+}
+
 check_gitflow_commit() {
   local out
   if out=$(python3 "$REPO_ROOT/scripts/test_gitflow_commit.py" 2>&1 \
@@ -445,6 +459,7 @@ check_gitflow_ahead
 check_gitflow_merge
 check_worker_env
 check_gitflow_commit
+check_worker_standards
 
 echo
 if [[ ${#FAILURES[@]} -eq 0 ]]; then

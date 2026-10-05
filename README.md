@@ -178,7 +178,7 @@ change, so it gets no review and no pull request, and the run posts its findings
 - **`/challenging-assumptions`**: an adversarial pre-mortem of a plan before you commit, ending in a verdict.
 - **`/research`**: an evidence-backed report on an open question, with options and a recommendation.
 - **`/finding-lacunae`**: a hunt for the essential element that a topic or design is missing.
-- **`/reviewing-changes`**: the two-axis review (Standards and Spec) of any diff, on its own.
+- **`/reviewing-changes`**: the two-axis review (Standards and Spec) of work done outside `implement`. Its Standards check follows the same procedure as `implement`'s review.
 - **`/speaking-plainly`**: reset your writing voice, or rewrite dense text plainly.
 - **`/teach`**: learn a concept over several sessions, using the current directory as the workspace.
 - **`/to-questionnaire`**: turn a decision you cannot make alone into a questionnaire for one person.
