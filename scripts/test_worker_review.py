@@ -47,6 +47,22 @@ if mode == "log":
 if mode == "scratch":
     Path(".scratch").mkdir(exist_ok=True)
     Path(".scratch/draft.md").write_text("edited\n")
+if mode == "cache":
+    # What running Python tests leaves behind: never part of the change.
+    Path("pkg/__pycache__").mkdir(parents=True, exist_ok=True)
+    Path("pkg/__pycache__/m.cpython-311.pyc").write_bytes(b"\x00cache")
+    Path(".pytest_cache/v/cache").mkdir(parents=True, exist_ok=True)
+    Path(".pytest_cache/v/cache/lastfailed").write_text("{}\n")
+if mode == "notes":
+    Path("pkg").mkdir(exist_ok=True)
+    Path("pkg/notes.txt").write_text("a note\n")
+if mode == "cachename":
+    # A file named like the cache folder, not inside one, is an ordinary change.
+    Path("__pycache__.txt").write_text("not a cache\n")
+if mode == "env":
+    import os
+    if os.environ.get("PYTHONDONTWRITEBYTECODE") != "1":
+        answer = "VERDICT FIX: PYTHONDONTWRITEBYTECODE is not set to 1"
 print(answer)
 print(answer)
 sys.exit(7 if mode == "fail" else 0)
@@ -117,6 +133,20 @@ def main() -> None:
         check(r.returncode == 4, f"{mode}: a changed file exits 4 (got {r.returncode})")
         check(path in r.stdout + r.stderr, f"{mode}: names the changed file {path}")
         check("VERDICT" not in r.stdout, f"{mode}: prints no verdict to act on (got {r.stdout!r})")
+
+    r = review("cache")
+    check(r.returncode == 0 and r.stdout == "VERDICT PASS\n",
+          f"cache: __pycache__ and .pytest_cache files do not void the round (got {r.returncode}, "
+          f"stdout {r.stdout!r}, stderr {r.stderr.strip()!r})")
+
+    for mode, path in (("notes", "pkg/notes.txt"), ("cachename", "__pycache__.txt")):
+        r = review(mode)
+        check(r.returncode == 4, f"{mode}: a file outside a cache folder still exits 4 (got {r.returncode})")
+        check(path in r.stdout + r.stderr, f"{mode}: names the changed file {path}")
+
+    r = review("env")
+    check(r.returncode == 0 and r.stdout == "VERDICT PASS\n",
+          f"env: the reviewer runs with PYTHONDONTWRITEBYTECODE=1 (got {r.stdout!r})")
 
     r = review("log")
     check(r.returncode == 0 and r.stdout == "VERDICT FIX: a real finding\n",
