@@ -640,7 +640,7 @@ def worker_env(entry):
     return env
 
 
-def run(argv, cwd, timeout, capture, entry, keep_on_timeout=False):
+def run(argv, cwd, timeout, capture, entry, keep_on_timeout=False, extra_env=None):
     """Run the worker that roster entry `entry` describes. On timeout, kill its
     process group and die with 124 — or, with keep_on_timeout, return code 124 and
     whatever it printed before the kill."""
@@ -650,7 +650,7 @@ def run(argv, cwd, timeout, capture, entry, keep_on_timeout=False):
         # children too, not just the CLI process itself.
         p = subprocess.Popen(
             argv, cwd=cwd, stdin=subprocess.DEVNULL, stdout=pipe, stderr=pipe,
-            text=True, start_new_session=True, env=worker_env(entry),
+            text=True, start_new_session=True, env={**worker_env(entry), **(extra_env or {})},
         )
     except FileNotFoundError:
         die(2, f"binary not found: {argv[0]}")
@@ -699,7 +699,9 @@ def review(name, cwd, brief_file, timeout):
     before = snapshot("before")
     # A timeout still gets the file check: a reviewer that edited files and then
     # hung must exit 4, not 124. Its partial output is saved like any other.
-    r = run(argv, cwd, timeout, capture=True, entry=entry, keep_on_timeout=True)
+    # Running Python tests must not leave __pycache__ behind and void the round.
+    r = run(argv, cwd, timeout, capture=True, entry=entry, keep_on_timeout=True,
+            extra_env={"PYTHONDONTWRITEBYTECODE": "1"})
     output = work / "review.txt"
     output.write_text(r.stdout + r.stderr)
     print(f"review output: {output}", file=sys.stderr)
