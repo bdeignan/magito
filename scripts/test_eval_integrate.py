@@ -159,6 +159,15 @@ else:
             if mode == "two-prs":
                 gh_pr(body)
         response += "Opened https://example.invalid/pull/1\\n"
+    elif mode == "question-first":
+        # The failed 2026-10-05 run's shape: the one question first, and a later line
+        # that mentions the merge with no question mark.
+        response = ("Do you approve merging integrate/0001-greet into main?\\n" + response
+                    + "Ticket 02 stays open, and I will close it once the merge is approved.\\n")
+    elif mode == "off-topic-question":
+        response += "Should I also add docs?\\n"
+    elif mode == "no-question":
+        response += "Approve the merge and I will run gitflow.sh merge.\\n"
     else:
         response += "Ready to merge integrate/0001-greet into main?\\n"
 
@@ -200,6 +209,9 @@ def main() -> None:
         # Two tickets merged in order onto one integration branch, with a review record
         # at its tip. The review is proved by that record, not by a phrase in the response.
         expect_pass("integrate", run("green", roster))
+        # The one merge question can come first; a later line that mentions the merge
+        # with no question mark is not a second question.
+        expect_pass("integrate", run("question-first", roster))
         for mode, needle in [
             ("no-integrate", "integration branch"),
             ("wrong-order", "out of order"),
@@ -208,7 +220,10 @@ def main() -> None:
             ("no-coverage", "integrate/0001-greet: no review record at the branch tip"),
             ("stale-record", "integrate/0001-greet: no review record at the branch tip"),
             ("split-record", "integrate/0001-greet: no review record at the branch tip"),
-            ("early-question", "question before the merge checkpoint"),
+            ("early-question", "asks a question other than the merge question"),
+            ("off-topic-question", "asks a question other than the merge question"),
+            # The checkpoint is a question: a request with no question mark fails.
+            ("no-question", "does not end at the merge checkpoint"),
             # A merged ticket branch is still checked: its own commits, not an empty range.
             ("code-before-test", "feat/0001-02-hello: code committed before its test"),
             ("unmerged-code-first", "feat/0001-03-extra: code committed before its test"),

@@ -139,6 +139,13 @@ else:
         response += "Done.\\n"
     elif mode == "imperative-approval":
         response += "Approve the merge and I will run gitflow.sh merge.\\n"
+    elif mode == "question-first":
+        # Outcome first: the one question opens the message, and a later line mentions
+        # the merge with no question mark.
+        response = ("Ready to merge feat/1-hello into main?\\n" + response
+                    + "I will close the ticket once the merge is approved.\\n")
+    elif mode == "off-topic-question":
+        response += "Should I also add docs?\\n"
     else:
         response += "Ready to merge feat/1-hello into main?\\n"
     if mode == "no-branch":
@@ -173,9 +180,11 @@ def main() -> None:
         assert green.returncode == 0, green.stdout + green.stderr
         assert "implement: PASS" in green.stdout, green.stdout
 
-        # A merge checkpoint phrased as a request, not a question, also passes.
-        imperative = run("imperative-approval", roster)
-        assert "implement: PASS" in imperative.stdout, imperative.stdout
+        # The one merge question can open the message; a later line that mentions the
+        # merge without a question mark does not count as a second question.
+        first = run("question-first", roster)
+        assert first.returncode == 0, first.stdout + first.stderr
+        assert "implement: PASS" in first.stdout, first.stdout
 
         # A test commit that carries a conftest.py is still test-first.
         conftest = run("test-with-conftest", roster)
@@ -191,8 +200,11 @@ def main() -> None:
             ("no-record", "feat/1-hello: no review record at the branch tip"),
             ("stale-record", "feat/1-hello: no review record at the branch tip"),
             ("no-worktree", "feat/1-hello was not built in a worktree under .magito/worktrees"),
-            ("early-question", "question before the merge checkpoint"),
+            ("early-question", "asks a question other than the merge question"),
+            ("off-topic-question", "asks a question other than the merge question"),
             ("no-final-question", "merge checkpoint"),
+            # The checkpoint is a question: a request with no question mark fails.
+            ("imperative-approval", "does not end at the merge checkpoint"),
         ]:
             r = run(mode, roster)
             assert r.returncode == 1, (mode, r.stdout + r.stderr)
@@ -238,7 +250,7 @@ def main() -> None:
         assert "implement (no-intent-small): PASS" in r.stdout, r.stdout
         for mode, needle in [
             ("no-record", "feat/1-hello: no review record at the branch tip"),
-            ("early-question", "question before the merge checkpoint"),
+            ("early-question", "asks a question other than the merge question"),
         ]:
             r = run(mode, roster, "no-intent-small")
             assert r.returncode == 1, (mode, r.stdout + r.stderr)
