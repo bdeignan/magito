@@ -235,7 +235,8 @@ def main() -> int:
     # A deleted Markdown file counts as mentioning nothing at HEAD.
     t, repo = fresh()
     with t:
-        base = repo.write({"old-guide.md": "run `make-thing`\n", "docs/live.md": "make-thing builds it\n"})
+        base = repo.write({"old-guide.md": "run `make-thing`\n",
+                           "docs/live.md": "make-thing builds it\nsee old-guide.md\n"})
         repo.delete("old-guide.md")
         s3 = section(repo.standards(base).stdout, H3)
         check("docs/live.md:1: make-thing builds it" in s3 and "`old-guide.md`" in s3,
