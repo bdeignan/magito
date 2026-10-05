@@ -77,6 +77,16 @@ def main() -> None:
                   and repo.git("rev-list", "--merges", "--count", "main").strip() == merges
                   and repo.git("status", "--porcelain", "--untracked-files=no").strip() == "",
                   f"{strategy} from a worktree: lands on main with nothing left staged (stderr {r.stderr.strip()!r})")
+            # Tell the two strategies apart: ff-only moves main onto the branch's own
+            # commit, while squash makes a new commit with the same tree.
+            tip = repo.git("rev-parse", repo.branch).strip()
+            main_sha = repo.git("rev-parse", "main").strip()
+            same_tree = repo.git("rev-parse", "main^{tree}") == repo.git("rev-parse", f"{repo.branch}^{{tree}}")
+            if strategy == "ff-only":
+                check(main_sha == tip, "ff-only from a worktree: main is the branch's own commit")
+            else:
+                check(main_sha != tip and same_tree,
+                      "squash from a worktree: main is a new commit with the branch's tree")
 
     # Uncommitted changes to tracked files where the base is checked out: refuse, change nothing.
     with tempfile.TemporaryDirectory() as t:

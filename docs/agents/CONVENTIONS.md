@@ -92,7 +92,8 @@ Nothing stops the model from starting any of these on its own now; what keeps `c
 the start of a session and `handoff` at the end is that each one's description says so.
 
 **A skill with no decision attached fires wherever its description matches**, not on a
-spine position. `reviewing-changes` and `verifying` fire inside build; `domain-modeling`
+spine position. `verifying` fires inside build; `reviewing-changes` fires on a diff that
+`implement` did not build, since `implement` runs its own review; `domain-modeling`
 fires inside decide and record; `speaking-plainly` fires wherever prose goes dense. That was
 already true before this change — dropping the flag only removed the mechanism that also
 happened to block them from being called by another skill.
