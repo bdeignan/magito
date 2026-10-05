@@ -67,7 +67,8 @@ Read local ticket files from the main root before preparing worker briefs.
 5. **One stop for the whole batch.** Before any executor starts, show the user: which
    tickets run at the same time, which run in order and why, who builds each ticket, how many
    executors will start and which worker backs each, and a short plan for every ticket whose
-   start line ends with `plan: I will show it and wait for you`. Tickets that run in order
+   start line ends with `plan: I will show it and wait for you`. That plan includes the
+   ticket's "Done when" when the ticket has none, as `SKILL.md` step 4 says. Tickets that run in order
    each get their own pull request from the base branch, so those pull requests can conflict
    with each other: name the order to merge them in. Then stop and wait for approval, once.
    When no ticket's start line asks for a plan, state the split and the builders and go on
@@ -80,7 +81,8 @@ Read local ticket files from the main root before preparing worker briefs.
 
    For a ticket that an executor builds, the one change is who does the build in step 3 of
    `pipeline.md`: the executor. You do every other step yourself, in the order `pipeline.md`
-   gives. So before the executor starts, and when the ticket names a red check, you create
+   gives. So before the executor starts, and when the ticket (or the "Done when" its plan
+   stated) names a red check, you create
    the worktree, write the test files the red check needs, run it, save the failing output,
    and commit those test files in a commit of their own. That commit is the first on the
    branch, and the test files are locked from then on. A ticket with no red check skips this.

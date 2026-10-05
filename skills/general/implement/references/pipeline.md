@@ -15,7 +15,8 @@ directory, as in `SKILL.md`.
    can land among tracked files. Never run raw
    `git worktree add`: only `gitflow.sh` gives the branch a review marker (`docs/adr/0014`).
    The new branch starts from the base branch, wherever you run the command from.
-2. **Red run.** Only when the ticket names a red check. Before any code change, run it. Save
+2. **Red run.** Only when the ticket names a red check, or the "Done when" that the plan stop
+   stated does. Before any code change, run it. Save
    the command and its failing output. If it passes before any change, escalate with rule 4.
    Make no commits: the check proves nothing. A ticket with only a reviewable check skips
    this step.
@@ -78,7 +79,10 @@ directory, as in `SKILL.md`.
    written rules as well as the ticket. Run that command
    in the worktree again before every round, not once per ticket: a fix round changes the
    diff, and so the lists. A Standards finding counts toward the same limit of three rounds as
-   any other finding. When step 2 ran, the brief also names the red-step commit and the locked test
+   any other finding. When the plan stop stated the "Done when", because the ticket had
+   none, the brief holds that approved "Done when" next to the ticket body, and the reviewer
+   judges the change against it. When step 2 ran, the brief also names the red-step commit
+   and the locked test
    files. From the second round on, it also lists each earlier finding with its fix, and
    what changed since the last round. The reviewer answers `VERDICT PASS`, or one or more `VERDICT FIX: <finding>` lines,
    and changes no files. Write the brief to a file outside the worktree with your file-writing

@@ -1,6 +1,6 @@
 ---
 name: to-issues
-description: Turn an accepted intent doc into reviewed, buildable tickets and publish them to the tracker, then hand off to implement. Also breaks a plan or conversation into tickets when there is no intent doc. Use once the decisions are made. Do not use it to decide what to build — that is intent.
+description: Turn an accepted intent doc into reviewed, buildable tickets and publish them to the tracker, then hand off to implement. Also breaks a plan or conversation into tickets when there is no intent doc, and publishes a single ticket for a bug or request the user wants built ("ticket it"). Use once the decisions are made. Do not use it to decide what to build — that is intent.
 ---
 
 # To Issues
@@ -159,6 +159,9 @@ is a different folder.
 8. **Hand off.** For an accepted intent, call `implement` with the published ticket
    identifiers and these two named fields: `tracker_adapter: <absolute-path>` and
    `main_root: <absolute-path>`. `implement` uses that adapter for every ticket operation.
+   When the user asked to "ticket it" (one bug or request they want built), hand that one
+   ticket to `implement` the same way: the request is a request to build. `implement` runs it
+   like any other ticket with no intent: it stops at the plan unless the change is small.
    Otherwise, report the published tickets and stop.
 
 <issue-template>
