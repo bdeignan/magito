@@ -78,7 +78,10 @@ directory, as in `SKILL.md`.
    written rules as well as the ticket. Run that command
    in the worktree again before every round, not once per ticket: a fix round changes the
    diff, and so the lists. A Standards finding counts toward the same limit of three rounds as
-   any other finding. When step 2 ran, the brief also names the red-step commit and the locked test
+   any other finding. When the plan stop stated the "Done when", because the ticket had
+   none, the brief holds that approved "Done when" next to the ticket body, and the reviewer
+   judges the change against it. When step 2 ran, the brief also names the red-step commit
+   and the locked test
    files. From the second round on, it also lists each earlier finding with its fix, and
    what changed since the last round. The reviewer answers `VERDICT PASS`, or one or more `VERDICT FIX: <finding>` lines,
    and changes no files. Write the brief to a file outside the worktree with your file-writing

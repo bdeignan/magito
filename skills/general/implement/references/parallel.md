@@ -67,7 +67,8 @@ Read local ticket files from the main root before preparing worker briefs.
 5. **One stop for the whole batch.** Before any executor starts, show the user: which
    tickets run at the same time, which run in order and why, who builds each ticket, how many
    executors will start and which worker backs each, and a short plan for every ticket whose
-   start line ends with `plan: I will show it and wait for you`. Tickets that run in order
+   start line ends with `plan: I will show it and wait for you`. That plan includes the
+   ticket's "Done when" when the ticket has none, as `SKILL.md` step 4 says. Tickets that run in order
    each get their own pull request from the base branch, so those pull requests can conflict
    with each other: name the order to merge them in. Then stop and wait for approval, once.
    When no ticket's start line asks for a plan, state the split and the builders and go on
