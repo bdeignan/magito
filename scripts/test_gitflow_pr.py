@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# ///
 """Tests for `gitflow.sh pr`: it refuses an empty body and a title that does not
 match magito.prTitlePattern (Conventional Commits when unset). Issue #207.
 

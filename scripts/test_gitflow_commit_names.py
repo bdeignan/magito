@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# ///
 """Tests for `gitflow.sh commit` with file names that hold a line break. Issue #229.
 
 test_gitflow_commit.py is locked; these cases came from review. A name with a line

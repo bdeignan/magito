@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# ///
 """Probe-count tests for worker.py: which workers a command starts, and how often.
 
 Each fake worker appends one line to a log every time it is started, so a test can

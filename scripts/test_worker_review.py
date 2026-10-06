@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# ///
 """Tests for `worker.py review`: one command runs a review round, proves the
 reviewer changed no files, and prints only the verdict lines. Issue #209.
 

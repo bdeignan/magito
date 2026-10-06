@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# ///
 """Capture and compare the files a spec reviewer must leave unchanged."""
 import hashlib
 import json

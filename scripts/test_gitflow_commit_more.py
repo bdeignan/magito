@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# ///
 """More tests for `gitflow.sh commit`. Issue #229.
 
 test_gitflow_commit.py was committed before the code and is locked, so cases found

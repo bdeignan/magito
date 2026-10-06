@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# ///
 """Tests for `gitflow.sh worktree add`: by default a worktree lives inside the
 repo at .magito/worktrees/<branch-slug>, and git never sees it. Issue #209.
 

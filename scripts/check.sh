@@ -68,6 +68,9 @@
 #  21. `worker.py standards` prints the docs and ADRs a review checks a diff
 #      against, and the doc lines that name something the diff removed or
 #      renamed, including a rebuilt PR #224 case. See issue #241.
+#  22. Every git-tracked *.py file opens with the PEP 723 block, right after its
+#      shebang line when it has one. A block lower in the file counts as
+#      missing. See issue #263.
 #
 # Not run here, because they start real tools and can cost money: the three paid
 # evals (eval-to-issues.sh, eval-implement.sh, eval-integrate.sh) and
@@ -438,6 +441,28 @@ check_gitflow_commit() {
   fi
 }
 
+# --- 22. every tracked *.py file opens with the PEP 723 block ----------------
+check_pep723() {
+  local block=$'# /// script\n# requires-python = ">=3.11"\n# ///'
+  local missing=() f top
+  while IFS= read -r -d '' f; do
+    # Skip the shebang line when there is one; the block must come right after.
+    if [[ $(head -1 "$REPO_ROOT/$f") == '#!'* ]]; then
+      top=$(sed -n 2,4p "$REPO_ROOT/$f")
+    else
+      top=$(head -3 "$REPO_ROOT/$f")
+    fi
+    [[ $top == "$block" ]] || missing+=("$f")
+  done < <(git -C "$REPO_ROOT" ls-files -z '*.py')
+  if [[ ${#missing[@]} -eq 0 ]]; then
+    echo "pep723: ok"
+  else
+    echo "pep723: FAILED — no PEP 723 block at the top of:"
+    printf '    %s\n' "${missing[@]}"
+    FAILURES+=("PEP 723 block missing in: ${missing[*]}")
+  fi
+}
+
 # --- run everything, then summarize ------------------------------------------
 check_install
 check_anti_slop
@@ -460,6 +485,7 @@ check_gitflow_merge
 check_worker_env
 check_gitflow_commit
 check_worker_standards
+check_pep723
 
 echo
 if [[ ${#FAILURES[@]} -eq 0 ]]; then
