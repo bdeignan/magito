@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# ///
 """Strict checks for the commit test in gitflow.sh, beside test_gitflow_ahead.py:
 the exact dirty-tree output, the local branch winning over origin, and the full
 text of the gate's advice. Issue #216. Stdlib only."""

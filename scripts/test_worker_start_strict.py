@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# ///
 """Strict comparisons of worker.py start against worker.py reviewer. Stdlib only.
 
 For every roster: start prints exactly one line; it names the same reviewer as

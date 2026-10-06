@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# ///
 """Tests for the commit test in gitflow.sh: `ahead`, and the clean-tree and
 commit-count checks in `push` and `pr`. Issue #216.
 

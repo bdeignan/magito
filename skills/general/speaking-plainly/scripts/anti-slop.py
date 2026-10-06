@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# ///
 """anti-slop.py — lint text against magito's canonical banned-voice list.
 
 Reads `../references/anti-ai-markers.md` as data (never forks it) and flags the banned

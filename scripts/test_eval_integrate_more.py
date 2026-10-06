@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# ///
 """More fake-worker cases for the paid integrate evaluator, beside test_eval_integrate.py.
 
 The pull request body that holds only the line `verdict pass`, and review records in

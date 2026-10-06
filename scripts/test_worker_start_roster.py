@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# ///
 """Hard inputs for worker.py start. Stdlib only.
 
 A roster path that exists but cannot be read as a file: start must still print its line

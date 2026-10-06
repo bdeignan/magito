@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# ///
 """Tests for worker.py start: the one line that opens a run. Stdlib only."""
 import os
 import subprocess

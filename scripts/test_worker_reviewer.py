@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# ///
 """Tests for worker.py reviewer subcommand. Stdlib only."""
 import os
 import subprocess

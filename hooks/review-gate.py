@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# ///
 """PreToolUse hook (Bash matcher): gate landing unreviewed FAN-OUT work.
 
 This hook is optional insurance, not the floor (ADR 0012). The same check lives

@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# ///
 """Which permissions.allow entries count as an allow rule for the worker launcher.
 
 `worker.py ready` reports `launcher allow rule: present` only for a Bash rule whose

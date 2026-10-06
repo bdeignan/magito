@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# ///
 """PreToolUse hook (Bash matcher): block bulk `git add`/`git commit -a`.
 
 Enforces "stage only the files you changed" — deny -A/--all/. staging and

@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# ///
 """Tests for the roster's per-worker `env` table. Issue #225. Stdlib only.
 
 Each case runs the real worker.py with a temporary home and a fake worker that

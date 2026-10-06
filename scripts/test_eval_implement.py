@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# ///
 """Process-boundary checks for the paid implement evaluator, using fake workers."""
 import json
 import os

@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# ///
 """Behavior checks for the deterministic parts of the to-issues contract."""
 import subprocess
 import tempfile

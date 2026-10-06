@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# ///
 """More fake-worker cases for the paid implement evaluator, beside test_eval_implement.py.
 
 Each case breaks exactly one thing the evaluator must check: a commit on main before the

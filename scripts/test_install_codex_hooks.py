@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# ///
 """
 test_install_codex_hooks.py — install.py links the guardrail hooks for Codex, registers
 them in Codex's hook file with a fail-open command, and never breaks a machine that runs

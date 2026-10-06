@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# ///
 """Roster worker names that are not one word: empty, with a space, with a line break.
 
 Such an entry is invalid everywhere: the reviewer pick skips it, ready gives it one line,

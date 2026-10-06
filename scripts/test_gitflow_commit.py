@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# ///
 """Tests for `gitflow.sh commit`: it refuses, and changes nothing, when a file is
 staged that the caller did not name. Issue #229.
 

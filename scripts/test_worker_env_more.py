@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# ///
 """More tests for the roster's per-worker `env` table. Issue #225. Stdlib only.
 
 test_worker_env.py was committed before the code and is locked, so cases found

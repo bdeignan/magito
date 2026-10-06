@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# ///
 """Tests for worker.py record: the one command that writes a review record. Stdlib only.
 
 Each case uses a real git repo, a real worktree made by gitflow.sh worktree add (which

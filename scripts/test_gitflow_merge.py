@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# ///
 """Tests for `gitflow.sh merge` from a linked worktree.
 
 Every `implement` branch lives in a worktree under .magito/worktrees while the main
