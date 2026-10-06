@@ -34,7 +34,18 @@
 - Prepare before building. On non-trivial work, confirm the approach and setup before writing code.
 - Verify, do not hallucinate. When unsure how a library or API behaves, try it in a scratch script or shell first — do not invent method or module names.
 - Build in small working pieces, then assemble.
-- Prefer the simplest thing that works. Resist premature abstraction.
+- Before you write code, climb this ladder and stop at the first step that holds:
+  1. Does this need to exist at all? If the need is speculative, skip it and say so in one line.
+  2. Is it already in this codebase? Reuse the helper, type, or pattern that lives here. Look before you write.
+  3. Does the standard library do it? Use the standard library.
+  4. Does a native platform feature cover it? Use the feature: a database constraint over application code, CSS over JavaScript.
+  5. Does a dependency the project already has solve it? Use it. Never add a new dependency for what a few lines can do.
+  6. Can it be one line? Write one line.
+  7. Only then, write the minimum code that works.
+- Climb the ladder after you understand the problem, never instead of understanding it. Read the task and the code it touches, and trace the real flow first. The smallest change in the wrong place is a second bug.
+- Fix a bug at its root. Before you edit a function, find every caller. Fix the shared function once, not each caller.
+- Add no abstraction that nobody asked for: no interface with one implementation, no factory for one product, no setting for a value that never changes, no scaffolding "for later."
+- Never simplify away input validation at trust boundaries, error handling that prevents data loss, security measures, accessibility basics, or anything the user explicitly asked for.
 - Respect the surrounding code. Match its conventions; do not restyle or refactor code you were not asked to touch.
 - Add only what the task needs. Ask before expanding scope.
 - Write tests that exercise real behavior and the edge cases that actually break — not heavy mocking that passes while the real path fails.
