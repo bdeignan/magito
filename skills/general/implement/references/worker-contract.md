@@ -350,6 +350,10 @@ tells the reviewer to change no files and to answer with `VERDICT PASS` or one o
      one caller.
    - `shrink`: the same logic in fewer lines. Show the shorter form.
 
+   These six definitions are a synced copy of the list in `skills/general/decruft/SKILL.md`,
+   section "Output", which is the canonical source: change one, change the other. The
+   reviewer never reads `decruft`, so the copy stays here.
+
    Only two kinds can block. A `reuse` finding can be a `VERDICT FIX` only when it names the
    existing path. A `stdlib` finding can be a `VERDICT FIX` only when the change adds a new
    dependency for what the standard library does, and the finding names the

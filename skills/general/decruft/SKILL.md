@@ -56,6 +56,10 @@ Each finding carries exactly one of six tags, naming the kind of over-building:
 - `yagni`: an abstraction with one implementation, a setting nobody sets, or a layer with one caller.
 - `shrink`: the same logic in fewer lines. Show the shorter form.
 
+This list is the canonical source of the six tags. Rule 7 of the reviewer rules in
+`skills/general/implement/references/worker-contract.md` holds a synced copy: change one,
+change the other.
+
 Ranked findings, capped at 7, highest-leverage first:
 
 ```
