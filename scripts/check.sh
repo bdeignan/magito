@@ -78,7 +78,7 @@
 #  24. The paid handoff evaluator passes and fails as its fake workers dictate, in its
 #      default case and in the nothing-landed and long-session variants. It checks
 #      the journal files on disk: one new entry, its name, its word count, and its
-#      Landed, Next, and Gotcha lines.
+#      Landed, Next, and Gotcha lines. See issue #260.
 #  25. `eval-intent.sh` pass/fail logic, run against fake workers that act out
 #      passing and failing runs of each scenario. See issue #261.
 #  26. `worker.py next-reviewer` picks the reviewer for the next round after a
@@ -86,7 +86,8 @@
 #      with no skip, else `subagent`. See issue #262.
 #
 # Not run here, because they start real tools and can cost money: the paid
-# evals (eval-to-issues.sh, eval-implement.sh, eval-integrate.sh, eval-catch-up.sh, eval-handoff.sh, eval-intent.sh) and
+# evals (eval-to-issues.sh, eval-implement.sh, eval-integrate.sh, eval-catch-up.sh,
+# eval-handoff.sh, eval-intent.sh) and
 # eval-workers.sh, which runs the worker commands against the real roster and a
 # real reviewer from another model family.
 #
