@@ -1,0 +1,106 @@
+## Python
+
+<!-- Generated from pydevtools.com, the Python Developer Tooling Handbook -->
+<!-- Full explanations: https://pydevtools.com/handbook/explanation/modern-python-project-setup-guide-for-ai-assistants/ -->
+
+### Manage packages
+
+This project uses uv. Do not use pip, pip-tools, poetry, or conda.
+
+- Add runtime dependency: `uv add <package>` (writes to `[project.dependencies]`)
+- Add dev dependency: `uv add --dev <package>` (writes to `[dependency-groups]` per PEP 735)
+- Remove dependency: `uv remove <package>`
+- Sync environment from lockfile: `uv sync`
+- Regenerate lockfile from constraints: `uv lock`
+- Upgrade locked versions: `uv lock --upgrade`
+- Commit `uv.lock` to version control (current uv guidance is to commit it for applications, CLIs, and libraries)
+
+### Run code
+
+Always use `uv run` to execute Python code and tools. Do not call `python`, `pytest`, `ruff`, or other tools directly. They may not resolve to the project's virtual environment.
+
+- Run a script: `uv run python script.py`
+- Run a module: `uv run python -m module_name`
+- Run a tool: `uv run pytest`, `uv run ruff check .`
+- One-off tool (not a project dependency): `uvx <tool>`
+- Standalone script: declare its dependencies in a PEP 723 block. Create it with `uv init --script <file>`, add to it with `uv add --script <file> <package>`, and run it with `uv run --script <file>`
+
+### Create new projects
+
+- Application or CLI package: `uv init --package project-name`
+- Library without a console script: `uv init --lib project-name`
+- Internal script or non-package project: `uv init --no-package project-name`
+- Set `requires-python = ">=3.12"`. Ruff's `target-version` and pyrefly's `python-version` match it; change all three together.
+- Always use `pyproject.toml` for metadata (PEP 621). Never create `setup.py`, `setup.cfg`, or `requirements.txt`.
+
+### Test code
+
+- Framework: pytest
+- Run tests: `uv run pytest`
+- Test files go in `tests/` at the project root
+- Test file naming: `test_*.py`
+- Test function naming: `test_*`
+- No `__init__.py` needed in `tests/`
+- Coverage: `uv add --dev coverage`, then `uv run coverage run -m pytest` and `uv run coverage report`
+
+### Configure continuous integration
+
+Use `astral-sh/setup-uv` in GitHub Actions. Let uv install Python and sync the locked environment; do not add a separate `actions/setup-python` step unless the workflow has a specific non-uv requirement.
+
+### Lint and format code
+
+- Tool: ruff (handles both linting and formatting)
+- Lint: `uv run ruff check .`
+- Lint and auto-fix: `uv run ruff check --fix .`
+- Format: `uv run ruff format .`
+- Check formatting: `uv run ruff format --check .`
+- Configuration lives in `pyproject.toml` under `[tool.ruff]`
+
+### Check types
+
+- Tool: pyrefly
+- Run: `uv run pyrefly check`
+- Configuration lives in `pyproject.toml` under `[tool.pyrefly]`. Keep its `default` preset. Never switch it to `strict` or `all`.
+- Type hints are optional. Add them where they help a reader, such as a public function. Do not add them only to quiet the checker.
+- Silence a false error on its line with `# pyrefly: ignore[<code>]`.
+
+### Follow code style
+
+- Follow ruff's defaults for formatting (88 char line length, double quotes, spaces)
+- Import sorting is handled by ruff (`isort` rules enabled via `select = ["I"]`)
+- Do not add `# type: ignore` comments without an error code
+
+### Install pre-commit hooks
+
+- Tool: prek (preferred) or pre-commit
+- Install prek hooks: `uvx prek install`
+- Install pre-commit hooks: `uvx pre-commit install`
+- Do not install pre-commit or prek with pip. Use `uvx`.
+
+### Avoid these practices
+
+- Do not create or activate virtual environments manually. uv manages `.venv/` automatically.
+- Do not install packages globally or with `pip install`.
+- Do not create `requirements.txt` for dependency management. Use `pyproject.toml` and `uv.lock`.
+- Do not run `python setup.py` commands.
+- Do not add dependencies to pyproject.toml by hand. Use `uv add`. Tool tables such as `[tool.ruff]` are edited by hand; after any hand edit to a dependency list, run `uv lock`.
+- If you must edit pyproject.toml directly, write dev dependencies under `[dependency-groups]` (PEP 735), not the legacy `[tool.uv.dev-dependencies]` table.
+
+### Choose libraries
+
+Reach for the standard library first. When it does not cover the job, use these defaults:
+
+- HTTP: `httpx`, not `requests` or `urllib`.
+- Paths: `pathlib`, not `os.path`.
+- Records: `dataclasses`. Use `pydantic` only to validate data from outside the program.
+- Messages from library code: `logging`, not `print`.
+- Shell commands: `subprocess.run` with a list of arguments, not `os.system` or `shell=True`.
+- Dates and times: timezone-aware `datetime` with `zoneinfo`, not naive datetimes or `pytz`.
+- Reading TOML: `tomllib`.
+
+### Pick versions
+
+- Never write a version number from memory. Your training data is older than today's releases.
+- Resolve versions with tools: `uv add` picks the latest compatible release, `uv tree --outdated` lists what is behind, `uv python list` shows which Python releases exist, and `uvx prek autoupdate` bumps hook revisions.
+- Before you claim a version does not exist or is not stable, check with one of those.
+- Upgrade everything: `uv lock --upgrade && uvx prek autoupdate`.
