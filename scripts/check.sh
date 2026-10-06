@@ -76,8 +76,8 @@
 #      the journal files on disk: one new entry, its name, its word count, and its
 #      Landed, Next, and Gotcha lines.
 #
-# Not run here, because they start real tools and can cost money: the three paid
-# evals (eval-to-issues.sh, eval-implement.sh, eval-integrate.sh) and
+# Not run here, because they start real tools and can cost money: the paid
+# evals (eval-to-issues.sh, eval-implement.sh, eval-integrate.sh, eval-handoff.sh) and
 # eval-workers.sh, which runs the worker commands against the real roster and a
 # real reviewer from another model family.
 #

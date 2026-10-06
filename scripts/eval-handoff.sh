@@ -145,7 +145,8 @@ for i in range(1, 41):
         f"tried a small variation, ran the test again, and wrote down what we saw in detail "
         f"for item {i} so that nothing would be lost between steps."
     )
-parts.append("In the end hello.py already worked and the one open ticket, number 1, "
+parts.append("In the end we committed a fix to hello.py on main, so it now greets by name. "
+             "The one open ticket, number 1, "
              "asks for an empty argument to print hello, world. That ticket is next. "
              "The trap we found: the test runs hello.py as a subprocess, so it only "
              "passes from the repo root.")
