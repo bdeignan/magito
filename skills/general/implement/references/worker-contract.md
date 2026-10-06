@@ -312,7 +312,7 @@ tells the reviewer to change no files and to answer with `VERDICT PASS` or one o
 1. Report every defect you find now, in this one reply. Do not hold any back for a later
    round.
 2. A `VERDICT FIX` must be substantial and on target for the ticket's goal. It names one of
-   two things:
+   four things:
    - the "Done when" item or the "Behavior" sentence that the change breaks, or a check
      that cannot work as written, in a case the change can meet in ordinary use: input an
      agent or a person types, files a build creates or deletes;
@@ -320,7 +320,8 @@ tells the reviewer to change no files and to answer with `VERDICT PASS` or one o
    - a Standards finding, in one of the two forms that
      [standards-review.md](./standards-review.md) gives: `VERDICT FIX: Standards — ...` for a
      written rule the change breaks, or `VERDICT FIX: Stale — ...` for a doc line the change
-     made untrue.
+     made untrue;
+   - a `reuse` or `stdlib` finding that rule 7 lets block.
 
    A failure that needs a contrived input or setup no build produces, and that fails safe,
    is a NOTE. Fails safe means the change refuses or stops and does no harm. The NOTE says
@@ -338,6 +339,27 @@ tells the reviewer to change no files and to answer with `VERDICT PASS` or one o
 6. From the second round on: the brief lists each finding of the earlier rounds with its
    fix, and says what changed since the last round. Do not repeat a finding unless its fix
    does not work.
+7. Over-building. Tag each finding about over-building with one of six tags:
+   - `reuse`: code that duplicates a helper, type, or pattern already in the repo. Name its
+     path.
+   - `stdlib`: hand-written code, or a new dependency, for what the standard library does.
+     Name the function.
+   - `native`: code or a dependency doing what the platform already does. Name the feature.
+   - `delete`: dead code, unused flexibility, or a feature nobody asked for.
+   - `yagni`: an abstraction with one implementation, a setting nobody sets, or a layer with
+     one caller.
+   - `shrink`: the same logic in fewer lines. Show the shorter form.
+
+   These six definitions are a synced copy of the list in `skills/general/decruft/SKILL.md`,
+   section "Output", which is the canonical source: change one, change the other. The
+   reviewer never reads `decruft`, so the copy stays here.
+
+   Only two kinds can block. A `reuse` finding can be a `VERDICT FIX` only when it names the
+   existing path. A `stdlib` finding can be a `VERDICT FIX` only when the change adds a new
+   dependency for what the standard library does, and the finding names the
+   standard-library function. A `stdlib` finding that names no function, or that is about
+   hand-written code with no new dependency, is a `NOTE`. A finding with any other tag is a
+   `NOTE`.
 
 Reading a reply:
 
