@@ -16,7 +16,7 @@ Capture once: `git diff <fixed-point>...HEAD` (three-dot, against the merge-base
 ## 2. Find the sources
 
 - **Spec** — the originating ticket, a path the user passed, or a PRD under `docs/` (or the intent doc under `docs/intent/` that a ticket links to; a local-markdown ticket's directory name starts with that intent's number). Find the ticket by scanning the commit messages for the identifier form `docs/agents/issue-tracker.md` describes (`#123`, `Closes #45`, `PROJ-88`, a file path), then use that file's **fetch a ticket** operation to read it. If there is none, the Spec axis reports "no spec available."
-- **Standards** — do not gather these by hand. Run `python3 <skills>/implement/scripts/worker.py standards <fixed-point>` once, and give its whole output to the Standards axis. It lists the standards docs, the ADRs that bear on the changed files, and the doc lines that name something the diff removed or renamed. `<skills>` is your tool's installed skills directory, as in `implement`.
+- **Standards** — do not gather these by hand. Run `python3 <skills>/implement/scripts/worker.py standards <fixed-point>` once, and give its whole output to the Standards axis. It lists the standards docs, the ADRs that bear on the changed files, and the doc lines that name something the diff removed or renamed. `<skills>` is the folder that holds this skill's own folder: the parent of the directory its `SKILL.md` is in.
 
 ## 3. Run the two axes
 
@@ -33,7 +33,7 @@ If sub-agents are available, spawn both in parallel so they do not pollute each 
 
 Present under `## Standards` and `## Spec`, verbatim or lightly cleaned. Under `## Standards`, each finding keeps one of the two forms from `standards-review.md`, and other remarks are listed as notes. Do **not** merge or rerank across axes. End with a one-line count per axis and the worst issue *within* each — never a single cross-axis winner. That reranking is exactly what the separation exists to prevent.
 
-**Per-axis provenance:** Each axis heading must be labeled with its provenance — where the output came from. Use one of three tags:
+**Per-axis provenance:** Each axis heading must be labeled with its provenance — where the output came from. Use one of four tags:
 - **`(sub-agent)`** — the axis was run by a sub-agent and produced output.
 - **`(inline)`** — the sub-agent stalled or failed, so you ran the axis inline (in this session) as a fallback.
 - **`(none)`** — the axis produced no meaningful output (either the sub-agent stalled and the inline fallback produced nothing, or the axis was not run at all).

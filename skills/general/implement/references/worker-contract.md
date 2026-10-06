@@ -1,5 +1,12 @@
 # Worker contract
 
+## Contents
+
+- The brief
+- Judging what the worker left
+- Executors
+- Probe and fallback
+
 The delegable build-slice of a ticket: what a driver hands to an executor — a Claude
 subagent or a headless shell CLI — and what comes back. The build step of `implement`
 ([pipeline.md](./pipeline.md) step 3) and a batch run ([parallel.md](./parallel.md)) both
@@ -68,7 +75,12 @@ Reachability basis: tracked files exist in every worktree by construction. A fla
 `--no-skills` blocks skill auto-discovery, not plain file reads, so the worker can open
 a named path just fine.
 
-This does not change how work is judged.
+This does not change how work is judged: see "Judging what the worker left" below.
+
+Write the brief to a file and hand the path to the launcher — it passes the content
+to the worker as a single argument, so long briefs survive without shell-quoting.
+
+## Judging what the worker left
 
 The report is not the result. A worker that did the work and forgot to stage it did not
 fail the build. After a worker reports, the driver judges what the worker left in the
@@ -101,9 +113,6 @@ Three cases show the rule at work:
   unstages it first when the worker staged it, and names the file to the user.
 - The worker left nothing at all, staged or not. This rule changes nothing there: the
   result is `DONE (no-op)` when the change is already in place, and `BLOCKED` otherwise.
-
-Write the brief to a file and hand the path to the launcher — it passes the content
-to the worker as a single argument, so long briefs survive without shell-quoting.
 
 ## Executors
 
@@ -242,35 +251,12 @@ on a sunset), or better, in each tool's own alias layer (omp modelRoles, claude
 aliases, codex profiles). CLIs with no working-directory flag (gemini, claude) need
 no `{cwd}` at all — the launcher sets the working directory itself.
 
-## Bootstrap
-
-The `workers` skill creates and checks the roster. It reports which workers on the machine
-are ready, and when `~/.magito/workers.toml` does not exist it offers to copy
-[`workers.toml.example`](./workers.toml.example) there. Never write that file from here, and
-never overwrite an existing one: it is the user's file. Expect the driver's permission system
-to ask once before the file is written: the entries are templates that launch agents with
-approval prompts bypassed, so a flag on persisting them is correct behavior, not an error.
-
-Every entry in the example is commented out, and the user turns on the ones for the tools
-they have. Each comment above an entry records the date its model id was checked, or says
-`unverified: check with <command>`. Treat an unverified id as a guess until that command
-confirms it. A newer model elsewhere does not establish availability in a given tool. The
-Cursor entries need `agent login` first, and `agent models` is the authority for the exact
-ids on the installed CLI and account. The Cursor and omp entries take their family from the
-pinned model, not from the tool. A different model means a separate entry with its own name.
-
-**agy is never a worker candidate.** It earns its magi seat behind a pty wrapper, but a
-worker needs what it lacks: reliable non-TTY output (open stdout-drop bug,
-google-antigravity/antigravity-cli#76), structured completion, and session isolation — its
-`-c` resumes globally and cross-contaminates concurrent workers.
-
 ## Probe and fallback
 
 Before dispatching to a named worker, probe it once: `python3 <skills>/implement/scripts/worker.py probe <worker>`
-sends "Reply with exactly: VERDICT-OK" and checks the token comes back. The
-launcher strips approval-bypass flags from the probe itself — a ping needs no
-permissions, and permission tooling rightly balks at bypass flags on a command that
-does not need them.
+sends "Reply with exactly: VERDICT-OK" and checks the token comes back. How the launcher
+builds the probe, and what to do about an entry that fails it, is in
+[roster-setup.md](../../workers/references/roster-setup.md).
 
 - **Dead at probe** (missing binary, auth failure, quota, timeout): stop and ask the
   user — fall back to building yourself (with the `executor` subagent in Claude Code), or abort. Never substitute silently: the user
@@ -343,37 +329,3 @@ Reading a reply:
   right and small, and it says so in its last message.
 - `worker.py review` verifies the no-write rule with `worktree_snapshot.py`; never trust the
   reviewer's word for it.
-
-## Nested-CLI gotchas (verified July 2026)
-
-- **Nested claude**: spawn with `env -u CLAUDECODE claude -p ...` — Claude Code
-  refuses to start inside itself otherwise.
-- **Claude billing**: a subprocess `claude -p` bills API pay-as-you-go when
-  `ANTHROPIC_API_KEY` is set in its environment, and the logged-in subscription
-  otherwise. Do not leak the key into a worker's env unless API billing is intended.
-- **codex as driver**: its `workspace-write` sandbox blocks child processes' network
-  by default — a spawned worker cannot reach its API without
-  `[sandbox_workspace_write] network_access = true`.
-- **omp workers**: always `--no-session --no-skills --max-time <s>` — omp otherwise
-  auto-discovers skills and instruction files, and the brief is the contract, not
-  what the worker finds. Give `--model` the full `provider/model` path; a bare fuzzy
-  name can resolve to a different provider and fail on missing auth.
-- **Timeouts are the driver's job**: most CLIs enforce no print-mode timeout of their
-  own. Pair the worker-side cap (omp `--max-time`) with a driver-side timeout on the
-  shell call.
-- **Claude Code permission modes**: run fan-out sessions in default (prompting)
-  mode — the first `python3 .../scripts/worker.py` launch prompts once, and "do not ask again this
-  session" covers the rest of the batch. Auto mode may deny the launch outright; if
-  you are then offered a fallback to `executor`, present it as a billing
-  decision, never a convenience. The launcher's single stable prefix
-  (`python3 .../scripts/worker.py`) is also what makes a tight allow rule possible
-  if the user ever wants zero prompts.
-- **Env vars and non-interactive shells**: workers inherit the driver's environment,
-  and a driver's shell tool runs non-interactive shells — exports living only in
-  `.zshrc` (read by interactive shells alone) may never arrive, depending on how the
-  driver itself was launched. This hits any env prerequisite: BYOK keys like
-  `OPENROUTER_API_KEY`, gemini's cloud-project variables, etc. Diagnose:
-  `zsh -ic 'echo $VAR'` shows it, `zsh -c 'echo $VAR'` does not. Fix at the root, per
-  machine: set it in the environment the worker starts from (for zsh, `~/.zshenv`, read by every zsh) or use the tool's native auth
-  store (`omp /login`, codex/claude/gemini logins). Never persist `zsh -ic` wrappers
-  into `cmd` templates — that couples the roster to shell-init quirks.

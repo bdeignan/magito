@@ -1,5 +1,16 @@
 # STE Structural Rules
 
+## Contents
+
+- Classify the text first
+- The 53 rules by section
+- The modal ladder
+- Slop-to-simple substitutions
+- Recurring substitutions
+- Consistency pass
+- Self-check
+- Attribution
+
 Structural writing rules adapted from ASD-STE100 Simplified Technical English (Issue 9),
 the controlled language that aerospace and defense use for maintenance documentation. The
 rules exist so that a tired, non-native reader cannot misread an instruction. They remove

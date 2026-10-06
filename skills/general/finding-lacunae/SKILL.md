@@ -64,6 +64,3 @@ its internal assumptions and failure modes. Use this skill to research the
 surrounding field and identify missing keystones. Use both only when the task
 needs both an external gap diagnosis and an internal critique; keep their
 findings separate.
-
-Either skill can call the other when the task needs both. Keep each one's
-findings in its own section rather than merging them.

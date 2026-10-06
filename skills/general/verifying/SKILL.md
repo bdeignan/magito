@@ -30,7 +30,7 @@ Independent of mode, guard the data boundaries — this is the default layer:
 - **Structural truths** — shape, row counts, keys unique, group probabilities sum to 1, monotonic where required.
 - **No leakage** — the train/test split is clean; no target or future information in features.
 
-Plain `pytest` asserts are the zero-dependency floor and always available. Reach for `pandera`/`pydantic` (schema) or `hypothesis` (properties) on heavier cases — but read the project's declared stack first, and do not add a dependency without asking.
+Use the project's own test runner for these checks. When it has none, use the language's standard-library test module, such as Python's `unittest`. Reach for `pandera`/`pydantic` (schema) or `hypothesis` (properties) on heavier cases — but read the project's declared stack first, and do not add a dependency without asking.
 
 ## 4. Handle nondeterminism
 

@@ -4,7 +4,7 @@
      the depth of each section scales with the run's size. Keep this the single source of the
      structure — the skill body points here rather than restating it. -->
 
-Render these sections in this order, top to bottom. Every section appears on every run. At `small`,
+Render these sections in this order, top to bottom. Every section appears on every run, except that Options is omitted when the question has no discrete alternatives. At `small`,
 Results and Options carry only the decisive evidence, not the full landscape.
 
 ---

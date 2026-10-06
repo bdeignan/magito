@@ -52,7 +52,7 @@ report either way — the rule file says what each mode permits.
 ### 1. Capture the question and the run settings
 
 Take the question from the arguments and conversation. Bind the **size** if the first token is
-`small`/`medium`/`large` (otherwise infer it in step 3). Detect the **mode** (strict unless the user
+`small`/`medium`/`large` (otherwise infer it in step 2). Detect the **mode** (strict unless the user
 opts into exploratory). Note any **output path** and any **`via <worker>`** delegation the user
 named. If the question is too vague to research — no answerable decision or unknown — ask what
 decision or unknown to resolve before dispatching anything. Do not guess and burn a round.

@@ -1,5 +1,12 @@
 # Decruft examples
 
+## Contents
+
+- Exception cruft
+- Test cruft
+- Indirection cruft
+- Flow cruft
+
 Curated from the [deslop.it pattern catalog](https://github.com/zaffnet/deslop.it/blob/main/skills/deslop/references/pattern-catalog.md)
 (MIT), which documents 42 patterns across six categories with a 1.0x–1.5x weighting
 scheme. This file keeps the 13 most Python-idiom-specific of those patterns and

@@ -1,5 +1,11 @@
 # The integrated run
 
+## Contents
+
+- The run
+- Resuming
+- Escalations added by this run
+
 Read this only when `/implement` was handed two or more tickets from the same accepted
 intent: each ticket's `**Intent:**` line links the same intent doc, and the start line says
 `plan: already approved`. Tickets from different intents, and tickets with no accepted
