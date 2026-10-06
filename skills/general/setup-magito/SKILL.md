@@ -164,8 +164,22 @@ After writing the section, count the lines of the file that holds it (`wc -l`). 
 **A fresh project.** Scaffold in this order. Never type a version number from memory into any of these files: every version comes from a tool on the day it runs.
 
 1. Run `uv self update --dry-run`. `uv init` takes the `uv_build` bounds from the installed uv, so a stale uv writes stale bounds. If the dry run says it would update, uv must be updated before step 2: offer to run `uv self update`. If that fails because a package manager installed uv, tell the user the installed and latest versions from the dry-run output, and ask them to update uv with that package manager. Do not run step 2 until `uv self update --dry-run` no longer offers an update. If the user declines to update, stop the scaffold and report that uv is out of date.
-2. `uv init --lib <project>` for a library, or `uv init --package <project>` for a CLI or app. Both give the `src/` layout and the `uv_build` backend.
-3. Append [references/pyproject.toml.template](./references/pyproject.toml.template) to the `pyproject.toml` that `uv init` wrote, and set `requires-python = ">=3.12"`.
+2. Inside the project folder, with no name argument, run `uv init --lib` for a library, or `uv init --package` for a CLI or app. uv takes the project name from the folder name; create the folder first if it does not exist. Both give the `src/` layout and the `uv_build` backend. `uv init` writes a `.gitignore` only when it creates the git repository itself. If the folder has no `.gitignore` after `uv init`, write one with exactly this content, which is what uv writes when it creates the repository. If a `.gitignore` already exists, leave it alone.
+
+   ```
+   # Python-generated files
+   __pycache__/
+   *.py[oc]
+   build/
+   dist/
+   wheels/
+   *.egg-info
+
+   # Virtual environments
+   .venv
+   ```
+
+3. Append [references/pyproject.toml.template](./references/pyproject.toml.template) to the `pyproject.toml` that `uv init` wrote, and set `requires-python = ">=3.12"`. Then run `uv python pin 3.12`, so `.python-version` matches the minimum the project supports. Run the pin after the `requires-python` edit: uv refuses a pin below the declared minimum.
 4. Add `tests/test_smoke.py` as [references/src-layout.md](./references/src-layout.md) describes, filling its `{{package}}` placeholder.
 5. `uv add --dev pytest ruff pyrefly`.
 6. Copy [references/pre-commit-config.yaml.template](./references/pre-commit-config.yaml.template) to `.pre-commit-config.yaml` and run `uvx prek autoupdate`. It needs a git repository; run `git init` first if there is none.
