@@ -76,8 +76,8 @@
 #      fails a run that changes any file outside .git/ or whose `sources:` line
 #      is missing, doubled, out of order, or wrong. See issue #259.
 #
-# Not run here, because they start real tools and can cost money: the three paid
-# evals (eval-to-issues.sh, eval-implement.sh, eval-integrate.sh) and
+# Not run here, because they start real tools and can cost money: the paid
+# evals (eval-to-issues.sh, eval-implement.sh, eval-integrate.sh, eval-catch-up.sh) and
 # eval-workers.sh, which runs the worker commands against the real roster and a
 # real reviewer from another model family.
 #

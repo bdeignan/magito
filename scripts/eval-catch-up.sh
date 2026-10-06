@@ -222,7 +222,7 @@ for i, name in enumerate(names):
     status[name] = body[starts[i][0]:end].strip().rstrip(",").strip()
 for name, want in (("journal", sys.argv[2]), ("tracker", sys.argv[3])):
     got = status[name]
-    ok = got.startswith("skipped") if want == "skipped" else got == want
+    ok = (got == "skipped" or got.startswith("skipped:")) if want == "skipped" else got == want
     if not ok:
         print(f"{name} is '{got}' on the sources line, expected {want}")
         raise SystemExit

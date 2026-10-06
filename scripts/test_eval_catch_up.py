@@ -42,6 +42,8 @@ if mode == "wrong-journal":
     statuses[0] = ("journal", "read" if journal == "missing" else "missing")
 elif mode == "wrong-tracker":
     statuses[4] = ("tracker", "read" if tracker != "read" else "skipped: no tracker configured")
+elif mode == "malformed-skipped":
+    statuses[4] = ("tracker", "skippedOops")
 elif mode == "wrong-order":
     statuses[1], statuses[2] = statuses[2], statuses[1]
 elif mode == "omits-prs":
@@ -138,6 +140,9 @@ def main() -> None:
             r = run(mode, roster, variant)
             assert r.returncode == 1, (variant, mode, r.stdout + r.stderr)
             assert f"{label(variant)}: FAIL ({reason})" in r.stdout, (variant, mode, r.stdout)
+        r = run("malformed-skipped", roster, "no-tracker")
+        assert r.returncode == 1, r.stdout + r.stderr
+        assert f"{label('no-tracker')}: FAIL (tracker is 'skippedOops' on the sources line, expected skipped)" in r.stdout, r.stdout
         r = run("wrong-tracker", roster, "")
         assert f"{label('')}: FAIL (tracker is 'skipped: no tracker configured' on the sources line, expected read)" in r.stdout, r.stdout
 
