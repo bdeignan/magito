@@ -75,9 +75,13 @@
 #      in its default case and in the no-journal and no-tracker variants. It
 #      fails a run that changes any file outside .git/ or whose `sources:` line
 #      is missing, doubled, out of order, or wrong. See issue #259.
+#  24. The paid handoff evaluator passes and fails as its fake workers dictate, in its
+#      default case and in the nothing-landed and long-session variants. It checks
+#      the journal files on disk: one new entry, its name, its word count, and its
+#      Landed, Next, and Gotcha lines.
 #
 # Not run here, because they start real tools and can cost money: the paid
-# evals (eval-to-issues.sh, eval-implement.sh, eval-integrate.sh, eval-catch-up.sh) and
+# evals (eval-to-issues.sh, eval-implement.sh, eval-integrate.sh, eval-catch-up.sh, eval-handoff.sh) and
 # eval-workers.sh, which runs the worker commands against the real roster and a
 # real reviewer from another model family.
 #
@@ -479,6 +483,18 @@ check_eval_catch_up() {
   fi
 }
 
+# --- 24. the paid handoff evaluator's pass/fail logic -------------------------
+check_eval_handoff() {
+  local out
+  if out=$(python3 "$REPO_ROOT/scripts/test_eval_handoff.py" 2>&1); then
+    echo "eval-handoff: ok"
+  else
+    echo "eval-handoff: FAILED"
+    echo "$out" | sed 's/^/    /'
+    FAILURES+=("eval-handoff pass/fail logic")
+  fi
+}
+
 # --- run everything, then summarize ------------------------------------------
 check_install
 check_anti_slop
@@ -503,6 +519,7 @@ check_gitflow_commit
 check_worker_standards
 check_pep723
 check_eval_catch_up
+check_eval_handoff
 
 echo
 if [[ ${#FAILURES[@]} -eq 0 ]]; then
