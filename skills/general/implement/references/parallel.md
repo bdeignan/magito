@@ -1,5 +1,10 @@
 # A batch of tickets
 
+## Contents
+
+- Process
+- Cost honesty
+
 Read this only when `/implement` was handed **more than one** ticket and the tickets do not
 all come from the same accepted intent. Tickets from one accepted intent follow
 [integrate.md](./integrate.md). A batch is the ordinary steps in [pipeline.md](./pipeline.md),

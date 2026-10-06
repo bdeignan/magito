@@ -9,6 +9,8 @@ Report which workers on this machine are ready, and why the others are not. The 
 `~/.magito/workers.toml`: one entry per command-line coding tool that magito can launch to
 build or review. Its format lives in the
 [worker contract](../implement/references/worker-contract.md); this skill does not repeat it.
+For creating the roster, probing an entry, and the quirks of each tool's command line, read
+[`references/roster-setup.md`](./references/roster-setup.md) when a step below needs it.
 `<skills>` is the folder that holds this skill's own folder: the parent of the directory its `SKILL.md` is in.
 
 This skill reports. It writes one thing only, the copy in step 3. It never edits, overwrites,

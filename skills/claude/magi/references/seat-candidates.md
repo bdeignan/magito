@@ -1,6 +1,6 @@
 # Seat candidates
 
-Vetted headless-capable agent CLIs for tribunal seats, as of July 2026. A seat
+Vetted headless-capable agent CLIs for tribunal seats. A seat
 candidate needs one thing: a shell command that takes a brief and prints a verdict on
 stdout. Configure the chosen seats per machine in `~/.magito/bench.toml` (see
 [SKILL.md](../SKILL.md)); this file is the menu, not the config.
@@ -27,13 +27,12 @@ qwen's documented headless command below takes no model flag at all. omp's docs 
 
 ## Quirks that will bite
 
-- **gemini**: consumer tiers (free, Pro, Ultra) lost access on 2026-06-18, replaced by
+- **gemini**: consumer tiers (free, Pro, Ultra) no longer have access, replaced by
   Antigravity CLI ("Project ID required" errors mean an ineligible account, not a
   missing project). Works with enterprise Code Assist or a paid, restricted
-  `GEMINI_API_KEY` — and Google's key-format migration (~September 2026) may break
-  standard keys.
+  `GEMINI_API_KEY`. Google's key-format migration can break standard keys.
 - **agy**: emits nothing when stdout is not a TTY — a known bug, tracked upstream as
-  google-antigravity/antigravity-cli#76 (open, no maintainer response as of July 2026).
+  google-antigravity/antigravity-cli#76 (open, no maintainer response).
   Shelling out pipes stdout, so always wrap in a pseudo-terminal:
   `script -q /dev/null agy ...`. There is no JSON or structured-output flag — `agy -p`
   prints plain text only. Consumer quotas are low; an exhausted quota errors out and
@@ -42,16 +41,16 @@ qwen's documented headless command below takes no model flag at all. omp's docs 
   versions and OpenCode >= v1.14.24 (earlier versions had a headless session bug).
 - **pi**: `--mode json` emits JSON-lines events — the easiest seat to parse verdicts
   from.
-- **omp**: probe-verified 2026-07-14 (ping and the `-p ... --model` pairing both
+- **omp**: probe-verified (ping and the `-p ... --model` pairing both
   answered on a live bench). Give `--model` the full `provider/model` path (e.g.
   `openrouter/deepseek/deepseek-v4-flash`) — a bare fuzzy name can resolve to a
-  different provider and fail on missing auth (reconfirmed 2026-07-22: bare `gemini`
+  different provider and fail on missing auth (reconfirmed: bare `gemini`
   and `kimi` misrouted to their *direct* providers and failed on the missing key,
   while bare `deepseek` happened to route through OpenRouter). Add `--no-session` so
   seat calls stay stateless. `--mode json` works but emits a verbose NDJSON event
   stream (every thinking delta included); plain text output is easier to read verdicts
   from.
-- **omp roles vs. the responder** (verified 2026-07-22): `--model` also accepts a
+- **omp roles vs. the responder**: `--model` also accepts a
   **role alias** — `@default`, `@slow`, `@plan`, `@smol` — which resolves to whatever
   model backs that role in the user's omp config *and* makes it the print-mode
   responder. This is how you bind a seat to a role (it follows the user repointing the
@@ -75,7 +74,16 @@ qwen's documented headless command below takes no model flag at all. omp's docs 
 ## Unconfirmed — verify before configuring
 
 - The `ANTIGRAVITY_API_KEY` env var. (`agy --output-format` is resolved: no such flag
-  exists — see the agy quirk above. omp's flags are resolved: probed 2026-07-14 — see
-  the omp quirk above.)
+  exists — see the agy quirk above. omp's flags are resolved: see the omp quirk
+  above.)
 
 When a candidate is unverified, run SKILL.md's probe against it before configuring.
+
+## History (verified on 2026-07)
+
+- This file was vetted in July 2026.
+- gemini: consumer tiers lost access on 2026-06-18. Google's key-format migration was
+  expected around September 2026.
+- agy: issue #76 had no maintainer response as of July 2026.
+- omp: probe-verified on 2026-07-14, and the bare-name misrouting was reconfirmed on
+  2026-07-22. The role-alias behavior was verified on 2026-07-22.

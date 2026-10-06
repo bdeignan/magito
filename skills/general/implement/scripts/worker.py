@@ -100,7 +100,7 @@ def die(code, msg):
 def read_roster():
     """(data, None), or (None, why it could not be read). Never exits."""
     if not ROSTER.exists():
-        return None, f"{ROSTER} not found — bootstrap it per worker-contract.md"
+        return None, f"{ROSTER} not found — bootstrap it per the workers skill's references/roster-setup.md"
     try:
         with open(ROSTER, "rb") as f:
             return tomllib.load(f), None

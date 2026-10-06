@@ -194,7 +194,7 @@ initiative — `bench.toml`, `workers.toml`, and the handoffs are the user's.
 and refreshing its symlinks on every run. Commands in both rosters run in
 non-interactive shells, so any env they need (API keys, cloud project ids) must
 come from `~/.zshenv` or the tool's own auth store, never `.zshrc` alone — see the
-worker contract's gotchas.
+gotchas in `skills/general/workers/references/roster-setup.md`.
 
 ## Skill and Agent Design Notes
 

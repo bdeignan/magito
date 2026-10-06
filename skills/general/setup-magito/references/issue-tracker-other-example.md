@@ -8,6 +8,22 @@
 
 # Worked example: a fictional Jira setup
 
+## Contents
+
+- The paragraph the user gave (input)
+- The file produced (output → docs/agents/issue-tracker.md)
+  - Ticket identifiers
+  - List open tickets
+  - Fetch a ticket
+  - Find a published ticket
+  - Publish a ticket
+  - Comment on a ticket
+  - Close a ticket
+  - Link a sub-ticket
+  - Blocking edges
+  - Pull requests
+- What this example is here to show
+
 ## The paragraph the user gave (input)
 
 > We track everything in Jira, project key `PLAT`, on the company cloud instance at

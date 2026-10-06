@@ -50,4 +50,8 @@ inspect existing branches and PRs before starting duplicate implementation work.
    - `plan: skipped, small change` — say "small change, skipping the plan" and go on.
    - `plan: already approved (intent ...)` — the user signed off on what to build when they accepted the intent. Go on without a stop.
 
-5. **Follow [`references/pipeline.md`](./references/pipeline.md)** from its first step to its last. It holds the worktree, the build and its floor, the check, the commit test, the review, the record, the pull request, and the last message.
+5. **Follow the references.** Read each one when its case applies. The files also link to each other as "see also".
+   - [`references/pipeline.md`](./references/pipeline.md): every ticket. Follow it from its first step to its last. It holds the worktree, the build and its floor, the check, the commit test, the review, the record, the pull request, and the last message.
+   - [`references/worker-contract.md`](./references/worker-contract.md): every ticket. It holds the build brief and the review rules.
+   - [`references/standards-review.md`](./references/standards-review.md): every review.
+   - [`references/pr-body.md`](./references/pr-body.md): every pull request.

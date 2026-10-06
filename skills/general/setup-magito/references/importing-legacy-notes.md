@@ -6,7 +6,7 @@ The goal: carry forward what a repo already knew, as proper session-journal entr
 
 ## What counts as legacy notes
 
-Anything that held session knowledge before magito did: an old magito handoff file under `~/.magito/handoffs/<repo-slug>.md`, a `NOTES.md` or `TODO.md` at the repo root, a `docs/decisions/` folder, a `.beads/` (or similar) task database, or a store the user names when asked. A `CHANGELOG.md`, a README, or anything already version-controlled as product docs is **not** legacy notes — leave it.
+Anything that held session knowledge before magito did: an old magito handoff file under `~/.magito/handoffs/<repo-slug>.md`, a `NOTES.md` or `TODO.md` at the repo root, a `.beads/` (or similar) task database, or a store the user names when asked. A `CHANGELOG.md`, a README, or anything already version-controlled as product docs is **not** legacy notes — leave it.
 
 ## The one rule that governs everything: never destructive
 

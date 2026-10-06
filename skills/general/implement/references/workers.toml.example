@@ -12,8 +12,8 @@
 # The environment variable MAGITO_THRIFTY set to 1 or 0 overrides this line for one session.
 # thrifty = true
 
-# Checked 2026-09-29: gpt-6-sol and gpt-6-astra are in ~/.codex/models_cache.json
-# (codex 0.158), and both accept effort levels from low to ultra. Sol at medium effort is
+# gpt-6-sol and gpt-6-astra are in ~/.codex/models_cache.json, and both accept effort
+# levels from low to ultra. Sol at medium effort is
 # the default here: strong, and far cheaper than Astra. `-c model_reasoning_effort=<level>`
 # sets the effort for one run. For Astra, copy this entry as `codex-astra`, point its model
 # at gpt-6-astra, and use it only when a review needs the strongest model.
@@ -23,9 +23,8 @@
 # family = "openai"
 # tier = "strong"
 
-# Checked 2026-09-29: `claude --help` (2.1.284) lists `opus` as a model alias and shows
-# --model, --permission-mode, and --effort (low, medium, high, xhigh, max). A probe with
-# `--model opus --effort medium` answered. Change `medium` to raise or lower the effort.
+# `claude --help` lists `opus` as a model alias and shows --model, --permission-mode, and
+# --effort (low, medium, high, xhigh, max). Change `medium` to raise or lower the effort.
 # The `fable` alias names Anthropic's higher, costlier tier; copy this entry as
 # `claude-fable` and set its model to the `fable` alias to use it.
 # [workers.claude]
@@ -34,10 +33,8 @@
 # family = "anthropic"
 # tier = "strong"
 
-# Flags checked 2026-09-29 against `gemini --help` (gemini-cli 0.46.0).
 # unverified: Gemini CLI has no model list command. The id below is the newest
-# pro model named in the 0.46.0 bundle; as of 2026-09-29, Gemini 3.1 Pro is still Google's
-# top Pro model (3.5 Pro is unreleased). Check with `gemini -m <id> -p "Reply OK"`.
+# pro model its bundle names. Check with `gemini -m <id> -p "Reply OK"`.
 # [workers.gemini]
 # cmd = "gemini --skip-trust --approval-mode yolo --model {model} --include-directories {cwd} -p {brief}"
 # model = "gemini-3.1-pro-preview"
@@ -55,15 +52,13 @@
 # `--mode ask` with `--force`.
 # Cursor's CLI has no effort flag. The effort is part of the model id, as a suffix such as
 # `-medium`, `-high`, `-thinking-high`, or `-extra-high`. `agent --list-models` prints the
-# exact ids. Before 2026-08-27 the CLI ignored that suffix, so update the CLI first.
+# exact ids. Older CLI versions ignore that suffix, so update the CLI first.
 # unverified: Cursor's `agent` CLI is not installed on the machine that wrote this file.
 # The flags follow https://cursor.com/docs/cli/reference/parameters. Confirm them with
 # `agent --help`.
 
-# OpenAI stops providing models to Cursor on 2026-11-12, after SpaceX acquired Cursor, and
-# ships no new models there before then:
-# https://openai.com/index/our-decision-on-cursor-following-its-acquisition-by-spacex/
-# So GPT-6 never reaches Cursor, and this entry stops working on that date. Prefer
+# OpenAI stops providing models to Cursor, so GPT-6 never reaches Cursor, and this entry
+# stops working once that cutoff passes (see History at the end of this file). Prefer
 # `cursor-grok` below for a non-Anthropic reviewer on a Cursor-only machine.
 # [workers.cursor-openai]
 # cmd = "agent -p --mode ask --model {model} {brief}"
@@ -80,7 +75,7 @@
 # family = "xai"
 # tier = "strong"
 
-# unverified: Cursor lists Claude Opus 5.5 and Fable 5.1, but its docs give no CLI id. The
+# unverified: Cursor lists Claude Opus and Fable models, but its docs give no CLI id. The
 # model value below is a deliberate placeholder: replace it with the Opus 5.5 id at the
 # effort you want, as `agent --list-models` prints it, before uncommenting. This entry is
 # the same family as Claude Code, so it cannot review work that Claude built.
@@ -90,7 +85,7 @@
 # family = "anthropic"
 # tier = "strong"
 
-# Checked 2026-09-29: `omp models find kimi-k3` lists moonshotai/kimi-k3 under openrouter.
+# `omp models find kimi-k3` lists moonshotai/kimi-k3 under openrouter.
 # The family comes from the pinned model (moonshot), not from omp.
 # [workers.omp]
 # cmd = "omp -p --no-session --no-skills --approval-mode yolo --max-time 900 --cwd {cwd} --model {model} {brief}"
@@ -100,14 +95,14 @@
 
 # Cheap entries for thrifty mode. Each one pins a low-cost model of the same tool.
 
-# Checked 2026-09-29: gpt-6-luna is in ~/.codex/models_cache.json (codex 0.158).
+# gpt-6-luna is in ~/.codex/models_cache.json.
 # [workers.codex-cheap]
 # cmd = "codex exec --sandbox workspace-write --ephemeral -m {model} -C {cwd} {brief}"
 # model = "gpt-6-luna"
 # family = "openai"
 # tier = "cheap"
 
-# Checked 2026-09-29: `claude -p --model haiku` answered a probe. `haiku` is Claude's
+# `claude -p --model haiku` answers a probe. `haiku` is Claude's
 # cheapest alias; `claude --help` does not list it among its examples.
 # [workers.claude-cheap]
 # cmd = "env -u CLAUDECODE claude -p --permission-mode bypassPermissions --model {model} {brief}"
@@ -115,7 +110,7 @@
 # family = "anthropic"
 # tier = "cheap"
 
-# Checked 2026-09-29: `omp models find deepseek-v4-flash` lists deepseek/deepseek-v4-flash under openrouter.
+# `omp models find deepseek-v4-flash` lists deepseek/deepseek-v4-flash under openrouter.
 # [workers.omp-cheap]
 # cmd = "omp -p --no-session --no-skills --approval-mode yolo --max-time 900 --cwd {cwd} --model {model} {brief}"
 # model = "openrouter/deepseek/deepseek-v4-flash"
@@ -123,7 +118,7 @@
 # tier = "cheap"
 
 # unverified: Gemini CLI has no model list command. gemini-3.5-flash is named in the
-# 0.46.0 bundle. Check with `gemini -m <id> -p "Reply OK"`.
+# Gemini CLI bundle. Check with `gemini -m <id> -p "Reply OK"`.
 # [workers.gemini-cheap]
 # cmd = "gemini --skip-trust --approval-mode yolo --model {model} --include-directories {cwd} -p {brief}"
 # model = "gemini-3.5-flash"
@@ -140,3 +135,18 @@
 # model = "REPLACE-with-cheap-id-from-agent-models"
 # family = "REPLACE-with-the-family-of-that-model"
 # tier = "cheap"
+
+# History (verified on 2026-09-29)
+# - codex 0.158: gpt-6-sol, gpt-6-astra, and gpt-6-luna are in ~/.codex/models_cache.json.
+# - claude 2.1.284: `claude --help` lists the `opus` alias and the --model,
+#   --permission-mode, and --effort flags. A probe with `--model opus --effort medium`
+#   answered, and `claude -p --model haiku` answered.
+# - gemini-cli 0.46.0: flags checked against `gemini --help`. Gemini 3.1 Pro is Google's
+#   top Pro model, and 3.5 Pro is unreleased.
+# - Cursor: before 2026-08-27 the CLI ignored the effort suffix in a model id.
+# - Cursor: OpenAI stops providing models to Cursor on 2026-11-12, after SpaceX acquired
+#   Cursor, and ships no new models there before then:
+#   https://openai.com/index/our-decision-on-cursor-following-its-acquisition-by-spacex/
+# - Cursor lists Claude Opus 5.5 and Fable 5.1, but its docs give no CLI id.
+# - omp: `omp models find` lists moonshotai/kimi-k3 and deepseek/deepseek-v4-flash under
+#   openrouter.

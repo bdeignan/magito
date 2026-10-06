@@ -1,11 +1,15 @@
 # The steps every ticket runs
 
+## Contents
+
+- Steps
+- Escalations: the only stops on these steps
+
 Every ticket runs these twelve steps, whether it comes from an accepted intent or not, alone
 or in a batch. `SKILL.md` runs first: it shows the start line and, for a ticket with no
 accepted intent, stops once for plan approval. From here on the run goes to an open pull
 request with no approval stop. The human hears from you only for an escalation, and at the
-merge. Commands run from your working directory; `<skills>` is your tool's installed skills
-directory, as in `SKILL.md`.
+merge. Commands run from your working directory; `<skills>` is the folder that holds this skill's own folder: the parent of the directory its `SKILL.md` is in.
 
 ## Steps
 

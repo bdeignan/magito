@@ -140,7 +140,7 @@ for p in .magito/ .scratch/; do grep -qxF "$p" "$e" 2>/dev/null || echo "$p" >> 
 
 ### Legacy notes
 
-Does this repo carry notes that predate magito? Scan for: an old magito handoff file (`~/.magito/handoffs/<slug>.md`), `NOTES.md`, `TODO.md`, `docs/decisions/`, a `.beads/` database or similar task store — or a system the user names when asked.
+Does this repo carry notes that predate magito? Scan for: an old magito handoff file (`~/.magito/handoffs/<slug>.md`), `NOTES.md`, `TODO.md`, a `.beads/` database or similar task store — or a system the user names when asked.
 
 If something is found, offer to bring it into the session journal as entries. **The import procedure lives in [`references/importing-legacy-notes.md`](./references/importing-legacy-notes.md) — read it only when the inventory actually finds something.** It is never destructive: originals stay put, the user confirms the mapping before any file is written, entries stay under the journal word cap (the reference points at the live number — do not restate it here), and timestamps come from the source. Found nothing? Skip the section and never open that file.
 
