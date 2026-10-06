@@ -71,9 +71,23 @@
 #  22. Every git-tracked *.py file opens with the PEP 723 block, right after its
 #      shebang line when it has one. A block lower in the file counts as
 #      missing. See issue #263.
+#  23. The paid catch-up evaluator passes and fails as its fake workers dictate,
+#      in its default case and in the no-journal and no-tracker variants. It
+#      fails a run that changes any file outside .git/ or whose `sources:` line
+#      is missing, doubled, out of order, or wrong. See issue #259.
+#  24. The paid handoff evaluator passes and fails as its fake workers dictate, in its
+#      default case and in the nothing-landed and long-session variants. It checks
+#      the journal files on disk: one new entry, its name, its word count, and its
+#      Landed, Next, and Gotcha lines. See issue #260.
+#  25. `eval-intent.sh` pass/fail logic, run against fake workers that act out
+#      passing and failing runs of each scenario. See issue #261.
+#  26. `worker.py next-reviewer` picks the reviewer for the next round after a
+#      reviewer failed: the pick skipping the failed workers, else the pick
+#      with no skip, else `subagent`. See issue #262.
 #
-# Not run here, because they start real tools and can cost money: the three paid
-# evals (eval-to-issues.sh, eval-implement.sh, eval-integrate.sh) and
+# Not run here, because they start real tools and can cost money: the paid
+# evals (eval-to-issues.sh, eval-implement.sh, eval-integrate.sh, eval-catch-up.sh,
+# eval-handoff.sh, eval-intent.sh) and
 # eval-workers.sh, which runs the worker commands against the real roster and a
 # real reviewer from another model family.
 #
@@ -463,6 +477,54 @@ check_pep723() {
   fi
 }
 
+# --- 23. the paid catch-up evaluator's pass/fail logic -----------------------
+check_eval_catch_up() {
+  local out
+  if out=$(python3 "$REPO_ROOT/scripts/test_eval_catch_up.py" 2>&1); then
+    echo "eval-catch-up: ok"
+  else
+    echo "eval-catch-up: FAILED"
+    echo "$out" | sed 's/^/    /'
+    FAILURES+=("eval-catch-up pass/fail logic")
+  fi
+}
+
+# --- 24. the paid handoff evaluator's pass/fail logic -------------------------
+check_eval_handoff() {
+  local out
+  if out=$(python3 "$REPO_ROOT/scripts/test_eval_handoff.py" 2>&1); then
+    echo "eval-handoff: ok"
+  else
+    echo "eval-handoff: FAILED"
+    echo "$out" | sed 's/^/    /'
+    FAILURES+=("eval-handoff pass/fail logic")
+  fi
+}
+
+# --- 25. eval-intent pass/fail logic -----------------------------------------
+check_eval_intent() {
+  local out
+  if out=$(python3 "$REPO_ROOT/scripts/test_eval_intent.py" 2>&1); then
+    echo "eval-intent: ok"
+  else
+    echo "eval-intent: FAILED"
+    echo "$out" | sed 's/^/    /'
+    FAILURES+=("eval-intent pass/fail logic")
+  fi
+}
+
+# --- 26. worker.py next-reviewer ---------------------------------------------
+check_worker_next_reviewer() {
+  local out
+  if out=$(python3 "$REPO_ROOT/scripts/test_worker_next_reviewer.py" 2>&1); then
+    echo "worker-next-reviewer: ok"
+  else
+    echo "worker-next-reviewer: FAILED"
+    echo "$out" | sed 's/^/    /'
+    FAILURES+=("worker.py next-reviewer pick")
+  fi
+}
+
 # --- run everything, then summarize ------------------------------------------
 check_install
 check_anti_slop
@@ -486,6 +548,10 @@ check_worker_env
 check_gitflow_commit
 check_worker_standards
 check_pep723
+check_eval_catch_up
+check_eval_handoff
+check_eval_intent
+check_worker_next_reviewer
 
 echo
 if [[ ${#FAILURES[@]} -eq 0 ]]; then
