@@ -5,6 +5,7 @@
 - The brief
 - Judging what the worker left
 - Executors
+- Running workers
 - Probe and fallback
 
 The delegable build-slice of a ticket: what a driver hands to an executor — a Claude
@@ -250,6 +251,27 @@ choice; the volatile id lives only in this machine-local file (one line to updat
 on a sunset), or better, in each tool's own alias layer (omp modelRoles, claude
 aliases, codex profiles). CLIs with no working-directory flag (gemini, claude) need
 no `{cwd}` at all — the launcher sets the working directory itself.
+
+## Running workers
+
+What the driver does while it launches and waits on workers in a build. Setting up a roster entry is in the `workers` skill's `references/roster-setup.md`.
+
+- **Claude billing**: a subprocess `claude -p` bills API pay-as-you-go when
+  `ANTHROPIC_API_KEY` is set in its environment, and the logged-in subscription
+  otherwise. Do not leak the key into a worker's env unless API billing is intended.
+- **codex as driver**: its `workspace-write` sandbox blocks child processes' network
+  by default — a spawned worker cannot reach its API without
+  `[sandbox_workspace_write] network_access = true`.
+- **Timeouts are the driver's job**: most CLIs enforce no print-mode timeout of their
+  own. Pair the worker-side cap (omp `--max-time`) with a driver-side timeout on the
+  shell call.
+- **Claude Code permission modes**: run fan-out sessions in default (prompting)
+  mode — the first `python3 .../scripts/worker.py` launch prompts once, and "do not ask again this
+  session" covers the rest of the batch. Auto mode may deny the launch outright; if
+  you are then offered a fallback to `executor`, present it as a billing
+  decision, never a convenience. The launcher's single stable prefix
+  (`python3 .../scripts/worker.py`) is also what makes a tight allow rule possible
+  if the user ever wants zero prompts.
 
 ## Probe and fallback
 

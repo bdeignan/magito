@@ -47,26 +47,10 @@ tool's own error. The most common cause is a login that has expired.
 
 - **Nested claude**: spawn with `env -u CLAUDECODE claude -p ...` — Claude Code
   refuses to start inside itself otherwise.
-- **Claude billing**: a subprocess `claude -p` bills API pay-as-you-go when
-  `ANTHROPIC_API_KEY` is set in its environment, and the logged-in subscription
-  otherwise. Do not leak the key into a worker's env unless API billing is intended.
-- **codex as driver**: its `workspace-write` sandbox blocks child processes' network
-  by default — a spawned worker cannot reach its API without
-  `[sandbox_workspace_write] network_access = true`.
 - **omp workers**: always `--no-session --no-skills --max-time <s>` — omp otherwise
   auto-discovers skills and instruction files, and the brief is the contract, not
   what the worker finds. Give `--model` the full `provider/model` path; a bare fuzzy
   name can resolve to a different provider and fail on missing auth.
-- **Timeouts are the driver's job**: most CLIs enforce no print-mode timeout of their
-  own. Pair the worker-side cap (omp `--max-time`) with a driver-side timeout on the
-  shell call.
-- **Claude Code permission modes**: run fan-out sessions in default (prompting)
-  mode — the first `python3 .../scripts/worker.py` launch prompts once, and "do not ask again this
-  session" covers the rest of the batch. Auto mode may deny the launch outright; if
-  you are then offered a fallback to `executor`, present it as a billing
-  decision, never a convenience. The launcher's single stable prefix
-  (`python3 .../scripts/worker.py`) is also what makes a tight allow rule possible
-  if the user ever wants zero prompts.
 - **Env vars and non-interactive shells**: workers inherit the driver's environment,
   and a driver's shell tool runs non-interactive shells — exports living only in
   `.zshrc` (read by interactive shells alone) may never arrive, depending on how the
