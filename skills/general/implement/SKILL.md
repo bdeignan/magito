@@ -52,6 +52,6 @@ inspect existing branches and PRs before starting duplicate implementation work.
 
 5. **Follow the references.** Read each one when its case applies. The files also link to each other as "see also".
    - [`references/pipeline.md`](./references/pipeline.md): every ticket. Follow it from its first step to its last. It holds the worktree, the build and its floor, the check, the commit test, the review, the record, the pull request, and the last message.
-   - [`references/worker-contract.md`](./references/worker-contract.md): when a worker builds or reviews. It holds the build brief and the review rules.
+   - [`references/worker-contract.md`](./references/worker-contract.md): every ticket. It holds the build brief and the review rules.
    - [`references/standards-review.md`](./references/standards-review.md): every review.
    - [`references/pr-body.md`](./references/pr-body.md): every pull request.
