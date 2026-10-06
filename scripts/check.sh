@@ -71,6 +71,10 @@
 #  22. Every git-tracked *.py file opens with the PEP 723 block, right after its
 #      shebang line when it has one. A block lower in the file counts as
 #      missing. See issue #263.
+#  24. The paid handoff evaluator passes and fails as its fake workers dictate, in its
+#      default case and in the nothing-landed and long-session variants. It checks
+#      the journal files on disk: one new entry, its name, its word count, and its
+#      Landed, Next, and Gotcha lines.
 #
 # Not run here, because they start real tools and can cost money: the three paid
 # evals (eval-to-issues.sh, eval-implement.sh, eval-integrate.sh) and
@@ -463,6 +467,18 @@ check_pep723() {
   fi
 }
 
+# --- 24. the paid handoff evaluator's pass/fail logic -------------------------
+check_eval_handoff() {
+  local out
+  if out=$(python3 "$REPO_ROOT/scripts/test_eval_handoff.py" 2>&1); then
+    echo "eval-handoff: ok"
+  else
+    echo "eval-handoff: FAILED"
+    echo "$out" | sed 's/^/    /'
+    FAILURES+=("eval-handoff pass/fail logic")
+  fi
+}
+
 # --- run everything, then summarize ------------------------------------------
 check_install
 check_anti_slop
@@ -486,6 +502,7 @@ check_worker_env
 check_gitflow_commit
 check_worker_standards
 check_pep723
+check_eval_handoff
 
 echo
 if [[ ${#FAILURES[@]} -eq 0 ]]; then
