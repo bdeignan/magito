@@ -12,6 +12,7 @@ runs the worker with its working directory set, and enforces a timeout.
     python3 worker.py run   <worker> <dir> <brief-file> [timeout-seconds]
     python3 worker.py review <worker> <dir> <brief-file> [timeout-seconds]
     python3 worker.py reviewer <writer-family> [--skip <worker>]...
+    python3 worker.py next-reviewer <builder-family> [--failed <worker>]...
     python3 worker.py ready [--family <family>]
     python3 worker.py start (--family <family> [--label <text>] | --builder <worker>)
                             [--intent <path>] [--small]
@@ -25,7 +26,11 @@ worker answers VERDICT-OK. reviewer picks a working worker whose family differs
 from the writer's, trying the top-level `reviewers` list first (or the older
 `spec_reviewer` name); --skip passes over a named candidate, for a run whose
 reviewer failed in the middle of a review. It also passes over a candidate whose
-`requires_env` names an unset variable, and any entry it cannot use. An entry's
+`requires_env` names an unset variable, and any entry it cannot use. next-reviewer
+picks the reviewer for the next round after a round failed because a reviewer did. It
+prints the reviewer pick with one --skip per --failed name; else the pick with no
+--skip, since a worker that failed earlier may answer its probe again; else the word
+subagent. It prints one line and exits 0, or 2 on a usage or roster error. An entry's
 optional `env` table holds variable names and string values. probe, run, and review
 start that worker with the launcher's own environment plus the table, and a table
 entry wins over an inherited variable of the same name. The table is set for that
@@ -890,6 +895,9 @@ def standards(base):
     sys.exit(0)
 
 
+NEXT_REVIEWER_USAGE = "usage: worker.py next-reviewer <builder-family> [--failed <worker>]..."
+
+
 def main():
     args = sys.argv[1:]
     if "--skip" in args and args[:1] != ["reviewer"]:
@@ -917,6 +925,25 @@ def main():
             print(name)
             sys.exit(0)
         die(3, no_reviewer_message(data, writer_family))
+    elif len(args) >= 2 and args[0] == "next-reviewer":
+        builder_family, rest, failed = args[1], args[2:], []
+        while rest:
+            if rest[0] != "--failed" or len(rest) < 2 or rest[1].startswith("--"):
+                die(2, NEXT_REVIEWER_USAGE)
+            failed.append(rest[1])
+            rest = rest[2:]
+        if not ROSTER.exists():
+            # No roster means no worker to pick: a subagent reviews.
+            print(RESERVED)
+            sys.exit(0)
+        data = load_roster()
+        try:
+            name = (pick_reviewer(data, builder_family, failed, quiet=True)
+                    or pick_reviewer(data, builder_family, quiet=True))
+        except Fault as e:
+            die(2, str(e))
+        print(name or RESERVED)
+        sys.exit(0)
     elif args[:1] == ["ready"]:
         if args[1:] and (args[1] != "--family" or len(args) != 3):
             die(2, "usage: worker.py ready [--family <family>]")
@@ -977,6 +1004,7 @@ def main():
     else:
         die(2, "usage: worker.py probe <worker> | "
                "worker.py reviewer <writer-family> [--skip <worker>]... | "
+               "worker.py next-reviewer <builder-family> [--failed <worker>]... | "
                "worker.py ready [--family <family>] | "
                "worker.py start (--family <family> [--label <text>] | --builder <worker>) "
                "[--intent <path>] [--small] | "

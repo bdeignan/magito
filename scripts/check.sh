@@ -71,6 +71,9 @@
 #  22. Every git-tracked *.py file opens with the PEP 723 block, right after its
 #      shebang line when it has one. A block lower in the file counts as
 #      missing. See issue #263.
+#  26. `worker.py next-reviewer` picks the reviewer for the next round after a
+#      reviewer failed: the pick skipping the failed workers, else the pick
+#      with no skip, else `subagent`. See issue #262.
 #
 # Not run here, because they start real tools and can cost money: the three paid
 # evals (eval-to-issues.sh, eval-implement.sh, eval-integrate.sh) and
@@ -463,6 +466,18 @@ check_pep723() {
   fi
 }
 
+# --- 26. worker.py next-reviewer ---------------------------------------------
+check_worker_next_reviewer() {
+  local out
+  if out=$(python3 "$REPO_ROOT/scripts/test_worker_next_reviewer.py" 2>&1); then
+    echo "worker-next-reviewer: ok"
+  else
+    echo "worker-next-reviewer: FAILED"
+    echo "$out" | sed 's/^/    /'
+    FAILURES+=("worker.py next-reviewer pick")
+  fi
+}
+
 # --- run everything, then summarize ------------------------------------------
 check_install
 check_anti_slop
@@ -486,6 +501,7 @@ check_worker_env
 check_gitflow_commit
 check_worker_standards
 check_pep723
+check_worker_next_reviewer
 
 echo
 if [[ ${#FAILURES[@]} -eq 0 ]]; then

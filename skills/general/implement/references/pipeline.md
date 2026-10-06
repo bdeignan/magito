@@ -54,23 +54,13 @@ merge. Commands run from your working directory; `<skills>` is the folder that h
 6. **Review.** Use the reviewer from the start line. There are two exceptions.
    - After step 8 exited 6, use the worker that the exit 6 message named, for this round and
      every later one.
-   - When a round fails because the reviewer itself failed, choose the reviewer for the next
-     round in two moves, with no judgment of your own. A reviewer fails when `worker.py
-     review` exits with anything other than 0, 4, and 5: a timeout, a lost login, a used-up
-     quota.
-     1. Run `python3 <skills>/implement/scripts/worker.py reviewer <builder-family> --skip
-        <name>`, with one `--skip` for every worker that has failed a round in this run, not
-        only the latest. When it prints a worker, use that worker for the next round and for
-        the record.
-     2. When move 1 prints no worker, run `python3 <skills>/implement/scripts/worker.py
-        reviewer <builder-family>` with no `--skip`. When it prints a worker, a worker that
-        failed earlier still answers its probe: run the next round with the worker it prints.
-        When it prints no worker, no roster worker of another family is working any more:
-        review with a fresh-context subagent, and record `subagent` in step 8.
-
-     Move 2 gives the same answer as step 8's own check: `worker.py record ... subagent` is
-     refused exactly when plain `worker.py reviewer <builder-family>` prints a worker. So the
-     run reaches a subagent only when the roster has no working reviewer, and never by choice.
+   - When a round fails because the reviewer itself failed, run `python3
+     <skills>/implement/scripts/worker.py next-reviewer <builder-family>` with one
+     `--failed <name>` for every worker that has failed a round in this run, not only the
+     latest. Use what it prints for the next round and for the record. `subagent` means a
+     fresh-context subagent reviews, and you record `subagent` in step 8. A reviewer fails
+     when `worker.py review` exits with anything other than 0, 4, and 5: a timeout, a lost
+     login, a used-up quota.
      A failed round counts toward the limit of three in step 7. When the three are used
      without a pass, stop with escalation 2 and quote the reviewer's failure.
 
@@ -100,7 +90,7 @@ merge. Commands run from your working directory; `<skills>` is the folder that h
      means the reply held no verdict line: review again. Each such repeat counts toward the
      limit of three in step 7.
    - **A subagent reviews.** This happens when the start line said `reviewer: none from
-     another family, using a subagent`, or when move 2 above printed no worker. Give the same
+     another family, using a subagent`, or when `next-reviewer` above printed `subagent`. Give the same
      brief to a fresh-context subagent. Prove it changed no files with the snapshot pair from
      `to-issues` step 5, using `<worktree>` as the root.
    - **Neither is possible.** When no roster worker is available and the tool you run in
