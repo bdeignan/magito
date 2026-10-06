@@ -81,6 +81,9 @@
 #      Landed, Next, and Gotcha lines.
 #  25. `eval-intent.sh` pass/fail logic, run against fake workers that act out
 #      passing and failing runs of each scenario. See issue #261.
+#  26. `worker.py next-reviewer` picks the reviewer for the next round after a
+#      reviewer failed: the pick skipping the failed workers, else the pick
+#      with no skip, else `subagent`. See issue #262.
 #
 # Not run here, because they start real tools and can cost money: the paid
 # evals (eval-to-issues.sh, eval-implement.sh, eval-integrate.sh, eval-catch-up.sh, eval-handoff.sh, eval-intent.sh) and
@@ -509,6 +512,18 @@ check_eval_intent() {
   fi
 }
 
+# --- 26. worker.py next-reviewer ---------------------------------------------
+check_worker_next_reviewer() {
+  local out
+  if out=$(python3 "$REPO_ROOT/scripts/test_worker_next_reviewer.py" 2>&1); then
+    echo "worker-next-reviewer: ok"
+  else
+    echo "worker-next-reviewer: FAILED"
+    echo "$out" | sed 's/^/    /'
+    FAILURES+=("worker.py next-reviewer pick")
+  fi
+}
+
 # --- run everything, then summarize ------------------------------------------
 check_install
 check_anti_slop
@@ -535,6 +550,7 @@ check_pep723
 check_eval_catch_up
 check_eval_handoff
 check_eval_intent
+check_worker_next_reviewer
 
 echo
 if [[ ${#FAILURES[@]} -eq 0 ]]; then
