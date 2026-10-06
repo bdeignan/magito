@@ -47,10 +47,19 @@ The cruft AI agents characteristically leave. Concrete before/after examples:
 
 ## Output
 
+Each finding carries exactly one of six tags, naming the kind of over-building:
+
+- `reuse`: code that duplicates a helper, type, or pattern already in the repo. Name its path.
+- `stdlib`: hand-written code, or a new dependency, for what the standard library does. Name the function.
+- `native`: code or a dependency doing what the platform already does. Name the feature.
+- `delete`: dead code, unused flexibility, or a feature nobody asked for.
+- `yagni`: an abstraction with one implementation, a setting nobody sets, or a layer with one caller.
+- `shrink`: the same logic in fewer lines. Show the shorter form.
+
 Ranked findings, capped at 7, highest-leverage first:
 
 ```
-**[one-line claim]** — file:line
+**[tag] [one-line claim]** — file:line
 Why it is cruft: [1–2 lines]
 Simplification: [concrete before → after sketch — what disappears]
 Risk: [what could break, and how to check it does not]
