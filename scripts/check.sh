@@ -71,6 +71,10 @@
 #  22. Every git-tracked *.py file opens with the PEP 723 block, right after its
 #      shebang line when it has one. A block lower in the file counts as
 #      missing. See issue #263.
+#  23. The paid catch-up evaluator passes and fails as its fake workers dictate,
+#      in its default case and in the no-journal and no-tracker variants. It
+#      fails a run that changes any file outside .git/ or whose `sources:` line
+#      is missing, doubled, out of order, or wrong. See issue #259.
 #
 # Not run here, because they start real tools and can cost money: the three paid
 # evals (eval-to-issues.sh, eval-implement.sh, eval-integrate.sh) and
@@ -463,6 +467,18 @@ check_pep723() {
   fi
 }
 
+# --- 23. the paid catch-up evaluator's pass/fail logic -----------------------
+check_eval_catch_up() {
+  local out
+  if out=$(python3 "$REPO_ROOT/scripts/test_eval_catch_up.py" 2>&1); then
+    echo "eval-catch-up: ok"
+  else
+    echo "eval-catch-up: FAILED"
+    echo "$out" | sed 's/^/    /'
+    FAILURES+=("eval-catch-up pass/fail logic")
+  fi
+}
+
 # --- run everything, then summarize ------------------------------------------
 check_install
 check_anti_slop
@@ -486,6 +502,7 @@ check_worker_env
 check_gitflow_commit
 check_worker_standards
 check_pep723
+check_eval_catch_up
 
 echo
 if [[ ${#FAILURES[@]} -eq 0 ]]; then
