@@ -71,6 +71,8 @@
 #  22. Every git-tracked *.py file opens with the PEP 723 block, right after its
 #      shebang line when it has one. A block lower in the file counts as
 #      missing. See issue #263.
+#  25. `eval-intent.sh` pass/fail logic, run against fake workers that act out
+#      passing and failing runs of each scenario. See issue #261.
 #
 # Not run here, because they start real tools and can cost money: the three paid
 # evals (eval-to-issues.sh, eval-implement.sh, eval-integrate.sh) and
@@ -463,6 +465,18 @@ check_pep723() {
   fi
 }
 
+# --- 25. eval-intent pass/fail logic -----------------------------------------
+check_eval_intent() {
+  local out
+  if out=$(python3 "$REPO_ROOT/scripts/test_eval_intent.py" 2>&1); then
+    echo "eval-intent: ok"
+  else
+    echo "eval-intent: FAILED"
+    echo "$out" | sed 's/^/    /'
+    FAILURES+=("eval-intent pass/fail logic")
+  fi
+}
+
 # --- run everything, then summarize ------------------------------------------
 check_install
 check_anti_slop
@@ -486,6 +500,7 @@ check_worker_env
 check_gitflow_commit
 check_worker_standards
 check_pep723
+check_eval_intent
 
 echo
 if [[ ${#FAILURES[@]} -eq 0 ]]; then
