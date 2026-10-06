@@ -106,7 +106,7 @@ def fails(roster: Path, mode: str, variant: str, reason: str) -> None:
     r = run(mode, roster, variant)
     assert r.returncode == 1, (mode, variant, r.stdout + r.stderr)
     expected = f"{label}: FAIL ({reason})"
-    assert expected in r.stdout, (mode, variant, expected, r.stdout)
+    assert expected in r.stdout.splitlines(), (mode, variant, expected, r.stdout)
 
 
 def main() -> None:

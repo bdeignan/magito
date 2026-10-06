@@ -74,8 +74,8 @@
 #  25. `eval-intent.sh` pass/fail logic, run against fake workers that act out
 #      passing and failing runs of each scenario. See issue #261.
 #
-# Not run here, because they start real tools and can cost money: the three paid
-# evals (eval-to-issues.sh, eval-implement.sh, eval-integrate.sh) and
+# Not run here, because they start real tools and can cost money: the paid
+# evals (eval-to-issues.sh, eval-implement.sh, eval-integrate.sh, eval-intent.sh) and
 # eval-workers.sh, which runs the worker commands against the real roster and a
 # real reviewer from another model family.
 #
