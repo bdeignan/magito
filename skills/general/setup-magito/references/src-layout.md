@@ -1,7 +1,7 @@
 # src/ layout scaffold
 
 {{project}}/
-├── pyproject.toml              # from pyproject.toml.template
+├── pyproject.toml              # from uv init, plus pyproject.toml.template
 ├── README.md
 ├── .pre-commit-config.yaml     # from pre-commit-config.yaml.template
 ├── src/
