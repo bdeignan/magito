@@ -38,7 +38,7 @@ Read the starting state and classify each item. **Configured** = present and cur
 | Legacy notes to import | scan for pre-magito notes (see §Legacy notes) | repo root, `docs/` |
 | Delegation workers | `~/.magito/workers.toml` present | `~/.magito/workers.toml` |
 | magi seats | `~/.magito/bench.toml` present | `~/.magito/bench.toml` |
-| Python toolchain | `pyproject.toml`, `tests/`, `src/` layout | repo root |
+| Python toolchain | `pyproject.toml`, `tests/`, `src/` layout, and a `## Python` section in whichever of `CLAUDE.md`/`AGENTS.md` holds the repo's instructions that matches `references/python-rules.md.template`. No `pyproject.toml`, and the user does not ask for a Python scaffold: `skipped: not a Python project` | repo root, `CLAUDE.md`/`AGENTS.md` |
 | Managed symlinks | dangling magito-owned links in tool dirs | `~/.magito/bin`, tool skills/agents/hooks dirs |
 
 Read, do not assume: `git remote -v` (is this GitHub?), `CLAUDE.md`/`AGENTS.md`, `docs/agents/` and which files it holds, whether `CLAUDE.md` already imports `@docs/agents/INDEX.md`, `docs/adr/`, `pyproject.toml`, `.scratch/`, `.magito/config.toml`, `GEMINI.md`/`.gemini/settings.json`, and `.git/info/exclude`. A tracker doc or a `docs/agents/` file that already exists is a **diff-and-propose**, never an overwrite.
@@ -153,14 +153,26 @@ missing roster and checks an existing one: send the user to `/workers`.
 
 ### Python toolchain
 
-The conventions `implement` and `verifying` build to. Defaults, overridable per project:
+The conventions `implement` and `verifying` build to, written into the project itself so that every agent in every tool follows them, with or without magito installed.
 
-- **uv** for environment and dependency management; the **uv build backend**.
-- **`src/` layout** — the package under `src/<pkg>/`.
-- **pytest**, tests under `tests/`.
-- **ruff** for lint/format; **prek** (not pre-commit) runs the hooks.
+**The rules section.** Copy [references/python-rules.md.template](./references/python-rules.md.template) into whichever of `CLAUDE.md`/`AGENTS.md` holds the repo's `## Agent workflow` block, as a `## Python` section after that block. Copy it as is; it has no placeholders. If a `## Python` section already exists, diff the template against it and propose the diff — never overwrite. In guest mode, show the section and never write it into a file the team tracks (the guest-mode rule).
 
-Templates live in [references/](./references/) — copy and adapt, never regenerate freehand: fill `{{package}}`/`{{project}}`/`{{description}}`, drop pieces the user declines. For a project that already has one of these files, diff the template against the existing file and propose the diff — never overwrite. After scaffolding a fresh project, verify: `uv sync && uv run pytest` must pass on the skeleton.
+The section replaces the toolchain lines that earlier runs wrote into the `## Agent workflow` block: any lines there about uv, the `src/` layout, pytest, ruff, or prek. When you add the `## Python` section to a project whose workflow block holds such lines, remove them in the same diff-and-propose step, so the project never carries the Python rules twice. The block keeps its tracker and check-command lines. In guest mode, the removal is only proposed, like the section itself.
+
+After writing the section, count the lines of the file that holds it (`wc -l`). The file is meant to stay at or under about 200 lines. If it is over 200, tell the user the count and the line count of each `## ` section, and leave the choice of what to cut to them. Never trim the `## Python` section to fit.
+
+**A fresh project.** Scaffold in this order. Never type a version number from memory into any of these files: every version comes from a tool on the day it runs.
+
+1. Run `uv self update --dry-run`. `uv init` takes the `uv_build` bounds from the installed uv, so a stale uv writes stale bounds. If the dry run says it would update, uv must be updated before step 2: offer to run `uv self update`. If that fails because a package manager installed uv, tell the user the installed and latest versions from the dry-run output, and ask them to update uv with that package manager. Do not run step 2 until `uv self update --dry-run` no longer offers an update. If the user declines to update, stop the scaffold and report that uv is out of date.
+2. `uv init --lib <project>` for a library, or `uv init --package <project>` for a CLI or app. Both give the `src/` layout and the `uv_build` backend.
+3. Append [references/pyproject.toml.template](./references/pyproject.toml.template) to the `pyproject.toml` that `uv init` wrote, and set `requires-python = ">=3.12"`.
+4. Add `tests/test_smoke.py` as [references/src-layout.md](./references/src-layout.md) describes, filling its `{{package}}` placeholder.
+5. `uv add --dev pytest ruff pyrefly`.
+6. Copy [references/pre-commit-config.yaml.template](./references/pre-commit-config.yaml.template) to `.pre-commit-config.yaml` and run `uvx prek autoupdate`. It needs a git repository; run `git init` first if there is none.
+7. Copy the rules section, as above.
+8. Verify: `uv sync && uv run pytest && uv run ruff check . && uv run pyrefly check` must pass on the skeleton.
+
+**An existing project.** For each of these files that the project already has, diff the template against the existing file and propose the diff — never overwrite.
 
 ### Managed symlinks
 
@@ -198,8 +210,9 @@ If `audited` is older, do not trust "configured" from a previous run at face val
 Show a draft, let the user edit, then write only what the inventory marked missing or stale. In guest mode, every bullet below that creates a file follows the guest-mode rule: exclude the path in the same step it is created, and never touch a file the team already tracks.
 
 - `.magito/config.toml` — write `mode` and `intent_dir` as soon as the mode question is settled (§Config file and mode); fill in `tracker` once the issue-tracker section settles, and `check` once the check-command section settles; stamp `audited` and `audited_on` at the end of a clean run (§Audit version).
-- An `## Agent workflow` block in whichever of `CLAUDE.md` / `AGENTS.md` already exists — edit that one; never create the other alongside it; if neither exists, ask which to create; in guest mode, only if neither is a file the team already tracks. The block records the toolchain conventions in a few lines, names the tracker in one line pointing at `docs/agents/issue-tracker.md`, and, in owner mode, names the check command — a summary, never a second copy of the operations.
+- An `## Agent workflow` block in whichever of `CLAUDE.md` / `AGENTS.md` already exists — edit that one; never create the other alongside it; if neither exists, ask which to create; in guest mode, only if neither is a file the team already tracks. The block names the tracker in one line pointing at `docs/agents/issue-tracker.md` and, in owner mode, names the check command — a summary, never a second copy of the operations. The Python toolchain lives in its own `## Python` section, not in this block.
 - `docs/agents/issue-tracker.md`, from the tracker section.
+- For a Python project, the `## Python` section from `references/python-rules.md.template`, written as §Python toolchain describes: after the `## Agent workflow` block, replacing any toolchain lines in that block, and followed by the line count check.
 - If the user chose local markdown, create `.scratch/` with a short `README.md` pointing at `docs/agents/issue-tracker.md` for the conventions.
 - The review-gate, base-branch, and exclude git commands above.
 - The check command script, if the check-command section had to write one (`scripts/check.sh` in owner mode, `.magito/check.sh` in guest mode).
