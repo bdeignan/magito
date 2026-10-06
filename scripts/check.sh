@@ -79,9 +79,11 @@
 #      default case and in the nothing-landed and long-session variants. It checks
 #      the journal files on disk: one new entry, its name, its word count, and its
 #      Landed, Next, and Gotcha lines.
+#  25. `eval-intent.sh` pass/fail logic, run against fake workers that act out
+#      passing and failing runs of each scenario. See issue #261.
 #
 # Not run here, because they start real tools and can cost money: the paid
-# evals (eval-to-issues.sh, eval-implement.sh, eval-integrate.sh, eval-catch-up.sh, eval-handoff.sh) and
+# evals (eval-to-issues.sh, eval-implement.sh, eval-integrate.sh, eval-catch-up.sh, eval-handoff.sh, eval-intent.sh) and
 # eval-workers.sh, which runs the worker commands against the real roster and a
 # real reviewer from another model family.
 #
@@ -495,6 +497,18 @@ check_eval_handoff() {
   fi
 }
 
+# --- 25. eval-intent pass/fail logic -----------------------------------------
+check_eval_intent() {
+  local out
+  if out=$(python3 "$REPO_ROOT/scripts/test_eval_intent.py" 2>&1); then
+    echo "eval-intent: ok"
+  else
+    echo "eval-intent: FAILED"
+    echo "$out" | sed 's/^/    /'
+    FAILURES+=("eval-intent pass/fail logic")
+  fi
+}
+
 # --- run everything, then summarize ------------------------------------------
 check_install
 check_anti_slop
@@ -520,6 +534,7 @@ check_worker_standards
 check_pep723
 check_eval_catch_up
 check_eval_handoff
+check_eval_intent
 
 echo
 if [[ ${#FAILURES[@]} -eq 0 ]]; then
