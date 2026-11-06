@@ -2,8 +2,7 @@
 
 How to create and fix the roster in `~/.magito/workers.toml`. A build or a review does not
 need this file: the `workers` skill reads it when a machine has no roster or a worker entry
-fails. The roster format and the rules a build follows are in the
-[worker contract](../../implement/references/worker-contract.md).
+fails.
 `<skills>` is the folder that holds this skill's own folder: the parent of the directory its `SKILL.md` is in.
 
 ## Contents
@@ -15,20 +14,10 @@ fails. The roster format and the rules a build follows are in the
 
 ## Bootstrap
 
-The `workers` skill creates and checks the roster. It reports which workers on the machine
-are ready, and when `~/.magito/workers.toml` does not exist it offers to copy
-[`workers.toml.example`](../../implement/references/workers.toml.example) there. Never write that file from here, and
-never overwrite an existing one: it is the user's file. Expect the driver's permission system
-to ask once before the file is written: the entries are templates that launch agents with
-approval prompts bypassed, so a flag on persisting them is correct behavior, not an error.
-
-Every entry in the example is commented out, and the user turns on the ones for the tools
-they have. Each comment above an entry says `unverified: check with <command>` when its model id
-is a guess. The dates of the checks are in the History block at the end of the example. Treat an unverified id as a guess until that command
-confirms it. A newer model elsewhere does not establish availability in a given tool. The
-Cursor entries need `agent login` first, and `agent models` is the authority for the exact
-ids on the installed CLI and account. The Cursor and omp entries take their family from the
-pinned model, not from the tool. A different model means a separate entry with its own name.
+The `workers` skill checks the roster. It reports which workers on the machine are ready,
+and when `~/.magito/workers.toml` does not exist it says so. magito no longer ships an
+example roster. Never write that file from here, and never overwrite an existing one: it is
+the user's file. A different model means a separate entry with its own name.
 
 **agy is never a worker candidate.** It earns its magi seat behind a pty wrapper, but a
 worker needs what it lacks: reliable non-TTY output (open stdout-drop bug,
