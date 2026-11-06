@@ -79,13 +79,19 @@ needs the user to approve every command defeats the point of a separate session.
 
 ## Stopping work
 
-**A skill or script can stop work only with an immediate refusal, in the same command or
-step, that says what is wrong and how to fix it.** It never creates a step that holds work
-until someone signs off later.
+**A skill or script stops work in one of two ways, and both happen where the user can see
+them.** When something is wrong, it refuses at once, in the same command or step, and says
+what is wrong and how to fix it. When the next move is the user's decision, it asks the user a
+question in the live session and waits for the answer. The plan stop and the "ready to read"
+stop are questions of this kind.
 
-The reason is that a later sign-off is a hidden blocker. Nobody sees it when the work starts,
+It never holds work on a sign-off that waits somewhere the user cannot see, such as a marker
+file or a recorded attestation that some later command checks.
+
+The reason is that a hidden sign-off is a hidden blocker. Nobody sees it when the work starts,
 the work waits on it with no message, and the person who must clear it may not know it exists.
-A refusal at the moment of the mistake costs one retry. A held step costs a stalled session.
+A refusal at the moment of the mistake costs one retry. A question in the session costs one
+answer. A held step costs a stalled session.
 
 ## Skill invocation
 

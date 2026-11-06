@@ -22,10 +22,11 @@ recorded a review.
 **Work is supervised by default.** The user reads every diff before a pull request opens. One
 exception: a Low-risk ticket opens its pull request before the user reads it.
 
-**Stops are immediate refusals only.** A skill or script can stop work with a refusal, in the
-same command or step, that says what is wrong and how to fix it. It never creates a step that
-holds work until someone signs off later. The rule lives in `docs/agents/CONVENTIONS.md`,
-"Stopping work".
+**Stops happen where the user can see them.** A skill or script stops work with an immediate
+refusal, in the same command or step, that says what is wrong and how to fix it. Or it asks
+the user a question in the live session, as the plan stop and the "ready to read" stop do. It
+never holds work on a sign-off that waits somewhere the user cannot see, such as a marker file
+or a recorded attestation. The rule lives in `docs/agents/CONVENTIONS.md`, "Stopping work".
 
 **These are removed:** the review gate, the review marker, the roster, `gitflow.sh`,
 `issues.sh`, both hooks (`review-gate.py` and `staging-guard.py`), and magito's own worktree

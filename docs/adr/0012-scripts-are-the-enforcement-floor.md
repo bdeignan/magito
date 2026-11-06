@@ -1,4 +1,5 @@
 # Hooks become optional; the workflow scripts are the enforcement floor
+
 Status: superseded by ADR 0021.
 
 `OVERVIEW.md` said skills ask and hooks enforce. That framing collapsed two different

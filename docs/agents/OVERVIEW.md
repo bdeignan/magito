@@ -19,11 +19,10 @@ take on the governed multi-agent idea — not a framework built for anyone else 
   copy step in between.
 - **Stdlib-only Python.** The installer and hooks must run on a bare Python with no
   dependency step — they are plumbing, not an application.
-- **Skills ask; scripts enforce; hooks are optional.** Behavior lives in prose skills an
-  agent reads. Where prose keeps failing to hold a rule, the check moves into a script the
-  agent already calls, which works in every tool on every machine. Hooks catch only what a
-  script cannot see, and exist in one tool, so they are insurance rather than the floor. The
-  core rules are also restated in a shared instruction file every tool reads.
+- **Skills are prose; the user is the check.** Behavior lives in prose skills an agent reads,
+  and the core rules are restated in a shared instruction file every tool reads. magito keeps
+  no enforcement layer of scripts or hooks (ADR 0021). A slip shows in the diff the user reads,
+  and a skill runs plain commands, as `CONVENTIONS.md`, "Commands in skills", sets out.
 - **Work is supervised, and stops are immediate refusals.** magito assumes the user watches
   every build in Claude Code Desktop and reads the diff before a pull request opens, except
   for a Low-risk ticket, whose pull request opens before the read (ADR 0021). So it keeps no
