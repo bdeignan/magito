@@ -25,8 +25,9 @@ take on the governed multi-agent idea — not a framework built for anyone else 
   script cannot see, and exist in one tool, so they are insurance rather than the floor. The
   core rules are also restated in a shared instruction file every tool reads.
 - **Work is supervised, and stops are immediate refusals.** magito assumes the user watches
-  every build in Claude Code Desktop and reads the diff before a pull request opens (ADR
-  0021). So it keeps no review gate and no review marker. A skill or script stops work only
+  every build in Claude Code Desktop and reads the diff before a pull request opens, except
+  for a Low-risk ticket, whose pull request opens before the read (ADR 0021). So it keeps no
+  review gate and no review marker. A skill or script stops work only
   with an explained refusal in the same command or step, never with a step that waits for a
   later sign-off.
 - **It has to degrade cleanly when switched off.** Removing magito should leave a
