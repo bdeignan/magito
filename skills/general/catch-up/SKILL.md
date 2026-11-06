@@ -1,6 +1,6 @@
 ---
 name: catch-up
-description: Load the project's current state at the start of a session, or when asked to catch up — read the durable docs, open issues, git status, and the session journal, then summarize where things stand and what to do next. Do not use it mid-session or once the state is already loaded — it repeats work already done and breaks the flow of a task in progress.
+description: Load the project's current state at the start of a session, or when asked to catch up — read the durable docs, open issues, git status, and the session journal, then summarize where things stand and what to do next. Do not use it mid-session or once the state is already loaded — it repeats work already done and breaks the flow of a task in progress. Do not use it in a worker session, which builds one ticket in its own worktree: its whole context is its ticket.
 ---
 
 # Catch Up
