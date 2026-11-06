@@ -2,14 +2,15 @@
 # /// script
 # requires-python = ">=3.11"
 # ///
-"""Tests for worker.py standards: the docs and stale doc lines a review checks. Stdlib only."""
+"""Tests for standards.py: the docs and stale doc lines a review checks. Stdlib only."""
 import os
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
 
-WORKER = Path(__file__).resolve().parent.parent / "skills" / "general" / "implement" / "scripts" / "worker.py"
+STANDARDS = (Path(__file__).resolve().parent.parent / "skills" / "general" / "reviewing-changes"
+             / "scripts" / "standards.py")
 H1 = "## Standards docs"
 H2 = "## ADRs, newest first within each chain"
 H3 = "## Doc lines that name something this diff removed or renamed"
@@ -64,7 +65,7 @@ class Repo:
         return self.git("rev-parse", "HEAD").strip()
 
     def standards(self, *args: str) -> subprocess.CompletedProcess:
-        return subprocess.run([sys.executable, str(WORKER), "standards", *args], cwd=self.root,
+        return subprocess.run([sys.executable, str(STANDARDS), *args], cwd=self.root,
                               env=self.env, capture_output=True, text=True)
 
 
@@ -246,7 +247,7 @@ def main() -> int:
               "deleted file: its terms and its path are searched", "\n".join(s3))
 
     failed = RESULTS.count(False)
-    print(f"test_worker_standards: {len(RESULTS) - failed} passed, {failed} failed")
+    print(f"test_standards:{len(RESULTS) - failed} passed, {failed} failed")
     return 1 if failed else 0
 
 
