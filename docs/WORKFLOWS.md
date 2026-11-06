@@ -41,7 +41,9 @@ A role's permission mode is named by what the role needs, never as a fixed mode:
 
 - The planner needs a mode that allows file edits, because `intent-interview` writes its doc
   from the first question. Plan mode allows no edits, so it is not the planner's mode.
-- The worker needs a mode that edits without asking per file. Accept edits does that today.
+- The worker needs a mode that runs the build's edits and commands without asking.
+  Auto does that today. A session card can grant only a mode the planner itself has, so the
+  planner runs in Auto too.
 - A new mode can replace either one without a change to this file.
 
 ## Risk levels
@@ -107,8 +109,8 @@ prompt, that is the signal to make it a skill.
 
 ## Workflow B: one ticket, start to merge
 
-1. **Start the worker.** Click the planner's card, or open a session yourself with Sonnet and
-   Worktree on. Do not run `session-catch-up`: the ticket is the worker's whole context.
+1. **Start the worker.** Click the planner's card, or open a session yourself with Sonnet,
+   Worktree on, and Auto. Do not run `session-catch-up`: the ticket is the worker's whole context.
 2. **`/ticket-to-pr <n>`.** It fetches the ticket and builds it. For a ticket no accepted
    intent covers, it stops once to show a plan for you to approve.
 3. **The worker's checks, in this order:**
