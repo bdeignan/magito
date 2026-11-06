@@ -1,6 +1,6 @@
 # The fan-out marks its own branches
 
-Status: settles the mechanism ADR 0013 left open, and implements it. Supersedes ADR 0011's
+Status: superseded by ADR 0021. Settles the mechanism ADR 0013 left open, and implements it. Supersedes ADR 0011's
 marker semantics — the file is the same, but its absence now means "not gated" rather than
 "no decision recorded".
 

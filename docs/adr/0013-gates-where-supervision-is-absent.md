@@ -1,6 +1,6 @@
 # Gates belong where supervision is absent
 
-Status: supersedes ADR 0011's premise that every landing needs a recorded decision, and
+Status: superseded by ADR 0021. Supersedes ADR 0011's premise that every landing needs a recorded decision, and
 makes ADR 0009 moot outside the fan-out path. Both remain accurate records of what was
 believed when they were written; neither should be edited.
 

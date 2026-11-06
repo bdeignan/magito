@@ -1,6 +1,6 @@
 # The pipeline reviews between the gates
 
-Status: accepted, 2026-09-29. Supersedes ADR 0013's premise that a human is present on the
+Status: superseded by ADR 0021 (accepted 2026-09-29). Supersedes ADR 0013's premise that a human is present on the
 pipeline path, and extends ADR 0014's marker from the fan-out alone to every pipeline branch.
 Both ADRs stay accurate for the manual path.
 
