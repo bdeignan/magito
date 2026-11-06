@@ -27,12 +27,7 @@ because the choice was surfaced.
 Reach for it when handing the user back to the prompt would only make them type their way
 back in.
 
-**Invoke is the default inside any `implement` run, as it is inside the pipeline, and recommend stays the default between skills that the user starts by hand.** `implement` reviews
-every change it makes with no question, whether or not an accepted intent covers the ticket
-— there is no decision to make, and turning the review into a recommendation makes it
-skippable, which is the whole reason it is not one (ADR 0020). The one branch it does not
-review is a branch with no commit ahead of its base, which holds no change. `implement` reaching
-`verifying` is the same shape.
+**Invoke is the default inside a pipeline, and recommend stays the default between skills the user starts by hand.** `implement` reaching `verifying` is that shape.
 
 **The failure mode Invoke has to guard against** is the seam that is none of the three: an
 automatic invocation the user did not choose and cannot see. Every skill is model-invocable
@@ -61,6 +56,36 @@ right there — a restatement is allowed, but as a synced copy, not a fork. Name
 source and flag it "change one, change the other," the way `hooks/staging-guard.py` and
 `hooks/review-gate.py` already do. The unflagged paraphrase is the failure; the flagged,
 sourced copy is the accepted cost.
+
+## Commands in skills
+
+When a skill tells an agent to run a shell command, it follows these four rules. Each one
+exists because the opposite raised approval prompts in real runs, and a build session that
+needs the user to approve every command defeats the point of a separate session.
+
+1. **Prefer reading a file to running a command.** A file read needs no approval in Claude
+   Code, Codex, Gemini CLI, or omp. A command can prompt in any of them (#150).
+2. **Prefer the real program to a wrapper script.** Write `gh issue view`, not a script around
+   it. A script's name is on no tool's read-only list, so it prompts where the program it
+   wraps would not (#150).
+3. **Run one plain command per Bash call.** Use no `;`, `&&`, `||`, `|`, `$(...)`, or shell
+   variables. Allow rules must match every part of a chained command, and Claude Code's Auto
+   mode refused compound commands that built values with `$(...)` (#128). Claude Code's
+   worktree isolation also refuses a command whose git use it cannot read from the text.
+4. **Write the real folder path where a skill names its own script.** A skill refers to its
+   scripts through the `<skills>` placeholder. The agent replaces it with the real folder path
+   in the command text. It never stores that path in a shell variable such as
+   `S=~/.claude/skills`, because the variable raises a prompt of its own.
+
+## Stopping work
+
+**A skill or script can stop work only with an immediate refusal, in the same command or
+step, that says what is wrong and how to fix it.** It never creates a step that holds work
+until someone signs off later.
+
+The reason is that a later sign-off is a hidden blocker. Nobody sees it when the work starts,
+the work waits on it with no message, and the person who must clear it may not know it exists.
+A refusal at the moment of the mistake costs one retry. A held step costs a stalled session.
 
 ## Skill invocation
 

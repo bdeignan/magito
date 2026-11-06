@@ -24,12 +24,11 @@ take on the governed multi-agent idea — not a framework built for anyone else 
   agent already calls, which works in every tool on every machine. Hooks catch only what a
   script cannot see, and exist in one tool, so they are insurance rather than the floor. The
   core rules are also restated in a shared instruction file every tool reads.
-- **Gates only where supervision is absent.** magito assumes a human in the loop and active.
-  A gate that blocks that person to collect an attestation nobody reads is ceremony. It still
-  earns its cost where nobody watches: the parallel fan-out, and the pipeline between
-  accepting an intent and merging its pull request (ADR 0018). A ticket a person starts by
-  hand is unsupervised too, once its plan is approved, so the same review and gate apply
-  there (ADR 0020).
+- **Work is supervised, and stops are immediate refusals.** magito assumes the user watches
+  every build in Claude Code Desktop and reads the diff before a pull request opens (ADR
+  0021). So it keeps no review gate and no review marker. A skill or script stops work only
+  with an explained refusal in the same command or step, never with a step that waits for a
+  later sign-off.
 - **It has to degrade cleanly when switched off.** Removing magito should leave a
   well-documented repo, not a broken one — which makes the claim testable when a new model
   lands.

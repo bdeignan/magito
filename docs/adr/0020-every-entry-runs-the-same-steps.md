@@ -1,6 +1,6 @@
 # Every entry runs the same steps
 
-Status: accepted, 2026-10-01. Replaces ADR 0013's rule for work a person starts by hand, and
+Status: superseded by ADR 0021 (accepted 2026-10-01). Replaces ADR 0013's rule for work a person starts by hand, and
 the sentence in ADR 0018 that puts the reviewer's fallback in the pull request body. Both
 ADRs stay accurate records of what was believed when they were written; neither is edited.
 

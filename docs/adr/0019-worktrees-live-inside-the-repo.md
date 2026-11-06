@@ -1,6 +1,6 @@
 # Worktrees live inside the repo, under `.magito/worktrees/`
 
-Status: accepted, 2026-09-29. Reverses the sibling-directory default that `gitflow.sh`
+Status: superseded by ADR 0021 (accepted 2026-09-29). Reverses the sibling-directory default that `gitflow.sh`
 carried before issue #209.
 
 `gitflow.sh worktree add <branch>` used to create each worktree beside the repo, in

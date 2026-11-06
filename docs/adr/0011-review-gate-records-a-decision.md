@@ -1,4 +1,5 @@
 # The review gate records a decision, not a review
+Status: superseded by ADR 0021.
 
 The marker `reviewing-changes` writes meant "a review happened at this sha", and
 `review-gate.py` refused to land anything without one. Making the review optional (#110)
