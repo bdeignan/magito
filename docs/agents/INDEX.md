@@ -22,6 +22,7 @@ currently deferred, see the file.)
 | Working on / question | Read |
 |---|---|
 | Why magito is built this way | [OVERVIEW.md](./OVERVIEW.md) |
+| How the user works day to day, and which workflow a change serves | [../WORKFLOWS.md](../WORKFLOWS.md) |
 | Where work is tracked, and how to perform a tracker operation | [issue-tracker.md](./issue-tracker.md) |
 | Install, symlink layout, where files map to each tool | `CLAUDE.md` — "Installing" and "Repo Layout" |
 | Machine-local config (`~/.magito/`: bench, workers, `bin/`) | `CLAUDE.md` — "Machine-Local Config" |
