@@ -9,7 +9,7 @@
 For the committed diff from <base> to HEAD, it prints three sections: the standards docs
 (CLAUDE.md or AGENTS.md, then docs/agents/GLOSSARY.md and docs/agents/CONVENTIONS.md), the
 ADRs that bear on the changed files (newest first within each chain), and the doc lines
-that name something the diff removed or renamed. See ../references/standards-review.md
+that name something the diff removed or renamed. See ../../implement/references/standards-review.md
 for the procedure that uses this output.
 
 Exit: 0 ok, 2 a usage error, a base git cannot resolve, or a failed git command.
