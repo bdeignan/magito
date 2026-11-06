@@ -1,6 +1,6 @@
 ---
 name: workers
-description: Show which roster workers and reviewers this machine can use — for each one, whether its tool is installed, the variables it needs are set, and it answers — and create the roster from the example when the machine has none. Use it to see which other tools magito can call here, or after a run reported no reviewer from another family. Do not use it at the start of a session or before every build — implement checks the roster itself at the start of each run, and running this first only repeats that work.
+description: Show which roster workers and reviewers this machine can use — for each one, whether its tool is installed, the variables it needs are set, and it answers. Use it to see which other tools magito can call here. Do not use it at the start of a session or before a build: implement does not use the roster.
 ---
 
 # Workers
