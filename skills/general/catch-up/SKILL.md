@@ -1,12 +1,14 @@
 ---
 name: catch-up
-description: Load the project's current state at the start of a session, or when asked to catch up — read the durable docs, open issues, git status, and the session journal, then summarize where things stand and what to do next. Do not use it mid-session or once the state is already loaded — it repeats work already done and breaks the flow of a task in progress.
+description: Load the project's current state at the start of a session, or when asked to catch up — read the durable docs, open issues, git status, and the session journal, then summarize where things stand and what to do next. Do not use it mid-session or once the state is already loaded — it repeats work already done and breaks the flow of a task in progress. Do not use it in a worker session, which builds one ticket in its own worktree: its whole context is its ticket.
 ---
 
 # Catch Up
 
 Rebuild context at the start of a session by working through this checklist in order,
 then summarizing. Do not act yet — orient first.
+
+This skill runs in a planner session. A worker session's whole context is its ticket.
 
 Every source below resolves to exactly one status: `read`, `missing` (checked, not
 there), `skipped: <reason>` (deliberately not checked), or `failed: <reason>` (checked,

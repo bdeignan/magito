@@ -50,11 +50,11 @@
 - Add only what the task needs. Ask before expanding scope.
 - Write tests that exercise real behavior and the edge cases that actually break — not heavy mocking that passes while the real path fails.
 - Stage only the files you changed. Never `git add -A`, `--all`, `.`, or `git commit -a`.
-- Decide about reviewing before you land: run the review, or knowingly skip it. What matters is that the choice is made, not that it is recorded — when you are driving by hand, deciding to skip is a legitimate answer. Work nobody watched is the exception: every change that `implement` makes gets a real review, because a worker's own claim to have reviewed cannot be trusted.
+- Decide about reviewing before you land: run the review, or knowingly skip it. What matters is that the choice is made, not that it is recorded — when you are driving by hand, deciding to skip is a legitimate answer.
 
 ## Session journal
 
 - Start of a work session: read the newest two entries in `.magito/journal/` (or run `/catch-up`, which does it for you). A session begins by reading — nothing needs starting or recording.
 - End of a work session: write one new file under `.magito/journal/` (or run `/handoff`, which does it for you). Cover what landed, what is next, and any gotcha worth keeping — **aim for 200 words, 300 hard ceiling**, and spend most of it on the gotcha, which is the part with durable value.
 - Write the entry when the whole session wraps, not after each task. A missed entry loses only that summary; the journal has no state to corrupt.
-- An agent handed a scoped task by another agent does not write a journal entry. The journal belongs to the agent that started the session.
+- Only a planner session writes a journal entry. A worker session, one that builds a ticket in its own worktree, never writes one: its record is its pull request and its ticket. An agent handed a scoped task by another agent writes none either.

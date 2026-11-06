@@ -1,12 +1,15 @@
 ---
 name: handoff
-description: Closes the session by writing one short entry to the project's session journal, so a fresh agent, or the user later, can pick the work up. Use only when the session is wrapping up. Do not use it mid-session or as a running status update: an entry written early misses what still happens, and one per task turns the journal into noise.
+description: Closes the session by writing one short entry to the project's session journal, so a fresh agent, or the user later, can pick the work up. Use only when the session is wrapping up. Do not use it mid-session or as a running status update: an entry written early misses what still happens, and one per task turns the journal into noise. Do not use it in a worker session, which builds one ticket in its own worktree: its record is its pull request.
 argument-hint: "what the next session will focus on"
 ---
 
 # Handoff
 
 Close out the session by writing **one new file** to the project's session journal.
+
+This skill runs in a planner session only. A worker session, one that builds a ticket in its
+own worktree, writes no entry: its record is its pull request.
 
 Compose the filename yourself: `.magito/journal/YYYY-MM-DD-HHMMSS-<slug>-<hex>.md` in the
 repo root, where the timestamp is the current date and time and `<hex>` is six hex digits
