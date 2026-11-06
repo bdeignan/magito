@@ -23,12 +23,12 @@ take on the governed multi-agent idea — not a framework built for anyone else 
   and the core rules are restated in a shared instruction file every tool reads. magito keeps
   no enforcement layer of scripts or hooks (ADR 0021). A slip shows in the diff the user reads,
   and a skill runs plain commands, as `CONVENTIONS.md`, "Commands in skills", sets out.
-- **Work is supervised, and stops are immediate refusals.** magito assumes the user watches
-  every build in Claude Code Desktop and reads the diff before a pull request opens, except
-  for a Low-risk ticket, whose pull request opens before the read (ADR 0021). So it keeps no
-  review gate and no review marker. A skill or script stops work only
-  with an explained refusal in the same command or step, never with a step that waits for a
-  later sign-off.
+- **Work is supervised, and stops happen where the user can see them.** magito assumes the
+  user watches every build in Claude Code Desktop and reads the diff before a pull request
+  opens, except for a Low-risk ticket, whose pull request opens before the read (ADR 0021).
+  So it keeps no review gate and no review marker. A skill or script stops work by refusing
+  at once or by asking a question in the live session, and never with a sign-off that waits
+  where the user cannot see it.
 - **It has to degrade cleanly when switched off.** Removing magito should leave a
   well-documented repo, not a broken one — which makes the claim testable when a new model
   lands.
