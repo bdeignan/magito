@@ -13,7 +13,7 @@ The driver prepares the inputs. The reviewer never searches for docs.
 Run this command in the worktree, before every review round:
 
 ```
-python3 <skills>/implement/scripts/worker.py standards <base>
+python3 <skills>/reviewing-changes/scripts/standards.py <base>
 ```
 
 `<base>` is the base the review diff starts from. In an integrated run, it is the

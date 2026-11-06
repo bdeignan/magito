@@ -65,7 +65,7 @@
 #      script covers names spelled with `./`, `../`, or an absolute path, and
 #      runs under /bin/bash (3.2 on macOS). A third covers file names that hold
 #      a line break. See issue #229.
-#  21. `worker.py standards` prints the docs and ADRs a review checks a diff
+#  21. `standards.py` (in the reviewing-changes skill) prints the docs and ADRs a review checks a diff
 #      against, and the doc lines that name something the diff removed or
 #      renamed, including a rebuilt PR #224 case. See issue #241.
 #  22. Every git-tracked *.py file opens with the PEP 723 block, right after its
@@ -431,14 +431,14 @@ check_worker_env() {
   fi
 }
 
-check_worker_standards() {
+check_standards() {
   local out
-  if out=$(python3 "$REPO_ROOT/scripts/test_worker_standards.py" 2>&1); then
-    echo "worker-standards: ok"
+  if out=$(python3 "$REPO_ROOT/scripts/test_standards.py" 2>&1); then
+    echo "standards: ok"
   else
-    echo "worker-standards: FAILED"
+    echo "standards: FAILED"
     echo "$out" | sed 's/^/    /'
-    FAILURES+=("worker.py standards inputs")
+    FAILURES+=("standards.py inputs")
   fi
 }
 
@@ -546,7 +546,7 @@ check_gitflow_ahead
 check_gitflow_merge
 check_worker_env
 check_gitflow_commit
-check_worker_standards
+check_standards
 check_pep723
 check_eval_catch_up
 check_eval_handoff

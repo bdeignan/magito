@@ -16,7 +16,7 @@ Capture once: `git diff <fixed-point>...HEAD` (three-dot, against the merge-base
 ## 2. Find the sources
 
 - **Spec** — the originating ticket, a path the user passed, or a PRD under `docs/` (or the intent doc under `docs/intent/` that a ticket links to; a local-markdown ticket's directory name starts with that intent's number). Find the ticket by scanning the commit messages for the identifier form `docs/agents/issue-tracker.md` describes (`#123`, `Closes #45`, `PROJ-88`, a file path), then use that file's **fetch a ticket** operation to read it. If there is none, the Spec axis reports "no spec available."
-- **Standards** — do not gather these by hand. Run `python3 <skills>/implement/scripts/worker.py standards <fixed-point>` once, and give its whole output to the Standards axis. It lists the standards docs, the ADRs that bear on the changed files, and the doc lines that name something the diff removed or renamed. `<skills>` is the folder that holds this skill's own folder: the parent of the directory its `SKILL.md` is in.
+- **Standards** — do not gather these by hand. Run `python3 <skills>/reviewing-changes/scripts/standards.py <fixed-point>` once, and give its whole output to the Standards axis. It lists the standards docs, the ADRs that bear on the changed files, and the doc lines that name something the diff removed or renamed. `<skills>` is the folder that holds this skill's own folder: the parent of the directory its `SKILL.md` is in.
 
 ## 3. Run the two axes
 
@@ -26,7 +26,7 @@ If sub-agents are available, spawn both in parallel so they do not pollute each 
 
 **Timebox and fallback for stalled axes:** Give each sub-agent axis a reasonable timebox, roughly 5–15 minutes depending on diff size and network latency. Treat an axis as stalled if it produces no output within that window. Stop waiting and run that axis inline in your own context instead. Say so at the time, not only in the final report. Disclose the fallback in the report too: mark the axis as `inline` rather than `sub-agent`. If the inline attempt also produces no meaningful output after a reasonable effort, mark that axis as `none` in the report. An axis with no result must never be reported as passed.
 
-- **Standards brief**: "Follow the procedure in `<skills>/implement/references/standards-review.md`: its reviewer's steps and its rules on which source wins. Use the `worker.py standards` output below as your only list of docs and doc lines, even when its last two sections say `None.`. Report each blocking finding in one of the two forms that file gives, and list everything else as a note. Under 500 words."
+- **Standards brief**: "Follow the procedure in `<skills>/implement/references/standards-review.md`: its reviewer's steps and its rules on which source wins. Use the `standards.py` output below as your only list of docs and doc lines, even when its last two sections say `None.`. Report each blocking finding in one of the two forms that file gives, and list everything else as a note. Under 500 words."
 - **Spec brief**: "(a) requirements the spec asked for that are missing or partial; (b) behavior not asked for (scope creep); (c) requirements that look implemented but wrong. Quote the spec line for each finding. Under 400 words."
 
 ## 4. Report
