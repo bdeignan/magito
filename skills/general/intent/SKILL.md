@@ -76,8 +76,8 @@ spans several sessions — no separate skill for it.
 ## Accept means go
 
 On "accept": set status to `accepted`, add an `Accepted:` date to the header line, then call
-`to-issues` directly. The user's next signal from the pipeline is an escalation or the PR, not
-a prompt to type the next command.
+`to-issues` directly. The user does not type the next command: the next thing they see is the
+set of session cards that `to-issues` offers.
 
 In owner mode, before calling `to-issues`, commit the doc on the base branch in your own
 checkout. Then push that branch with one plain `git push` call. New worktrees start from the
