@@ -8,6 +8,8 @@ description: Load the project's current state at the start of a session, or when
 Rebuild context at the start of a session by working through this checklist in order,
 then summarizing. Do not act yet — orient first.
 
+This skill runs in a planner session. A worker session's whole context is its ticket.
+
 Every source below resolves to exactly one status: `read`, `missing` (checked, not
 there), `skipped: <reason>` (deliberately not checked), or `failed: <reason>` (checked,
 the attempt errored). No source can be silently omitted from the final report — if you

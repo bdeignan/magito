@@ -8,6 +8,9 @@ argument-hint: "what the next session will focus on"
 
 Close out the session by writing **one new file** to the project's session journal.
 
+This skill runs in a planner session only. A worker session, one that builds a ticket in its
+own worktree, writes no entry: its record is its pull request.
+
 Compose the filename yourself: `.magito/journal/YYYY-MM-DD-HHMMSS-<slug>-<hex>.md` in the
 repo root, where the timestamp is the current date and time and `<hex>` is six hex digits
 you pick to keep the name unique. Create that file directly with your file-writing tool.

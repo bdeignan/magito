@@ -16,6 +16,9 @@ Skip straight to `to-issues` when the change already fits one issue and the user
 `intent` when the user is still deciding what they want, or when a request for an issue turns
 up open design questions.
 
+Not sure the approach works? Spike first: a quick throwaway build in its own worker session,
+described in `docs/WORKFLOWS.md`, Workflow A.
+
 ## Recon first
 
 Before the first question, survey the code and docs the change touches, unconditionally, per
@@ -72,18 +75,24 @@ spans several sessions — no separate skill for it.
 
 ## Accept means go
 
-On "accept": set status to `accepted`, add an `Accepted:` date to the header line, commit the
-doc in owner mode, then call `to-issues` directly. The user's next signal from the pipeline is
-an escalation or the PR, not a prompt to type the next command.
+On "accept": set status to `accepted`, add an `Accepted:` date to the header line, then call
+`to-issues` directly. The user's next signal from the pipeline is an escalation or the PR, not
+a prompt to type the next command.
 
-"Accept, but hold" does the same, except it does not call `to-issues`. Use it to batch several
-intents, or to hand off to another machine.
+In owner mode, before calling `to-issues`, commit the doc on the base branch in your own
+checkout. Then push that branch with one plain `git push` call. New worktrees start from the
+remote's default branch, so an intent that is not pushed never reaches a worker. When
+`git remote -v` prints nothing, skip the push: Claude Code then starts new worktrees from the
+local `HEAD`, which already holds the commit.
+
+"Accept, but hold" does the same, except it does not call `to-issues`. It still commits and
+pushes. Use it to batch several intents, or to hand off to another machine.
 
 Once accepted, the doc is a record and is never updated again. A doc has only two statuses:
 `draft` (open questions remain) and `accepted` (signed off).
 
-In guest mode, the doc is never committed — it is already excluded from git, per
-`setup-magito`.
+In guest mode, the doc is never committed and nothing is pushed — the doc is already excluded
+from git, per `setup-magito`.
 
 ## ADRs
 
