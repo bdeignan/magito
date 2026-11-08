@@ -12,7 +12,7 @@ Every command these steps run is a plain `git` or `gh` command, one per call, as
 
 **Tracker handoff.** When the caller passes a `tracker_adapter`, use that file for every ticket operation in this run, per [tracker-selection.md](../setup-magito/references/tracker-selection.md). References to `docs/agents/issue-tracker.md` then mean that file. If the passed file does not exist, stop and say so. Never fall back to a different tracker. On a rerun, look at the existing branches and pull requests before you start work that may already exist.
 
-**Route on how many tickets you were handed.** One ticket runs the process below. Several tickets run as a batch, one after another in this session. Each ticket gets its own branch from the base branch and runs every step to "ready to read". Its pull request opens as it does for a single ticket, per step 12 of `references/pipeline.md`. The next ticket starts only after that.
+**Route on how many tickets you were handed.** One ticket runs the process below. Several tickets run as a batch, one after another in this session. The first ticket builds on the session's branch. Every later ticket starts its own branch from the base branch, never from the branch before it, per step 1 of `references/pipeline.md`. Each ticket runs every step to "ready to read". Its pull request opens as it does for a single ticket, per step 12 of `references/pipeline.md`. The next ticket starts only after that.
 
 ## Process (one ticket)
 

@@ -18,9 +18,14 @@ variables (`docs/agents/CONVENTIONS.md`, "Commands in skills").
    files inside your worktree. Fetch the ticket with the **fetch a ticket** operation in
    `docs/agents/issue-tracker.md`. With the local tracker, the ticket body is in the session's
    brief: never read the planner's `.scratch/`. The ticket body carries everything you need.
-   Run `git branch --show-current`. If it prints the base branch (step 2), first create a
-   branch for the ticket with `git switch -c <type>/<ticket>-<slug>`, for example
-   `git switch -c fix/142-empty-body`.
+   Pick the ticket's branch:
+   - **The first ticket** uses the branch the session is on. Run `git branch --show-current`.
+     If it prints the base branch (step 2), create a branch for the ticket with
+     `git switch -c <type>/<ticket>-<slug>`, for example `git switch -c fix/142-empty-body`.
+   - **Every later ticket in a batch** starts its own branch from the base, never from the
+     branch before it. When the repo has a remote, run `git fetch origin`, then
+     `git switch -c <type>/<ticket>-<slug> origin/<base>`. With no remote, run
+     `git switch -c <type>/<ticket>-<slug> <base>`.
 2. **Base branch.** Run `git config --get magito.baseBranch`. If it prints a name, that is the
    base branch. If it prints nothing, run `git symbolic-ref --short refs/remotes/origin/HEAD`
    and drop the leading `origin/` from what it prints. Never assume `main`.
@@ -84,8 +89,9 @@ variables (`docs/agents/CONVENTIONS.md`, "Commands in skills").
 
 ## The stops
 
-Apart from the plan stop in `SKILL.md` and the "ready to read" stop in step 11, stop and ask
-the user only for these four. Each message quotes the evidence.
+Apart from the plan stop in `SKILL.md`, its two refusals at the start (an open blocker, and a
+passed `tracker_adapter` file that does not exist), and the "ready to read" stop in step 11,
+stop and ask the user only for these four. Each message quotes the evidence.
 
 1. The ticket is ambiguous in a way it does not settle. Quote the sentence.
 2. Passing needs a locked test changed, or work outside the ticket. Name the file or the work.
