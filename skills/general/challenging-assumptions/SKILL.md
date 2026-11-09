@@ -33,7 +33,7 @@ Work through these in order, showing your reasoning at each step.
    - Pattern attraction — reached for a heavier pattern, framework, or abstraction than the problem needs.
    - Reactive patching — fixed the symptom at the call site instead of the root cause.
 
-6. **Optional: name the keeping-empty force.** When the review finds a gap, a missing piece the artifact needs, ask what force keeps the missing piece missing. Identify a concrete mechanism that explains the absence: incentives, cost structure, regulation, technical limits, an explicit design trade-off, or another evidenced constraint. Cite the support. **No specific force = boring gap.** A boring gap is an oversight: report it as an ordinary concern, with adding the piece as its fix.
+6. **Optional: name the keeping-empty force.** When the review finds a gap, a missing piece the artifact needs, ask what force keeps the missing piece missing. Identify a concrete mechanism that explains the absence: incentives, cost structure, regulation, technical limits, an explicit design trade-off, or another evidenced constraint. Cite the support, and put the force in the concern's "Why it bites" line. **No specific force = boring gap.** A boring gap is an oversight: report it as an ordinary concern, with adding the piece as its fix.
 
 ## Output
 
