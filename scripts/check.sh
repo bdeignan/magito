@@ -16,8 +16,6 @@
 #      skill is model-invocable (#174), so the flag never comes back.
 #   5. `worker.py reviewer` picks a worker from a different family than the
 #      writer's, probing candidates in roster order. See issue #183.
-#   6. The to-issues review snapshot catches content edits that git status
-#      cannot see, including ignored drafts and already-dirty tracked files.
 #   7. The paid to-issues evaluator checks its complete final response and
 #      preserves a worker failure.
 #   8. The paid implement evaluator passes and fails as its fake workers dictate,
@@ -264,18 +262,6 @@ check_worker_reviewer() {
     echo "worker-reviewer: FAILED"
     echo "$out" | sed 's/^/    /'
     FAILURES+=("worker.py reviewer selection")
-  fi
-}
-
-# --- 6. to-issues contract ---------------------------------------------------
-check_to_issues_contract() {
-  local out
-  if out=$(python3 "$REPO_ROOT/scripts/test_to_issues_contract.py" 2>&1); then
-    echo "to-issues-contract: ok"
-  else
-    echo "to-issues-contract: FAILED"
-    echo "$out" | sed 's/^/    /'
-    FAILURES+=("to-issues review snapshot")
   fi
 }
 
@@ -531,7 +517,6 @@ check_anti_slop
 check_hooks
 check_model_invocation
 check_worker_reviewer
-check_to_issues_contract
 check_eval_to_issues
 check_eval_implement
 check_eval_integrate

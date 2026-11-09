@@ -102,5 +102,5 @@ infer the shape.
 _How work reaches review, if this tracker is involved at all._
 
 {{Most trackers are not the review surface — the repo host is. If that is the case here, say
-so and stop. PR creation stays on `gitflow.sh pr` and never routes through this file, whatever
-the tracker is; `docs/adr/0015` is the canonical reason.}}
+so and stop. `implement` opens pull requests on the repo host with `gh pr create`, never
+through this file, whatever the tracker is.}}

@@ -5,11 +5,13 @@
 
 # Issue tracker: local markdown
 
-All `.scratch/` paths below resolve against the main worktree root.
+Local tickets are private files in the planner's own checkout, the main one. A worker never
+reads them: it gets a local ticket's body in its session card.
 
 Work for this repo is tracked as markdown files under `.scratch/`, one directory per feature.
 There is no service and no CLI — every operation below is a file read or a file write, which
-is the point: it works in a repo with no remote, and the tickets stay in the main worktree across implementation branches.
+is the point: it works in a repo with no remote, and the tickets stay in the planner's checkout
+whatever branch is checked out.
 
 Skills never name a backend. They name one of the operations below and read this file to find
 out how to perform it here.
@@ -52,8 +54,8 @@ so a bare `03` means nothing on its own — always carry the feature slug with i
 the path in commit messages so `reviewing-changes` can find the spec behind a diff.
 
 When given a file path, an absolute path is used directly. A path starting with `.scratch/`
-is relative to the main worktree root. A path starting with a feature slug, such as
-`0001-hello/01-hello.md`, is relative to that root's `.scratch/` directory.
+is relative to the repo root. A path starting with a feature slug, such as
+`0001-hello/01-hello.md`, is relative to the repo root's `.scratch/` directory.
 
 ## List open tickets
 
@@ -70,7 +72,7 @@ guessing.
 
 ## Find a published ticket
 
-Read all `.scratch/*/[0-9][0-9]-*.md` under the main worktree root, including done tickets.
+Read all `.scratch/*/[0-9][0-9]-*.md`, including done tickets.
 Match the exact `Publication-ID: <identity>` line in the body. Return all matching paths.
 The glob excludes draft tickets. A read error is an uncertain result, never an empty result.
 
@@ -83,13 +85,16 @@ Start it with the header block above, `Status: open`.
 Write `Made:` as today's date and `Use by:` as described under the header block.
 
 Before writing the first file under `.scratch/`, make sure `.scratch/` is a line in
-`.git/info/exclude`, using the shell form from `setup-magito`'s *Private-state excludes*
-section. A line already present is left alone.
+`.git/info/exclude`, as `setup-magito`'s *Private-state excludes* section describes. A line
+already present is left alone.
 
 ## Comment on a ticket
 
 Append to the `## Comments` section at the bottom of the file, newest last, each entry
 prefixed with the date.
+
+A worker cannot reach the ticket file. It puts the comment in its final report instead, and
+the planner appends it.
 
 ## Close a ticket
 
@@ -113,11 +118,17 @@ afterwards; a number already on it is left alone.
 
 ## Pull requests
 
-Tracking tickets in files says nothing about how work lands. A repo can keep its tickets here
-and still open a pull request on a remote — `implement` decides that from the remote, not from
-this file, and PR creation stays on `gitflow.sh pr` either way (`docs/adr/0015`).
+Tracking tickets in files says nothing about how work lands. `implement` decides that from the
+remote, not from this file. With a GitHub remote, it opens a pull request after the user reads
+the diff, or at once for a Low ticket:
 
-Where there genuinely is no remote, `implement` stops at its own checkpoint instead: it shows
-the diff and the review summary and waits for explicit approval before
-`bash <skills>/implement/scripts/gitflow.sh merge`. That checkpoint *is* the human's gate.
-(`<skills>` is the folder that holds the installed skills: the parent of the `implement` skill's folder.)
+```
+gh pr create --base <base> --title "<title>" --body "<body>"
+```
+
+With no GitHub remote there is no pull request. Once the user approves, the planner merges the
+branch in its own checkout, the main one:
+
+```
+git merge --no-ff <branch>
+```
