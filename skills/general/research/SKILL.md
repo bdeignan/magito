@@ -91,8 +91,7 @@ Delegate each angle by its **capability tier**:
   tool spawns to run a scoped task and hand back only its result. Claude Code, Gemini CLI, and Codex
   all provide these; a general-purpose subagent needs no definition. Launch the angles in parallel
   where the tool allows.
-- **On request — a worker.** If the user named one (`via omp`), delegate each angle to that worker
-  per [`../implement/references/worker-contract.md`](../implement/references/worker-contract.md): a
+- **On request — a worker.** If the user named one (`via omp`), delegate each angle to that worker: a
   self-contained brief written to a file, isolation preserved for the web angle, output judged on
   what it returns. This spends a prepaid seat instead of the session.
 - **Floor — inline.** If the tool has no subagent capability and no worker was named, run the angles

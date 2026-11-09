@@ -46,9 +46,8 @@ That is the rot the two-gate filter exists to prevent, turned on magito's own do
 
 The test is what you are reusing. **Behavior** — a procedure a skill runs — takes a seam
 above. **A rule** — a definition or policy that must stay identical everywhere it appears —
-gets named and linked: `docs/agents/README.md` owns the two gates,
-`implement/references/worker-contract.md` owns the brief protocol, and a skill that needs one
-points rather than recopies.
+gets named and linked: `docs/agents/README.md` owns the two gates, and a skill that needs
+one points rather than recopies.
 
 The one exception, and its cost: when an agent must apply a rule *at the point of decision*
 mid-flow — `intent/references/recon.md` states both gates inline because promotion is judged

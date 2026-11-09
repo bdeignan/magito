@@ -33,7 +33,6 @@ currently deferred, see the file.)
 | How a skill writes a shell command, and when it can stop work | [CONVENTIONS.md](./CONVENTIONS.md) — "Commands in skills" and "Stopping work" |
 | Which workers and reviewers this machine can use | `skills/general/workers/SKILL.md` |
 | Why skills name tracker operations instead of `gh`, including intent overrides | `docs/adr/0015`, `docs/adr/0017` |
-| Delegating a build (shell workers, worktrees) | `skills/general/implement/references/worker-contract.md` |
 | Why magito keeps no worktree rules of its own (Desktop makes the worktree) | `docs/adr/0021` |
 | The magi tribunal | `skills/claude/magi/SKILL.md` |
 | Why a past decision was made | `docs/adr/` |

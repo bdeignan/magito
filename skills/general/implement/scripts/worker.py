@@ -2,7 +2,7 @@
 # /// script
 # requires-python = ">=3.11"
 # ///
-"""Deterministic launcher for shell workers (see ../references/worker-contract.md).
+"""Deterministic launcher for shell workers.
 
 Resolves a named worker from ~/.magito/workers.toml, substitutes placeholders at
 the argv level (no shell re-quoting — cmd is an argv template: no &&, |, or cd),
@@ -42,7 +42,7 @@ variables are set, and its probe answers; then whether an allow rule for this
 launcher exists; then, with --family, which worker reviewer would pick. standards prints,
 for the committed diff from <base> to HEAD, the docs and ADRs a review checks the diff
 against and the doc lines that name something the diff removed or renamed; see
-../references/worker-contract.md and the standards review procedure. start prints
+the standards review procedure. start prints
 the one line that opens a run: who builds, who reviews (the same pick as reviewer, or
 the subagent fallback whenever that pick fails), and whether a plan stop comes. record
 writes the review record that gitflow.sh pr and merge require, `<sha> reviewed by <name>`,

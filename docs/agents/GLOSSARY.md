@@ -56,7 +56,7 @@ journal entry.
 **Risk** — a ticket's Low, Normal, or High level. It sets both how the user reviews the
 change and how much testing it gets.
 
-**escalation** — one of the seven named reasons an `implement` run stops and asks the human,
+**escalation** — one of the four named reasons an `implement` run stops and asks the human,
 listed in `skills/general/implement/references/pipeline.md`. Anything else the agent decides
 alone, and it states each such decision in the pull request body in ordinary words, as
 "Chose X over Y because Z".

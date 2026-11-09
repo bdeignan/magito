@@ -1,19 +1,18 @@
 ---
 name: workers
-description: Show which roster workers and reviewers this machine can use — for each one, whether its tool is installed, the variables it needs are set, and it answers — and create the roster from the example when the machine has none. Use it to see which other tools magito can call here, or after a run reported no reviewer from another family. Do not use it at the start of a session or before every build — implement checks the roster itself at the start of each run, and running this first only repeats that work.
+description: Show which roster workers and reviewers this machine can use — for each one, whether its tool is installed, the variables it needs are set, and it answers. Use it to see which other tools magito can call here. Do not use it at the start of a session or before a build: implement does not use the roster.
 ---
 
 # Workers
 
 Report which workers on this machine are ready, and why the others are not. The roster is
 `~/.magito/workers.toml`: one entry per command-line coding tool that magito can launch to
-build or review. Its format lives in the
-[worker contract](../implement/references/worker-contract.md); this skill does not repeat it.
+build or review.
 For creating the roster, probing an entry, and the quirks of each tool's command line, read
 [`references/roster-setup.md`](./references/roster-setup.md) when a step below needs it.
 `<skills>` is the folder that holds this skill's own folder: the parent of the directory its `SKILL.md` is in.
 
-This skill reports. It writes one thing only, the copy in step 3. It never edits, overwrites,
+This skill reports, and writes nothing. It never edits, overwrites,
 or deletes an existing `~/.magito/workers.toml`: that file is the user's. A second run
 changes nothing.
 
@@ -52,11 +51,7 @@ changes nothing.
    `thrifty`, or `workers`), name that setting's line the same way.
 
 3. **No roster file.** The command exits 2 and says the file was not found. Say so, and
-   offer to copy `<skills>/implement/references/workers.toml.example` to
-   `~/.magito/workers.toml`. Copy only after the user says yes, and check again right before
-   the copy that the destination does not exist. Then tell the user that every entry in the
-   file is commented out, that they must uncomment the entries for the tools they have, and
-   to run this skill again.
+   stop. magito no longer ships an example roster to copy.
 
 4. **A roster that cannot be read.** The command exits 2 and says why: it is not valid TOML,
    or the file cannot be opened. Show the error it printed and stop. Change nothing.
