@@ -36,7 +36,8 @@ Every path below that starts with `.scratch/` is in the folder the planner works
 
 2. **Resolve the tracker adapter** through
    [tracker-selection.md](../setup-magito/references/tracker-selection.md). Read that adapter
-   for every tracker operation below. `<skills>` is the folder that holds this skill's own folder: the parent of the directory its `SKILL.md` is in.
+   for every tracker operation below. `<skills>` is the folder that holds this skill's own
+   folder: the parent of the directory its `SKILL.md` is in.
 
 3. **Draft the tickets** as files in `.scratch/<NNNN>-<slug>/drafts/`, one file per ticket,
    named `01-<slug>.md`, `02-<slug>.md`, in dependency order. With no intent doc, use a short
@@ -110,8 +111,7 @@ Every path below that starts with `.scratch/` is in the folder the planner works
    rule of exactly one verdict per draft file. Apply the following rules to both ticket and
    coverage verdicts:
    - **FIX or AMBIGUOUS** on any ticket: revise those drafts and run step 5 again. For an
-     AMBIGUOUS line, make the draft state what the intent settles, or cut what it does not.
-     Run at most three review rounds. After round 3, if any FIX or AMBIGUOUS line is left,
+     AMBIGUOUS line, revise the draft to say what the intent settles. Run at most three review rounds. After round 3, if any FIX or AMBIGUOUS line is left,
      stop and show the user the remaining lines.
    - **PASS** on every ticket and COVERAGE: publish. Each published body ends with
      `Spec review: subagent, round <n>`, or `Spec review: planner, round <n>` when you
@@ -121,9 +121,9 @@ Every path below that starts with `.scratch/` is in the folder the planner works
    - A reply can hold several NOTE lines for one draft file and none for another.
    - A NOTE line never stands in for a verdict. A reply with a NOTE line for a file and no
      `VERDICT` line for that file is a failed review, as a missing verdict is.
-   - The driver never runs another review round for a NOTE. It can apply a NOTE to a draft
-     before publishing when the change is plainly right, and it lists each one it applied
-     when it reports the published tickets. A draft changed for a NOTE after every verdict
+   - Never run another review round for a NOTE. You can apply a NOTE to a draft before
+     publishing when the change is plainly right, and you list each one you applied when you
+     report the published tickets. A draft changed for a NOTE after every verdict
      was PASS is published without a new review round.
 
 7. **Publish** by following [publication.md](./references/publication.md). It looks for
