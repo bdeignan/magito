@@ -1,7 +1,7 @@
 ---
 name: research
-description: Researches an open-ended question (options, prior art, trade-offs, or how something works) and produces an evidence-backed report in a fixed structure that recommends a direction without committing the user to build it. Delegates angles to subagents by default, or to a named worker on request. Use to weigh approaches or survey the state of the art before deciding. Not for diagnosing a bug, specifying a feature, or writing code.
-argument-hint: '[small|medium|large] [the question] [optional output path] [optional: "exploratory"] [optional: "via <worker>"]'
+description: Researches an open-ended question (options, prior art, trade-offs, or how something works) and produces an evidence-backed report in a fixed structure that recommends a direction without committing the user to build it. Delegates angles to subagents by default. Use to weigh approaches or survey the state of the art before deciding. Not for diagnosing a bug, specifying a feature, or writing code.
+argument-hint: '[small|medium|large] [the question] [optional output path] [optional: "exploratory"]'
 ---
 
 # Research
@@ -53,9 +53,9 @@ report either way — the rule file says what each mode permits.
 
 Take the question from the arguments and conversation. Bind the **size** if the first token is
 `small`/`medium`/`large` (otherwise infer it in step 2). Detect the **mode** (strict unless the user
-opts into exploratory). Note any **output path** and any **`via <worker>`** delegation the user
-named. If the question is too vague to research — no answerable decision or unknown — ask what
-decision or unknown to resolve before dispatching anything. Do not guess and burn a round.
+opts into exploratory). Note any **output path** the user named. If the question is too vague to
+research — no answerable decision or unknown — ask what decision or unknown to resolve before
+dispatching anything. Do not guess and burn a round.
 
 ### 2. Size the run and announce it
 
@@ -91,11 +91,8 @@ Delegate each angle by its **capability tier**:
   tool spawns to run a scoped task and hand back only its result. Claude Code, Gemini CLI, and Codex
   all provide these; a general-purpose subagent needs no definition. Launch the angles in parallel
   where the tool allows.
-- **On request — a worker.** If the user named one (`via omp`), delegate each angle to that worker: a
-  self-contained brief written to a file, isolation preserved for the web angle, output judged on
-  what it returns. This spends a prepaid seat instead of the session.
-- **Floor — inline.** If the tool has no subagent capability and no worker was named, run the angles
-  yourself, in sequence. The report is identical; only the parallelism is lost.
+- **Floor — inline.** If the tool has no subagent capability, run the angles yourself, in sequence.
+  The report is identical; only the parallelism is lost.
 
 ### 4. Consolidate the sources
 
@@ -116,7 +113,7 @@ marked `[single-source]` or `[reasoning]` where that applies.
 Run an adversarial pass over the evidence, the options framing, the recommendation, and the integrity
 of the evidence-gathering — can any source have been shaped by hostile external content, and does
 discounting any single web source change the recommendation? Emit numbered `V#` findings. At `medium`
-and above delegate this to a fresh subagent (or worker); at `small` you can run it yourself. Then
+and above delegate this to a fresh subagent; at `small` you can run it yourself. Then
 **re-evaluate**: if the recommendation no longer survives, rewrite it into the "no clear winner" form
 with deciding criteria — never leave a recommendation standing above a validation that contradicts it.
 
