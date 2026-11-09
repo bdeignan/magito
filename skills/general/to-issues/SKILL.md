@@ -1,13 +1,13 @@
 ---
 name: to-issues
-description: Turn an accepted intent doc into reviewed, buildable tickets and publish them to the tracker, then hand off to implement. Also breaks a plan or conversation into tickets when there is no intent doc, and publishes a single ticket for a bug or request the user wants built ("ticket it"). Use once the decisions are made. Do not use it to decide what to build — that is intent.
+description: Turn an accepted intent doc into reviewed, buildable tickets and publish them to the tracker, then offer one session card per ticket that is ready to start. Also breaks a plan or conversation into tickets when there is no intent doc, and publishes a single ticket for a bug or request the user wants built ("ticket it"). Use once the decisions are made. Do not use it to decide what to build — that is intent.
 ---
 
 # To Issues
 
 **First rule. If the input is an intent doc whose header line says `Status: accepted`, never
 ask the user to approve the breakdown. Go from drafting to publishing without stopping. Stop
-only for an escalation named in steps 5 to 7.** Any other input (a plan, a conversation, a
+only for an escalation named in steps 6 and 7.** Any other input (a plan, a conversation, a
 draft intent) gets the approval step in step 4, because no human signed it off yet.
 
 Each ticket is a thin slice that works end to end and can be built alone. The agent that
@@ -28,10 +28,7 @@ everything.
 
 ## Process
 
-Every path below that starts with `.magito/` or `.scratch/` is relative to the **main
-worktree root**, which `git worktree list --porcelain | head -1` prints as `worktree <path>`.
-Never resolve them against the current directory: inside a linked worktree, that directory
-is a different folder.
+Every path below that starts with `.scratch/` is in the folder the planner works in.
 
 1. **Read the input.** For an intent doc, read the whole file. Note the intent number and slug
    from its filename (`0003-to-issues.md` gives `0003` and `to-issues`), and whether its header
@@ -39,7 +36,7 @@ is a different folder.
 
 2. **Resolve the tracker adapter** through
    [tracker-selection.md](../setup-magito/references/tracker-selection.md). Keep its absolute
-   path and the absolute main worktree root with the tickets throughout this run. Read that
+   path with the tickets throughout this run. Read that
    adapter for every tracker operation below. `<skills>` is the folder that holds this skill's own folder: the parent of the directory its `SKILL.md` is in.
 
 3. **Draft the tickets** as files in `.scratch/<NNNN>-<slug>/drafts/`, one file per ticket,
@@ -60,16 +57,8 @@ is a different folder.
    depends on, size. Ask whether the granularity and order are right. Revise until the user
    approves. For an accepted intent, skip this step entirely.
 
-5. **Spec review by a different model family.** Your family is the family of the model you
-   run as: `anthropic` for Claude, `google` for Gemini, `openai` for GPT and Codex models.
-   Run:
-
-   ```
-   python3 <skills>/implement/scripts/worker.py reviewer <your-family>
-   ```
-
-   It prints a worker name, or exits non-zero when no worker from another family works.
-   Write the brief to `.scratch/<NNNN>-<slug>/review-brief.md`. It holds the full intent doc
+5. **Spec review by a fresh-context subagent.** Write the brief to
+   `.scratch/<NNNN>-<slug>/review-brief.md`. It holds the full intent doc
    (or the plan you worked from), every draft file in full, the checklist below, and these
    instructions:
 
@@ -84,25 +73,12 @@ is a different folder.
    approved. Anything else is a NOTE line.
 
    Wording taste is a NOTE. For a ticket that changes only prose, a reviewable check is enough:
-   do not ask for a test that pins wording." Then:
+   do not ask for a test that pins wording."
 
-   A reviewer must not change any file. Check this by file contents, since `git status`
-   cannot see the excluded drafts.
-
-   - With a worker name, run the whole round as one command:
-     `python3 <skills>/implement/scripts/worker.py review <name> <main-worktree-root> <main-worktree-root>/.scratch/<NNNN>-<slug>/review-brief.md`.
-     It snapshots the files, runs the reviewer, snapshots again, and prints only the verdict
-     lines. It names the file holding the full output on stderr. Exit 4 means the reviewer
-     changed a file, and it lists which. Exit 5 means the reply held no verdict line. On any
-     non-zero exit, stop and escalate with its output.
-   - With none: give the same brief to a fresh-context subagent, and tell the user in one line
-     that the review fell back to a subagent. If your tool has no subagents, stop and escalate
-     "no spec reviewer available." Prove the subagent changed no file by hand. `S` means
-     `python3 <skills>/to-issues/scripts/worktree_snapshot.py`, `T` the absolute ticket
-     directory, and `E` a new temporary directory outside the repo:
-     1. Before the review: `S capture <main-root> T E/before.json`.
-     2. After the review: `S capture <main-root> T E/after.json`, then
-        `S compare E/before.json E/after.json`. A changed file means stop and escalate.
+   Give the whole brief to a fresh-context subagent, one that has seen none of this
+   conversation, and take its reply as the round's verdicts. When your tool cannot start a
+   subagent, review the drafts yourself against the same checklist, in the same reply format,
+   and tell the user so in one line.
 
    The checklist the reviewer applies to each ticket:
    1. "Done when" is present and another agent can verify it. A red check names a command
@@ -134,19 +110,18 @@ is a different folder.
    review; stop and report them. NOTE lines are not verdicts. They do not count toward the
    rule of exactly one verdict per draft file. Apply the following rules to both ticket and
    coverage verdicts:
-   - **AMBIGUOUS** on any ticket: stop and escalate to the user at once, quoting the line. Do
-     not guess.
-   - **FIX** on any ticket: revise those drafts and run step 5 again. After two FIX rounds,
-     stop and escalate with the remaining FIX lines.
+   - **FIX or AMBIGUOUS** on any ticket: revise those drafts and run step 5 again. For an
+     AMBIGUOUS line, make the draft state what the intent settles, or cut what it does not.
+     Run at most three review rounds. After round 3, if any FIX or AMBIGUOUS line is left,
+     stop and show the user the remaining lines.
    - **PASS** on every ticket and COVERAGE: publish. Each published body ends with
-     `Spec review: <worker or "subagent"> (<family>), round <n>`.
+     `Spec review: subagent, round <n>`, or `Spec review: planner, round <n>` when you
+     reviewed the drafts yourself.
 
    NOTE lines follow their own rules:
    - A reply can hold several NOTE lines for one draft file and none for another.
    - A NOTE line never stands in for a verdict. A reply with a NOTE line for a file and no
      `VERDICT` line for that file is a failed review, as a missing verdict is.
-   - `worker.py review` prints only the `VERDICT` and `COVERAGE` lines. The NOTE lines are in
-     the full output file that it names on stderr. Read them there.
    - The driver never runs another review round for a NOTE. It can apply a NOTE to a draft
      before publishing when the change is plainly right, and it lists each one it applied
      when it reports the published tickets. A draft changed for a NOTE after every verdict
@@ -156,13 +131,20 @@ is a different folder.
    each ticket before publishing it, so a rerun after an interruption never publishes a
    ticket twice.
 
-8. **Hand off.** For an accepted intent, call `implement` with the published ticket
-   identifiers and these two named fields: `tracker_adapter: <absolute-path>` and
-   `main_root: <absolute-path>`. `implement` uses that adapter for every ticket operation.
-   When the user asked to "ticket it" (one bug or request they want built), hand that one
-   ticket to `implement` the same way: the request is a request to build. `implement` runs it
-   like any other ticket with no intent: it stops at the plan unless the change is small.
-   Otherwise, report the published tickets and stop.
+8. **Hand off.** Never call `implement` yourself. After publishing, stop and offer one session
+   card per ticket that is ready to start. A ticket is ready when all its blockers are
+   closed: run the ready check in the tracker adapter from step 2 for each published ticket.
+   - **Each card** starts a worker session with Sonnet, Worktree on, and Auto mode. Its brief
+     is "Run `/implement <ticket>`". With the local tracker, the brief also carries the full
+     ticket body, because a worker cannot read the planner's `.scratch/`.
+   - **A blocked ticket** gets no card yet. Tell the user which tickets are blocked, and that
+     when one of their blockers merges, they ask you for the next cards. Then run the ready
+     check again and offer a card for each ticket that is now ready.
+   - **When your tool cannot offer a card,** print one line per ready ticket: "Run
+     `/implement <ticket>` in a new session." With the local tracker, print the ticket body
+     under its line, to paste into that session.
+
+   For a single "ticket it" request, offer the one card the same way.
 
 <issue-template>
 # <short title: what this ticket delivers>
@@ -175,6 +157,10 @@ it matters. No file paths or symbols here.>
 **Intent:** <link to the intent doc>, <which decisions this ticket carries>
 
 **Size:** small | large
+
+**Risk:** Low | Normal | High
+<Low is docs, comments, copy, or deleting dead code. High is a contract other tickets rely
+on, data at external edges, security, or CI or install config. Normal is everything else.>
 
 ## Behavior
 

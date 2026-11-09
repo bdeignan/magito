@@ -672,7 +672,7 @@ def run(argv, cwd, timeout, capture, entry, keep_on_timeout=False, extra_env=Non
     return SimpleNamespace(returncode=p.returncode, stdout=out or "", stderr=err or "")
 
 
-SNAPSHOT = Path(__file__).resolve().parents[2] / "to-issues" / "scripts" / "worktree_snapshot.py"
+SNAPSHOT = Path(__file__).resolve().parent / "worktree_snapshot.py"
 VERDICT_LINE = re.compile(r"^[\s>*`-]*((?:VERDICT|COVERAGE)\b.*?)[`\s]*$")
 
 
