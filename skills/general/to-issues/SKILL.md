@@ -111,8 +111,9 @@ Every path below that starts with `.scratch/` is in the folder the planner works
    rule of exactly one verdict per draft file. Apply the following rules to both ticket and
    coverage verdicts:
    - **FIX or AMBIGUOUS** on any ticket: revise those drafts and run step 5 again. For an
-     AMBIGUOUS line, revise the draft to say what the intent settles. Run at most three review rounds. After round 3, if any FIX or AMBIGUOUS line is left,
-     stop and show the user the remaining lines.
+     AMBIGUOUS line, revise the draft to say what the intent settles. Run at most three
+     review rounds. After round 3, if any FIX or AMBIGUOUS line is left, stop and show the
+     user the remaining lines.
    - **PASS** on every ticket and COVERAGE: publish. Each published body ends with
      `Spec review: subagent, round <n>`, or `Spec review: planner, round <n>` when you
      reviewed the drafts yourself.
