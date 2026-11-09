@@ -255,7 +255,9 @@ import sys
 
 result = json.load(open(sys.argv[1]))
 open(sys.argv[2], "w").write(result["result"])
-for d in result["permission_denials"]:
+if "permission_denials" not in result:
+    print("denied: the result holds no permission_denials list")
+for d in result.get("permission_denials", []):
     tool_input = d.get("tool_input") or {}
     print(f"denied: {d.get('tool_name', '?')}: {tool_input.get('command') or json.dumps(tool_input)}")
 PY
@@ -317,7 +319,7 @@ built_in_session_worktree() {
 }
 
 # ready_to_read: the run ends at "ready to read" and, for a Normal ticket, opens no pull
-# request. The fixture has no remote, so the run would have to add one to open it.
+# request. The fixture has no remote, so a pull request needs the run to add one.
 ready_to_read() {
   grep -qi 'ready to read' "$RESPONSE" || fail "final response does not reach \"ready to read\""
   [[ -z "$(git -C "$REPO" remote)" ]] || fail "a remote was added; a Normal ticket opens no pull request"
