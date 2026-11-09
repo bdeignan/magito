@@ -5,7 +5,8 @@
 """Process-boundary checks for the paid implement evaluator, using a fake `claude` on PATH.
 
 The fake acts as `claude -p --worktree <name>` does: it makes the worktree
-.claude/worktrees/<name> on branch worktree-<name>, locks it, and prints a JSON result with
+.claude/worktrees/<name> on branch worktree-<name>, locks it, copies the files
+.worktreeinclude lists into it, and prints a JSON result with
 `result` and `permission_denials`. It refuses any other command line, so every case also
 checks that the eval starts its subject with the one fixed command."""
 import os
@@ -22,6 +23,7 @@ EVAL = ROOT / "scripts/eval-implement.sh"
 FAKE_CLAUDE = '''#!/usr/bin/env python3
 import json
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -50,6 +52,10 @@ def commit(where, message, *files):
 WT = repo / ".claude" / "worktrees" / "eval"
 git("worktree", "add", "-q", "-b", "worktree-eval", str(WT))
 git("worktree", "lock", "--reason", "claude session", str(WT))
+# Claude Code copies each file .worktreeinclude lists into a new worktree.
+for line in (repo / ".worktreeinclude").read_text().split():
+    (WT / line).parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy(repo / line, WT / line)
 red_passes = (WT / "test_hello.py").exists()
 
 

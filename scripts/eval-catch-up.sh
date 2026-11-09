@@ -157,7 +157,7 @@ instead. Only read: change no file, and start no other work.
 BRIEF_END
 
 cd "$REPO"
-claude -p --model "$MODEL" --permission-mode auto --output-format json "$(cat "$BRIEF")" >"$RESULT" 2>"$LOG"
+claude -p --model "$MODEL" --permission-mode auto --output-format json "$(<"$BRIEF")" >"$RESULT" 2>"$LOG"
 python3 -c 'import json, sys; open(sys.argv[2], "w").write(json.load(open(sys.argv[1]))["result"])' "$RESULT" "$RESPONSE"
 
 fail() { echo "$LABEL: FAIL ($1)"; exit 1; }

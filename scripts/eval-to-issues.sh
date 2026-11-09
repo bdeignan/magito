@@ -84,7 +84,7 @@ EOF
 # reply goes to <response>.
 run_claude() {
   cd "$1"
-  claude -p --model "$MODEL" --permission-mode auto --output-format json "$(cat "$BRIEF")" >"$2" 2>"$3"
+  claude -p --model "$MODEL" --permission-mode auto --output-format json "$(<"$BRIEF")" >"$2" 2>"$3"
   python3 -c 'import json, sys; open(sys.argv[2], "w").write(json.load(open(sys.argv[1]))["result"])' "$2" "$4"
 }
 

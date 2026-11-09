@@ -167,7 +167,7 @@ $SUMMARY
 BRIEF_END
 
 cd "$REPO"
-claude -p --model "$MODEL" --permission-mode auto --output-format json "$(cat "$BRIEF")" >"$RESULT" 2>"$LOG"
+claude -p --model "$MODEL" --permission-mode auto --output-format json "$(<"$BRIEF")" >"$RESULT" 2>"$LOG"
 
 fail() { echo "$LABEL: FAIL ($1)"; exit 1; }
 

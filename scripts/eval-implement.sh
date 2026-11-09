@@ -53,10 +53,8 @@ WT="$REPO/.claude/worktrees/$WT_NAME"
 # branch and commits stay behind as the evidence.
 cleanup() {
   local status=$?
-  if [[ -d "$WT" ]]; then
-    git -C "$REPO" worktree unlock "$WT" >/dev/null 2>&1 || true
-    git -C "$REPO" worktree remove --force "$WT" >/dev/null 2>&1 || true
-  fi
+  git -C "$REPO" worktree unlock "$WT" >/dev/null 2>&1 || true
+  git -C "$REPO" worktree remove --force "$WT" >/dev/null 2>&1 || true
   if [[ $status -ne 0 ]]; then
     echo "eval failed ($status); evidence: $TMP_BASE" >&2
   fi
@@ -231,7 +229,11 @@ class HelloTest(unittest.TestCase):
 PY
 fi
 
-git -C "$REPO" add -f .magito docs
+# As in a repo setup-magito has run: .magito/ is excluded, and .worktreeinclude copies its
+# config into each worktree. The run's own worktree is excluded too, so it is no change.
+printf '.magito/\n.claude/worktrees/\n' >> "$REPO/.git/info/exclude"
+printf '.magito/config.toml\n' > "$REPO/.worktreeinclude"
+git -C "$REPO" add docs .worktreeinclude
 [[ "$VARIANT" == "red-passes" ]] && git -C "$REPO" add hello.py test_hello.py
 [[ "$VARIANT" == "no-intent-small" ]] && git -C "$REPO" add NOTES.md test_notes.py
 git -C "$REPO" commit -q -m "fixture"
@@ -241,12 +243,23 @@ cat > "$BRIEF" <<EOF
 Read $MAGITO/skills/general/implement/SKILL.md and follow it on the ticket below. Where it
 says <skills>, use $MAGITO/skills/general. The ticket is a local one, and this is its body:
 
-$(cat "$TICKET")
+$(<"$TICKET")
 EOF
 
 cd "$REPO"
-claude -p --model "$MODEL" --permission-mode auto --output-format json --worktree "$WT_NAME" "$(cat "$BRIEF")" >"$RESULT" 2>"$LOG"
-python3 -c 'import json, sys; open(sys.argv[2], "w").write(json.load(open(sys.argv[1]))["result"])' "$RESULT" "$RESPONSE"
+claude -p --model "$MODEL" --permission-mode auto --output-format json --worktree "$WT_NAME" "$(<"$BRIEF")" >"$RESULT" 2>"$LOG"
+# The final reply goes to $RESPONSE, and each permission denial becomes one printed line.
+DENIED="$(python3 - "$RESULT" "$RESPONSE" <<'PY'
+import json
+import sys
+
+result = json.load(open(sys.argv[1]))
+open(sys.argv[2], "w").write(result["result"])
+for d in result["permission_denials"]:
+    tool_input = d.get("tool_input") or {}
+    print(f"denied: {d.get('tool_name', '?')}: {tool_input.get('command') or json.dumps(tool_input)}")
+PY
+)"
 
 fail() { echo "$LABEL: FAIL ($1)"; exit 1; }
 
@@ -285,15 +298,6 @@ test_first() {
 }
 
 # Zero prompts: the run needed no permission it was not granted. Each denial is printed.
-DENIED="$(python3 - "$RESULT" <<'PY'
-import json
-import sys
-
-for d in json.load(open(sys.argv[1]))["permission_denials"]:
-    tool_input = d.get("tool_input") or {}
-    print(f"denied: {d.get('tool_name', '?')}: {tool_input.get('command') or json.dumps(tool_input)}")
-PY
-)"
 if [[ -n "$DENIED" ]]; then
   echo "$DENIED"
   fail "the run hit a permission prompt"
@@ -338,11 +342,10 @@ if [[ "$VARIANT" == "red-passes" ]]; then
   echo "$LABEL: PASS"
 elif [[ "$VARIANT" == "no-intent" ]]; then
   # The run stops at the plan: nothing committed, nothing changed, and a request to
-  # approve the plan. Asking does not excuse a commit or an edit. The main checkout
-  # shows the run's worktree under .claude/, which is not a change.
+  # approve the plan. Asking does not excuse a commit or an edit.
   [[ -z "$(work_branches)" ]] || fail "commits were made before the plan was approved"
   [[ "$(git -C "$REPO" rev-parse main)" == "$BASE_SHA" ]] || fail "commits were made before the plan was approved"
-  [[ -z "$(git -C "$REPO" status --porcelain -- . ':!.claude' 2>&1)" ]] \
+  [[ -z "$(git -C "$REPO" status --porcelain 2>&1)" ]] \
     && [[ -z "$(git -C "$WT" status --porcelain 2>&1)" ]] \
     || fail "files were changed before the plan was approved"
   [[ "$(git -C "$REPO" worktree list --porcelain | grep -c '^worktree ')" -eq 2 ]] \

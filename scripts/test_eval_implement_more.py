@@ -19,14 +19,13 @@ EVAL = ROOT / "scripts/eval-implement.sh"
 FAKE_CLAUDE = """#!/usr/bin/env python3
 import json
 import os
+import shutil
 import subprocess
-import sys
 from pathlib import Path
 
 repo = Path.cwd()
 mode = os.environ["IMPLEMENT_FAKE_MODE"]
-name = sys.argv[sys.argv.index("--worktree") + 1]
-WT = repo / ".claude" / "worktrees" / name
+WT = repo / ".claude" / "worktrees" / "eval"
 
 
 def git(*args, cwd=repo):
@@ -39,13 +38,17 @@ def commit(where, message, file, text):
     git("commit", "-m", message, cwd=where)
 
 
-git("worktree", "add", "-q", "-b", f"worktree-{name}", str(WT))
+git("worktree", "add", "-q", "-b", "worktree-eval", str(WT))
 git("worktree", "lock", str(WT))
+# Claude Code copies each file .worktreeinclude lists into a new worktree.
+for line in (repo / ".worktreeinclude").read_text().split():
+    (WT / line).parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy(repo / line, WT / line)
 
 PLAN = "Plan: write the test, then the code.\\nIs this plan fine?\\n"
 READY = "Ready to read. Risk: Normal.\\n"
 CODE = "import sys\\nname = sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] else 'world'\\nprint(f'hello, {name}')\\n"
-TEST = "import subprocess, sys, unittest\\nclass T(unittest.TestCase):\\n    def test_x(self):\\n        self.assertTrue(True)\\n"
+TEST = "import unittest\\nclass T(unittest.TestCase):\\n    def test_x(self):\\n        self.assertTrue(True)\\n"
 denials = []
 
 if mode == "main-commit":
