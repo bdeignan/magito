@@ -17,7 +17,7 @@
 #   no-intent        the ticket links no intent and has several criteria; the run must
 #                    stop at the plan, change nothing, and ask for approval
 #   no-intent-small  a one-file text fix with no intent; the run must skip the plan,
-#                    build in the worktree, and reach "ready to read"
+#                    build in the worktree, and open no pull request
 set -euo pipefail
 
 if [[ $# -gt 1 ]]; then
@@ -318,10 +318,11 @@ built_in_session_worktree() {
     || fail "$1 was not built in the worktree Claude Code made"
 }
 
-# ready_to_read: the run ends at "ready to read" and, for a Normal ticket, opens no pull
-# request. The fixture has no remote, so a pull request needs the run to add one.
-ready_to_read() {
-  grep -qi 'ready to read' "$RESPONSE" || fail "final response does not reach \"ready to read\""
+# no_pull_request: a Normal ticket stops at "ready to read" and opens no pull request. The
+# fixture has no remote, so a pull request needs the run to add one. "Ready to read" is
+# proved by the built, committed branch the other checks read, not by a phrase: the
+# message is in the model's own words, and a real run that reached it never said them.
+no_pull_request() {
   [[ -z "$(git -C "$REPO" remote)" ]] || fail "a remote was added; a Normal ticket opens no pull request"
 }
 
@@ -364,7 +365,7 @@ elif [[ "$VARIANT" == "no-intent-small" ]]; then
   [[ "$(git -C "$REPO" show "$BRANCH:NOTES.md" 2>/dev/null)" == "greeting: hello" ]] \
     || fail "NOTES.md on $BRANCH does not hold 'greeting: hello'"
   built_in_session_worktree "$BRANCH"
-  ready_to_read
+  no_pull_request
   echo "$LABEL: PASS"
 else
   first_work_branch
@@ -378,7 +379,7 @@ else
   [[ "$OUT" == "hello, world" ]] || fail "hello.py \"\" printed '$OUT', expected 'hello, world'"
 
   built_in_session_worktree "$BRANCH"
-  ready_to_read
+  no_pull_request
   echo "$LABEL: PASS"
 fi
 

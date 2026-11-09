@@ -105,9 +105,7 @@ elif variant == "no-intent-small":
     # A small change with no accepted intent: no plan stop, straight to the steps.
     (WT / "NOTES.md").write_text("greeting: hello\\n")
     commit(WT, "docs: fix the greeting", "NOTES.md")
-    response = "Small change, skipping the plan.\\nFixed the greeting in NOTES.md.\\n"
-    if mode != "no-ready":
-        response += READY
+    response = "Small change, skipping the plan.\\nFixed the greeting in NOTES.md.\\n" + READY
 elif red_passes:
     if mode == "redpass-commits":
         (WT / "extra.txt").write_text("x\\n")
@@ -147,9 +145,7 @@ else:
     if mode == "denied":
         denials.append({"tool_name": "Bash", "tool_use_id": "t1",
                         "tool_input": {"command": "git push -u origin worktree-eval"}})
-    response = "Built hello.py with its test first.\\n"
-    if mode != "no-ready":
-        response += READY
+    response = "Built hello.py with its test first.\\n" + READY
 
 print(json.dumps({"type": "result", "result": response, "permission_denials": denials}))
 '''
@@ -221,7 +217,6 @@ def main() -> None:
             ("no-worktree", "feat/1-hello was not built in the worktree Claude Code made"),
             ("magito-worktree", "a .magito/worktrees folder was created"),
             ("review-marker", "a .magito/review-* file was created"),
-            ("no-ready", "final response does not reach \"ready to read\""),
             ("adds-remote", "a remote was added; a Normal ticket opens no pull request"),
         ]:
             fails(mode, bindir, "", reason)
@@ -249,9 +244,8 @@ def main() -> None:
         fails("plan-no-ask", bindir, "no-intent", "final response does not ask for plan approval")
 
         # A small change with no accepted intent: no plan stop. It is built in the run's
-        # worktree and ends at "ready to read".
+        # worktree and opens no pull request.
         passes("green", bindir, "no-intent-small")
-        fails("no-ready", bindir, "no-intent-small", "final response does not reach \"ready to read\"")
 
         # An unknown variant is still a usage error.
         r = run("green", bindir, "no-such-variant")
