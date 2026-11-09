@@ -105,9 +105,9 @@ ready when every ticket it names is `Done`. Write both when you record a new edg
 
 ## Pull requests
 
-Jira is not the review surface. Work lands through GitHub pull requests, and PR creation
-stays on `bash <skills>/implement/scripts/gitflow.sh pr <issue> <title> <body>` — never through
-this file.
+Jira is not the review surface. Work lands through GitHub pull requests, which `implement`
+opens with `gh pr create --base <base> --title "<title>" --body "<body>"`, never through this
+file.
 
 ---
 

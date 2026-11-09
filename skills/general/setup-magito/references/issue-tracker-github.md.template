@@ -5,18 +5,12 @@
 
 # Issue tracker: GitHub
 
-Work for this repo is tracked as GitHub issues, reached through the `gh` CLI. `issues.sh` is
-magito's deterministic wrapper around the verbs agents otherwise retype freehand — it fails
-loudly on a missing argument or missing auth instead of opening an editor or retrying. The two
-read-only operations (list, fetch) lead with the plain `gh` command below, since the wrapper
-adds nothing but a `gh auth status` precheck; the four operations that change a ticket lead
-with the wrapper, since its argument checks stop `gh` from opening an interactive editor. This
-file still reads correctly on a machine without magito installed either way.
+Work for this repo is tracked as GitHub issues, reached through the `gh` CLI.
 
 Skills never name a backend. They name one of the operations below and read this file to find
 out how to perform it here.
 
-`<skills>` is the folder that holds the installed skills: the parent of the `implement` skill's folder.
+Each command below is one plain call, run on its own.
 
 ## Ticket identifiers
 
@@ -31,12 +25,7 @@ back to `gh pr view 42`.
 gh issue list
 ```
 
-Extra flags pass straight through, e.g. `gh issue list --label bug --state all`. Or, for a
-call that fails loudly on missing auth instead of a bare `gh` error:
-
-```
-bash <skills>/implement/scripts/issues.sh list
-```
+Extra flags pass straight through, e.g. `gh issue list --label bug --state all`.
 
 ## Fetch a ticket
 
@@ -50,15 +39,6 @@ For the conversation and the relationship fields:
 gh issue view <number> --comments
 gh issue view <number> --json number,title,body,labels,parent,subIssues,blockedBy,blocking
 ```
-
-Or, for a call that fails loudly on missing auth instead of a bare `gh` error:
-
-```
-bash <skills>/implement/scripts/issues.sh view <number>
-```
-
-The wrapper takes the number and nothing else — use plain `gh` above for `--comments` or
-`--json`.
 
 ## Find a published ticket
 
@@ -77,39 +57,45 @@ issue to compare its body before reusing it.
 ## Publish a ticket
 
 ```
-bash <skills>/implement/scripts/issues.sh create "<title>" "<body>"
-# gh issue create --title "<title>" --body "<body>"
+gh issue create --title "<title>" --body "<body>"
 ```
 
-Both arguments are mandatory. Use a heredoc or a `$(cat file)` for a multi-line body.
+Pass both flags. Without them, `gh` opens an interactive editor. Pass a multi-line body as one
+quoted argument.
 
 ## Comment on a ticket
 
 ```
-bash <skills>/implement/scripts/issues.sh comment <number> "<body>"
-# gh issue comment <number> --body "<body>"
+gh issue comment <number> --body "<body>"
 ```
+
+Pass `--body`. Without it, `gh` opens an interactive editor.
 
 ## Close a ticket
 
 ```
-bash <skills>/implement/scripts/issues.sh close <number>    # gh issue close <number>
+gh issue close <number>
 ```
 
-Merging a PR whose body says `Closes #<n>` closes the issue on its own — don't close it a
+Merging a PR whose body says `Closes #<n>` closes the issue on its own. Do not close it a
 second time by hand.
 
 ## Link a sub-ticket
 
+No single `gh` flag does this. GitHub's sub-issue link is an API call, not an `issue edit`
+flag. Run two calls. First, resolve the child's internal id:
+
 ```
-bash <skills>/implement/scripts/issues.sh sub-add <parent> <child>
+gh api 'repos/{owner}/{repo}/issues/<child>' --jq .id
 ```
 
-No single `gh` flag does this — GitHub's sub-issue link is an API call, not an
-`issue edit` flag. The wrapper runs three calls: `gh repo view --json nameWithOwner` to get
-`owner/repo`, then `gh api repos/<owner>/<repo>/issues/<child> -q .id` to resolve the child's
-internal id, then `gh api -X POST repos/<owner>/<repo>/issues/<parent>/sub_issues -F
-sub_issue_id=<id>`.
+Then link it, with the id the first call printed:
+
+```
+gh api -X POST 'repos/{owner}/{repo}/issues/<parent>/sub_issues' -F sub_issue_id=<id>
+```
+
+`gh` fills `{owner}` and `{repo}` from the clone's remote.
 
 Read the relationship back with `gh issue view <n> --json parent,subIssues,subIssuesCompleted`.
 
@@ -119,28 +105,37 @@ GitHub has native issue dependencies, and `gh` exposes them as ordinary flags. N
 needs GraphQL or a convention buried in a ticket body:
 
 ```
-gh issue edit <n> --add-blocked-by <blocker>     --remove-blocked-by <blocker>
-gh issue edit <n> --add-blocking <blocked>       --remove-blocking <blocked>
+gh issue edit <n> --add-blocked-by <blocker>
+gh issue edit <n> --remove-blocked-by <blocker>
+gh issue edit <n> --add-blocking <blocked>
+gh issue edit <n> --remove-blocking <blocked>
 ```
 
 Read them back with `gh issue view <n> --json blockedBy,blocking`. `blockedBy` and
-`blocking` are connection objects — their entries are in `.nodes`, not at the top level.
+`blocking` are connection objects. Their entries are in `.nodes`, not at the top level.
 `assignees`, `labels`, and `parent` are plain values.
 
-A ticket is ready to start when it has no open blockers:
+A ticket is ready to start when it has no open blockers. Read them with:
 
 ```
-gh issue view <n> --json blockedBy --jq '[.blockedBy.nodes[] | select(.state=="OPEN")] | length'
+gh issue view <n> --json blockedBy
 ```
 
-The ticket is ready when the result is `0`.
+The ticket is ready when no entry in `.blockedBy.nodes` has `"state": "OPEN"`.
 
 ## Pull requests
 
-**PR creation does not route through this file.** It stays on
-`bash <skills>/implement/scripts/gitflow.sh pr <issue> <title> <body>`, which checks for a review
-decision before it opens anything. Whoever later notices that `gh pr create` is missing here
-and decides to "unify" it weakens the review gate on fan-out branches. Leave it where it is;
-`docs/adr/0015` is the canonical reason and the place to argue with it.
+`implement` opens a pull request after the user reads the diff, or at once for a Low ticket:
+
+```
+gh pr create --base <base> --title "<title>" --body "<body>"
+```
+
+With no GitHub remote there is no pull request. Once the user approves, the planner merges the
+branch in its own checkout, the main one:
+
+```
+git merge --no-ff <branch>
+```
 
 Reading PRs is unrestricted: `gh pr list`, `gh pr view <n>`, `gh pr diff <n>`.

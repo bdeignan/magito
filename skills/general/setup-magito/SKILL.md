@@ -9,7 +9,9 @@ Bring a repo up to the configuration the MAGITO workflow skills expect — "magi
 
 **Run it to onboard a fresh repo, and re-run it any time to change a choice or repair drift.** It is idempotent.
 
-Most of what it touches is **per-repo** (`.magito/config.toml`, the tracker doc, the check command, review gate, `docs/agents/`, permissions, excludes, journal). Two items are **machine-global** and shared across every repo on this machine: `~/.magito/workers.toml` and `~/.magito/bench.toml`. For those it only checks and offers — it configures the project, not your machine.
+Most of what it touches is **per-repo** (`.magito/config.toml`, the tracker doc, the check command, the base branch, `.worktreeinclude`, `docs/agents/`, permissions, excludes, journal). Two items are **machine-global** and shared across every repo on this machine: `~/.magito/bench.toml` and the Auto mode setting in `~/.claude/settings.json`. For those it only checks and offers — it configures the project, not your machine.
+
+The planner runs this skill in its own checkout, the main one. Every path below is relative to the current folder.
 
 **Inventory first, then fill gaps.** Read the starting state of every item, report each as **configured / missing / stale**, then walk only the unsettled ones — one section at a time, leading with the recommended answer. Re-running is safe by design: a second run finds everything configured and changes nothing. Never overwrite a user's answer or a user's file without asking.
 
@@ -29,14 +31,15 @@ Read the starting state and classify each item. **Configured** = present and cur
 | Guest excludes | Guest mode only: every path this skill created is in `.git/info/exclude` and none shows in `git status` | `.git/info/exclude` |
 | Audit version | `audited` matches the current magito commit. If older, newer checklist rows can be unchecked — re-run them | `.magito/config.toml` |
 | Issue tracker | `docs/agents/issue-tracker.md` present? | `docs/agents/issue-tracker.md` |
-| Review gate + base branch | `git config magito.reviewGate`, `git config magito.baseBranch` | git config |
+| Base branch | `git config magito.baseBranch` | git config |
 | Pull request title | Guest mode only: `git config magito.prTitlePattern` is set when the repo's merged pull requests do not use Conventional Commits titles | git config |
 | Agent docs | `docs/agents/` files + the `@docs/agents/INDEX.md` import | `docs/agents/`, `CLAUDE.md`/`AGENTS.md` |
-| Permission allowlist | Claude Code only: `.claude/settings.json` — has `allow`, has **no** `hooks` key. Elsewhere: `skipped: not Claude Code` | `.claude/settings.json` |
+| Permission allowlist | Claude Code only: `.claude/settings.json` has an `allow` list of read-only verbs. Elsewhere: `skipped: not Claude Code` | `.claude/settings.json` |
+| Worktree include | `.worktreeinclude` exists at the repo root and lists `.magito/config.toml` | `.worktreeinclude` |
+| Auto mode | Claude Code only: `~/.claude/settings.json` sets `"permissions": {"defaultMode": "auto"}`. Elsewhere: `skipped: not Claude Code` | `~/.claude/settings.json` |
 | Private-state excludes | `.magito/` and `.scratch/` in `.git/info/exclude` | `.git/info/exclude` |
 | Session journal | `.magito/journal/` present (self-creates on first `/handoff`) | `.magito/journal/` |
 | Legacy notes to import | scan for pre-magito notes (see §Legacy notes) | repo root, `docs/` |
-| Delegation workers | `~/.magito/workers.toml` present | `~/.magito/workers.toml` |
 | magi seats | `~/.magito/bench.toml` present | `~/.magito/bench.toml` |
 | Python toolchain | `pyproject.toml`, `tests/`, `src/` layout, and a `## Python` section in whichever of `CLAUDE.md`/`AGENTS.md` holds the repo's instructions that matches `references/python-rules.md.template`. No `pyproject.toml`, and the user does not ask for a Python scaffold: `skipped: not a Python project` | repo root, `CLAUDE.md`/`AGENTS.md` |
 | Managed symlinks | dangling magito-owned links in tool dirs | `~/.magito/bin`, tool skills/agents/hooks dirs |
@@ -49,7 +52,7 @@ Take the unsettled items one at a time. Skip anything the inventory settled. For
 
 ### Config file and mode
 
-`.magito/config.toml` is the one file every later pipeline step reads to learn how this repo works with magito: its mode, its default tracker, its check command, where intent docs go, and when it was last audited. It lives in the main worktree root, under `.magito/`, never in a linked worktree. Resolve that root with `git worktree list --porcelain | head -1`, which prints `worktree <path>`, and write to `<path>/.magito/config.toml`. Never write it relative to the current directory: from a linked worktree, that creates a second config that nothing reads. The review marker is resolved the same way (ADR 0014). The directory `.magito/` is already in `.git/info/exclude` (see §Private-state excludes), so the file is never committed, in any repo, in either mode. Python 3.11's `tomllib` reads it; write it with your file-writing tool, no script is needed. It holds:
+`.magito/config.toml` is the one file every later pipeline step reads to learn how this repo works with magito: its mode, its default tracker, its check command, where intent docs go, and when it was last audited. It lives at `.magito/config.toml` in the current folder. `.worktreeinclude` lists it, so each worker's worktree gets a copy (see §Worktree include). The directory `.magito/` is already in `.git/info/exclude` (see §Private-state excludes), so the file is never committed, in any repo, in either mode. Python 3.11's `tomllib` reads it; write it with your file-writing tool, no script is needed. It holds:
 
 ```toml
 mode = "owner"            # "owner" or "guest"
@@ -63,7 +66,7 @@ audited_on = "2026-09-28"
 
 If the file is missing, ask the owner-or-guest question now, before any other section: **owner**, where magito files commit as usual, or **guest**, where the repo belongs to a team and magito's own files must stay out of the shared history. Recommend owner by default; recommend guest when the remote is not the user's own — a fork, or a shared team repo where the user is a contributor rather than an administrator. Ask this question at most once per repo: once `mode` is written, every later run reads it from the file instead of asking again. Changing it later means editing `.magito/config.toml` directly, the same as any other choice this skill writes.
 
-**The guest-mode rule:** in guest mode, `setup-magito` never edits a file the team already tracks in git — an existing `AGENTS.md`, `CLAUDE.md`, or `GEMINI.md` is read, never written. When `setup-magito` creates a file in a guest repo, it adds that exact path to `.git/info/exclude` in the same step it creates the file, so nothing it wrote ever shows up in `git status`. The paths this applies to are `docs/agents/`, `docs/intent/`, an untracked `AGENTS.md`/`CLAUDE.md`/`GEMINI.md`, an untracked `.claude/settings.json`, and a magito-written check script, which goes at `.magito/check.sh` in guest mode rather than `scripts/check.sh` (see §Check command).
+**The guest-mode rule:** in guest mode, `setup-magito` never edits a file the team already tracks in git — an existing `AGENTS.md`, `CLAUDE.md`, or `GEMINI.md` is read, never written. When `setup-magito` creates a file in a guest repo, it adds that exact path to `.git/info/exclude` in the same step it creates the file, so nothing it wrote ever shows up in `git status`. The paths this applies to are `docs/agents/`, `docs/intent/`, an untracked `AGENTS.md`/`CLAUDE.md`/`GEMINI.md`, an untracked `.claude/settings.json`, an untracked `.worktreeinclude`, and a magito-written check script, which goes at `.magito/check.sh` in guest mode rather than `scripts/check.sh` (see §Check command).
 
 Write `mode` and a default `intent_dir` of `docs/intent` as soon as the mode question is settled. `tracker`, `check`, `audited`, and `audited_on` are filled by the sections that own them, below.
 
@@ -101,29 +104,48 @@ Gemini CLI reads `GEMINI.md` by default. Configured when either `GEMINI.md` exis
 
 If missing, recommend the `contextFileName` setting over a second file: it points Gemini at instructions that already exist, rather than creating a copy that can drift out of sync. Offer to create a dedicated `GEMINI.md` only if the user prefers that. Either write follows the guest-mode rule: an existing `.gemini/settings.json` the team tracks is never edited; a new `GEMINI.md` gets excluded in the same step it is created.
 
-### Review gate + base branch
+### Base branch
 
-- Run `git config magito.reviewGate true` — opts the repo into the merge/PR review gate. The gate applies to every branch that `implement` built, since `gitflow.sh worktree add` gives each one a review-decision marker (ADR 0014, ADR 0020); work done outside `implement` has no marker and lands with no gate. On a marked branch, landing is blocked until a fresh decision is recorded: a completed review, recorded with `worker.py record`.
-- If this repo merges into a trunk other than its GitHub default branch (e.g. a `develop`-based migration workflow), also run `git config magito.baseBranch <branch>` — do NOT set this by default.
+If this repo merges into a trunk other than its GitHub default branch (e.g. a `develop`-based migration workflow), run `git config magito.baseBranch <branch>`. `implement` reads it to pick the base for each branch and pull request. Do NOT set this by default: unset means the remote's default branch.
 
 ### Pull request title
 
-`gitflow.sh pr` refuses a title that does not match `git config magito.prTitlePattern`, and unset means Conventional Commits (see `<skills>/implement/references/pr-body.md`, where `<skills>` is the folder that holds this skill's own folder: the parent of the directory its `SKILL.md` is in). Owner mode: leave it unset. Guest mode: read the titles of the last 20 merged pull requests with `gh pr list --state merged --limit 20 --json title`. If most of them already match `type(scope): summary`, leave the pattern unset. Otherwise recommend `git config magito.prTitlePattern off`, so the agent matches the house style by eye. When the titles follow one clear house pattern, such as a ticket key prefix, offer that pattern as an extended regular expression instead. Skip this step when the repo is not on GitHub, and say so in the report.
+`implement` writes each pull request title to match `git config magito.prTitlePattern`, and unset means Conventional Commits (see `<skills>/implement/references/pr-body.md`, where `<skills>` is the folder that holds this skill's own folder: the parent of the directory its `SKILL.md` is in). Owner mode: leave it unset. Guest mode: read the titles of the last 20 merged pull requests with `gh pr list --state merged --limit 20 --json title`. If most of them already match `type(scope): summary`, leave the pattern unset. Otherwise recommend `git config magito.prTitlePattern off`, so the agent matches the house style by eye. When the titles follow one clear house pattern, such as a ticket key prefix, offer that pattern as an extended regular expression instead. Skip this step when the repo is not on GitHub, and say so in the report.
 
 ### Permission allowlist
 
 This section applies only when the user runs Claude Code. For any other tool, report `skipped: not Claude Code` and write nothing here.
 
-`.claude/settings.json` (committed) holds a read-only permission allowlist that cuts the approval prompts the workflow raises on every read-only `git` and `gh` call. Two rules, both from `CLAUDE.md`:
+`.claude/settings.json` (committed) holds a read-only permission allowlist that cuts the approval prompts the workflow raises on every read-only `git` and `gh` call. One rule:
 
-- **Permissions only — never a `hooks` key.** A `hooks` key here replaces the user-level hooks for this repo, silently disabling `staging-guard` and `review-gate`. If the file already carries one, flag it; do not add one.
-- **Read-only verbs only, and no `deny` block.** `allow` rules merge across scopes, so this file only adds to the user's rules — it never restates them. A `deny` here is a false sense of enforcement, since the hooks are what actually block.
+- **Read-only verbs only, and no `deny` block.** `allow` rules merge across scopes, so this file only adds to the user's rules — it never restates them. The file only removes prompts for safe reads; it is not where anything is blocked.
 
-Missing? Offer to write a minimal permissions-only `allow` list for the read-only `git`/`gh` calls the skills use. Present but drifted (a stray `hooks` key, a `deny` block, write verbs)? Report it and propose the correction — never overwrite silently.
+Missing? Offer to write a minimal `allow` list for the read-only `git`/`gh` calls the skills use. Present but drifted (a `deny` block, write verbs)? Report it and propose the correction — never overwrite silently.
+
+### Worktree include
+
+`.worktreeinclude` at the repo root lists the ignored files a build needs. Claude Code copies every listed file that git ignores into each worktree it creates. Configured when the file exists and lists `.magito/config.toml`.
+
+- **The file exists without that line.** Add `.magito/config.toml` as a line. In guest mode, a `.worktreeinclude` the team tracks is never edited: show the user the missing line instead.
+- **The file is missing.** Ask the user which ignored files a build needs, such as credentials (`.env`) or local config. Write them one pattern per line, in `.gitignore` syntax.
+- **Always list `.magito/config.toml`,** so that a worker can read the repo's `check` command in its own worktree.
+- **Do not list dependency folders** such as `.venv` and `node_modules`. The worker rebuilds them with the project's setup, and `uv run` does that on first use.
+
+Owner mode: commit the file like any other. Guest mode: write it untracked, and add `.worktreeinclude` to `.git/info/exclude` in the same step, per the guest-mode rule.
+
+### Auto mode (Claude Code only)
+
+Worker sessions run in Auto mode, so a build runs without approval prompts. Configured when `~/.claude/settings.json` sets `"permissions": {"defaultMode": "auto"}`. For any other tool, report `skipped: not Claude Code` and write nothing here.
+
+Read the file, and never write it. It is the user's file, and Claude Code ignores this key in a project's settings. If the setting is missing, suggest that the user add this one line inside the `permissions` object (or add the object if the file has none):
+
+```json
+"defaultMode": "auto"
+```
 
 ### Private-state excludes
 
-Ensure both `.magito/` and `.scratch/` are in `.git/info/exclude` — add each if absent. Never `.gitignore`: that file is shared, and this is personal state. Both the session journal and the review-decision marker write under `.magito/`.
+Ensure both `.magito/` and `.scratch/` are in `.git/info/exclude` — add each if absent. Never `.gitignore`: that file is shared, and this is personal state. The session journal and `.magito/config.toml` both live under `.magito/`.
 
 Run `git rev-parse --git-common-dir` (`--git-common-dir`, since inside a linked worktree `.git` is a file, not a directory) to get the exclude file's directory, then read `<that>/info/exclude` with your file-reading tool, then add whichever of `.magito/` and `.scratch/` is not already a line in it, using your file-editing tool. Idempotent by construction — a line already present is left alone.
 
@@ -144,12 +166,9 @@ Does this repo carry notes that predate magito? Scan for: an old magito handoff 
 
 If something is found, offer to bring it into the session journal as entries. **The import procedure lives in [`references/importing-legacy-notes.md`](./references/importing-legacy-notes.md) — read it only when the inventory actually finds something.** It is never destructive: originals stay put, the user confirms the mapping before any file is written, entries stay under the journal word cap (the reference points at the live number — do not restate it here), and timestamps come from the source. Found nothing? Skip the section and never open that file.
 
-### Delegation workers and magi seats
+### magi seats
 
-`~/.magito/workers.toml` (the `/implement` delegation roster) and `~/.magito/bench.toml` (the magi seat roster) are **the user's machine-local files**. Report each as present or missing. Never write or overwrite either without explicit confirmation (the convention is in `CLAUDE.md`). If one is missing, say so and point at where it bootstraps — `bench.toml` self-creates on the first `/magi` run and is repaired by `/magi config`; `workers.toml` is created and checked by the `workers` skill (`/workers`). Offer to seed a missing `bench.toml` only if the user asks; do not fill it silently.
-
-For `workers.toml`, report present or missing and stop there. The `workers` skill creates a
-missing roster and checks an existing one: send the user to `/workers`.
+`~/.magito/bench.toml` (the magi seat roster) is **the user's machine-local file**. Report it as present or missing. Never write or overwrite it without explicit confirmation (the convention is in `CLAUDE.md`). If it is missing, say so and point at where it bootstraps: it self-creates on the first `/magi` run and is repaired by `/magi config`. Offer to seed a missing `bench.toml` only if the user asks; do not fill it silently.
 
 ### Python toolchain
 
@@ -211,7 +230,7 @@ Wire the auto-load bundle with the same "whichever of `CLAUDE.md` / `AGENTS.md` 
 
 ### Guest excludes
 
-Guest mode only. Configured when every path this skill created — `docs/agents/`, `docs/intent/`, an untracked `AGENTS.md`/`CLAUDE.md`/`GEMINI.md`, an untracked `.claude/settings.json`, `.magito/check.sh` — is listed in `.git/info/exclude`, and `git status --short` shows none of them. Run that command at the end of the walk. Anything it shows is a path a write step forgot to exclude; add it before the run finishes.
+Guest mode only. Configured when every path this skill created — `docs/agents/`, `docs/intent/`, an untracked `AGENTS.md`/`CLAUDE.md`/`GEMINI.md`, an untracked `.claude/settings.json`, an untracked `.worktreeinclude`, `.magito/check.sh` — is listed in `.git/info/exclude`, and `git status --short` shows none of them. Run that command at the end of the walk. Anything it shows is a path a write step forgot to exclude; add it before the run finishes.
 
 ### Audit version
 
@@ -228,10 +247,11 @@ Show a draft, let the user edit, then write only what the inventory marked missi
 - `docs/agents/issue-tracker.md`, from the tracker section.
 - For a Python project, the `## Python` section from `references/python-rules.md.template`, written as §Python toolchain describes: after the `## Agent workflow` block, replacing any toolchain lines in that block, and followed by the line count check.
 - If the user chose local markdown, create `.scratch/` with a short `README.md` pointing at `docs/agents/issue-tracker.md` for the conventions.
-- The review-gate, base-branch, and exclude git commands above.
+- The base-branch and exclude git commands above.
+- `.worktreeinclude`, from §Worktree include, always listing `.magito/config.toml`.
 - The check command script, if the check-command section had to write one (`scripts/check.sh` in owner mode, `.magito/check.sh` in guest mode).
 - The Gemini context fix — a `contextFileName` setting in `.gemini/settings.json`, or a new `GEMINI.md`.
-- The `.claude/settings.json` permission allowlist, if the user runs Claude Code and it was missing or drifted — permissions only, no `hooks` key, no `deny` block.
+- The `.claude/settings.json` permission allowlist, if the user runs Claude Code and it was missing or drifted — read-only verbs only, no `deny` block. The Auto mode setting is never written here: it was only suggested to the user.
 - If the user accepted the agent-docs section, scaffold the four `docs/agents/` files, add the `@docs/agents/INDEX.md` import (or the `AGENTS.md` pointer), and give `INDEX.md` its `issue-tracker.md` routing row.
 
 Close by telling the user what changed and what was already fine. Name the skills that read this config, and that they name operations rather than backends — so switching trackers later means rewriting one file, not editing every skill. If you scaffolded `docs/agents/`, name the four files, note that the auto-load bundle (INDEX + OVERVIEW + GLOSSARY) loads via the `@-import`, and that `CONVENTIONS.md` / `GOTCHAS.md` / `flows/` grow lazily. Everything here is editable directly later — and this skill is safe to re-run any time, to change a choice or repair drift.
