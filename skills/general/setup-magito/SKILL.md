@@ -52,7 +52,7 @@ Take the unsettled items one at a time. Skip anything the inventory settled. For
 
 ### Config file and mode
 
-`.magito/config.toml` is the one file every later pipeline step reads to learn how this repo works with magito: its mode, its default tracker, its check command, where intent docs go, and when it was last audited. It lives at `.magito/config.toml` in the current folder. `.worktreeinclude` lists it, so each worker's worktree gets a copy (see §Worktree include). The directory `.magito/` is already in `.git/info/exclude` (see §Private-state excludes), so the file is never committed, in any repo, in either mode. Python 3.11's `tomllib` reads it; write it with your file-writing tool, no script is needed. It holds:
+`.magito/config.toml` is the one file every later pipeline step reads to learn how this repo works with magito: its mode, its default tracker, its check command, where intent docs go, and when it was last audited. `.worktreeinclude` lists it, so each worker's worktree gets a copy (see §Worktree include). The directory `.magito/` is already in `.git/info/exclude` (see §Private-state excludes), so the file is never committed, in any repo, in either mode. Python 3.11's `tomllib` reads it; write it with your file-writing tool, no script is needed. It holds:
 
 ```toml
 mode = "owner"            # "owner" or "guest"
@@ -116,9 +116,7 @@ If this repo merges into a trunk other than its GitHub default branch (e.g. a `d
 
 This section applies only when the user runs Claude Code. For any other tool, report `skipped: not Claude Code` and write nothing here.
 
-`.claude/settings.json` (committed) holds a read-only permission allowlist that cuts the approval prompts the workflow raises on every read-only `git` and `gh` call. One rule:
-
-- **Read-only verbs only, and no `deny` block.** `allow` rules merge across scopes, so this file only adds to the user's rules — it never restates them. The file only removes prompts for safe reads; it is not where anything is blocked.
+`.claude/settings.json` (committed) holds a read-only permission allowlist that cuts the approval prompts the workflow raises on every read-only `git` and `gh` call. **Read-only verbs only, and no `deny` block.** `allow` rules merge across scopes, so this file only adds to the user's rules — it never restates them.
 
 Missing? Offer to write a minimal `allow` list for the read-only `git`/`gh` calls the skills use. Present but drifted (a `deny` block, write verbs)? Report it and propose the correction — never overwrite silently.
 
@@ -147,14 +145,16 @@ Read the file, and never write it. It is the user's file, and Claude Code ignore
 
 Ensure both `.magito/` and `.scratch/` are in `.git/info/exclude` — add each if absent. Never `.gitignore`: that file is shared, and this is personal state. The session journal and `.magito/config.toml` both live under `.magito/`.
 
-Run `git rev-parse --git-common-dir` (`--git-common-dir`, since inside a linked worktree `.git` is a file, not a directory) to get the exclude file's directory, then read `<that>/info/exclude` with your file-reading tool, then add whichever of `.magito/` and `.scratch/` is not already a line in it, using your file-editing tool. Idempotent by construction — a line already present is left alone.
+Read `.git/info/exclude` with your file-reading tool, then add whichever of `.magito/` and `.scratch/` is not already a line in it, using your file-editing tool. Idempotent by construction — a line already present is left alone.
 
-On a tool with no file-editing tool, fall back to the shell form:
+On a tool with no file-editing tool, check each path with one plain command, and append it only when the check exits 1:
 
 ```
-e="$(git rev-parse --git-common-dir)/info/exclude"
-for p in .magito/ .scratch/; do grep -qxF "$p" "$e" 2>/dev/null || echo "$p" >> "$e"; done
+grep -qxF .magito/ .git/info/exclude
+echo .magito/ >> .git/info/exclude
 ```
+
+Run the same two commands for `.scratch/`.
 
 ### Session journal
 
@@ -230,7 +230,7 @@ Wire the auto-load bundle with the same "whichever of `CLAUDE.md` / `AGENTS.md` 
 
 ### Guest excludes
 
-Guest mode only. Configured when every path this skill created — `docs/agents/`, `docs/intent/`, an untracked `AGENTS.md`/`CLAUDE.md`/`GEMINI.md`, an untracked `.claude/settings.json`, an untracked `.worktreeinclude`, `.magito/check.sh` — is listed in `.git/info/exclude`, and `git status --short` shows none of them. Run that command at the end of the walk. Anything it shows is a path a write step forgot to exclude; add it before the run finishes.
+Guest mode only. Configured when every path this skill created from the guest-mode rule's list (§Config file and mode) is listed in `.git/info/exclude`, and `git status --short` shows none of them. Run that command at the end of the walk. Anything it shows is a path a write step forgot to exclude; add it before the run finishes.
 
 ### Audit version
 
@@ -251,7 +251,7 @@ Show a draft, let the user edit, then write only what the inventory marked missi
 - `.worktreeinclude`, from §Worktree include, always listing `.magito/config.toml`.
 - The check command script, if the check-command section had to write one (`scripts/check.sh` in owner mode, `.magito/check.sh` in guest mode).
 - The Gemini context fix — a `contextFileName` setting in `.gemini/settings.json`, or a new `GEMINI.md`.
-- The `.claude/settings.json` permission allowlist, if the user runs Claude Code and it was missing or drifted — read-only verbs only, no `deny` block. The Auto mode setting is never written here: it was only suggested to the user.
+- The `.claude/settings.json` permission allowlist, if the user runs Claude Code and it was missing or drifted — read-only verbs only, no `deny` block.
 - If the user accepted the agent-docs section, scaffold the four `docs/agents/` files, add the `@docs/agents/INDEX.md` import (or the `AGENTS.md` pointer), and give `INDEX.md` its `issue-tracker.md` routing row.
 
 Close by telling the user what changed and what was already fine. Name the skills that read this config, and that they name operations rather than backends — so switching trackers later means rewriting one file, not editing every skill. If you scaffolded `docs/agents/`, name the four files, note that the auto-load bundle (INDEX + OVERVIEW + GLOSSARY) loads via the `@-import`, and that `CONVENTIONS.md` / `GOTCHAS.md` / `flows/` grow lazily. Everything here is editable directly later — and this skill is safe to re-run any time, to change a choice or repair drift.

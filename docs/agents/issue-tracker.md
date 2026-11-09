@@ -11,7 +11,8 @@ CLI.
 Skills never name a backend. They name one of the operations below and read this file to find
 out how to perform it here.
 
-Each command below is one plain call, run on its own.
+Each command below is one plain call, run on its own. A command that writes takes its text
+as flags: without them, `gh` opens an interactive editor.
 
 ## Ticket identifiers
 
@@ -61,16 +62,13 @@ issue to compare its body before reusing it.
 gh issue create --title "<title>" --body "<body>"
 ```
 
-Pass both flags. Without them, `gh` opens an interactive editor. Pass a multi-line body as one
-quoted argument.
+Pass a multi-line body as one quoted argument.
 
 ## Comment on a ticket
 
 ```
 gh issue comment <number> --body "<body>"
 ```
-
-Pass `--body`. Without it, `gh` opens an interactive editor.
 
 ## Close a ticket
 
@@ -83,8 +81,8 @@ second time by hand.
 
 ## Link a sub-ticket
 
-No single `gh` flag does this. GitHub's sub-issue link is an API call, not an `issue edit`
-flag. Run two calls. First, resolve the child's internal id:
+GitHub links a sub-issue through its API, in two calls. First, resolve the child's internal
+id:
 
 ```
 gh api 'repos/{owner}/{repo}/issues/<child>' --jq .id
