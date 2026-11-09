@@ -93,6 +93,9 @@ already present is left alone.
 Append to the `## Comments` section at the bottom of the file, newest last, each entry
 prefixed with the date.
 
+A worker cannot reach the ticket file. It puts the comment in its final report instead, and
+the planner appends it.
+
 ## Close a ticket
 
 Set `Status: done` in the file. Leave the file in place — the history is the record, and

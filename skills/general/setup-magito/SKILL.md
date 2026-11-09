@@ -11,7 +11,7 @@ Bring a repo up to the configuration the MAGITO workflow skills expect — "magi
 
 Most of what it touches is **per-repo** (`.magito/config.toml`, the tracker doc, the check command, the base branch, `.worktreeinclude`, `docs/agents/`, permissions, excludes, journal). Two items are **machine-global** and shared across every repo on this machine: `~/.magito/bench.toml` and the Auto mode setting in `~/.claude/settings.json`. For those it only checks and offers — it configures the project, not your machine.
 
-The planner runs this skill in its own checkout, the main one. Every path below is relative to the current folder.
+The planner runs this skill in its own checkout, the main one. Every repo path below is relative to the current folder.
 
 **Inventory first, then fill gaps.** Read the starting state of every item, report each as **configured / missing / stale**, then walk only the unsettled ones — one section at a time, leading with the recommended answer. Re-running is safe by design: a second run finds everything configured and changes nothing. Never overwrite a user's answer or a user's file without asking.
 
