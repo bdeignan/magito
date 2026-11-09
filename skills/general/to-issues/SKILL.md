@@ -7,7 +7,7 @@ description: Turn an accepted intent doc into reviewed, buildable tickets and pu
 
 **First rule. If the input is an intent doc whose header line says `Status: accepted`, never
 ask the user to approve the breakdown. Go from drafting to publishing without stopping. Stop
-only for an escalation named in steps 6 and 7.** Any other input (a plan, a conversation, a
+only where steps 6 and 7 say to stop.** Any other input (a plan, a conversation, a
 draft intent) gets the approval step in step 4, because no human signed it off yet.
 
 Each ticket is a thin slice that works end to end and can be built alone. The agent that
@@ -35,9 +35,8 @@ Every path below that starts with `.scratch/` is in the folder the planner works
    says `Status: accepted`. For a ticket reference, fetch its body and comments.
 
 2. **Resolve the tracker adapter** through
-   [tracker-selection.md](../setup-magito/references/tracker-selection.md). Keep its absolute
-   path with the tickets throughout this run. Read that
-   adapter for every tracker operation below. `<skills>` is the folder that holds this skill's own folder: the parent of the directory its `SKILL.md` is in.
+   [tracker-selection.md](../setup-magito/references/tracker-selection.md). Read that adapter
+   for every tracker operation below. `<skills>` is the folder that holds this skill's own folder: the parent of the directory its `SKILL.md` is in.
 
 3. **Draft the tickets** as files in `.scratch/<NNNN>-<slug>/drafts/`, one file per ticket,
    named `01-<slug>.md`, `02-<slug>.md`, in dependency order. With no intent doc, use a short
@@ -139,7 +138,8 @@ Every path below that starts with `.scratch/` is in the folder the planner works
      ticket body, because a worker cannot read the planner's `.scratch/`.
    - **A blocked ticket** gets no card yet. Tell the user which tickets are blocked, and that
      when one of their blockers merges, they ask you for the next cards. Then run the ready
-     check again and offer a card for each ticket that is now ready.
+     check again on the tickets that had no card, and offer a card for each one that is now
+     ready.
    - **When your tool cannot offer a card,** print one line per ready ticket: "Run
      `/implement <ticket>` in a new session." With the local tracker, print the ticket body
      under its line, to paste into that session.

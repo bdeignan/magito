@@ -22,9 +22,8 @@ For each draft, blockers first:
      cannot tell whether the ticket exists.
 2. **Publish.** Build the body from the draft. The text after `# ` on the first line is the
    title; remove that line from the body. Replace each draft file name under "Depends on"
-   with the identifier of the published blocker. Add the `Spec review:` line
-   (`Spec review: subagent, round <n>` or `Spec review: planner, round <n>`, per step 6 of
-   `SKILL.md`) and the `Publication-ID:` line at the end. Run **publish a ticket**. If the call fails, or you
+   with the identifier of the published blocker. Add the `Spec review:` line from step 6 of
+   `SKILL.md` and the `Publication-ID:` line at the end. Run **publish a ticket**. If the call fails, or you
    cannot tell whether it succeeded, return to step 1 for this draft before trying again.
 3. **Link blockers.** Read the ticket's existing blockers, add only the missing ones with
    **blocking edges**, and read them back.
