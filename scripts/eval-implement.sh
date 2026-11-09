@@ -1,26 +1,31 @@
 #!/usr/bin/env bash
 # eval-implement.sh — headless check that `implement` takes a ticket from an accepted
-# intent from build to a reviewed branch without stopping for plan approval, and
-# stops only at the merge checkpoint. The branch must be built in a worktree under
-# .magito/worktrees and carry a review record at its tip. Run as:
-#   bash scripts/eval-implement.sh <worker>
-# where <worker> names a roster worker. Not part of scripts/check.sh: it calls a
-# paid model. Set MAGITO_EVAL_VARIANT to run another case:
-#   red-passes       the red check already passes; the run must escalate with rule 4
-#                    and make no commits
+# intent to "ready to read" in the worktree Claude Code made for the run, with zero
+# permission prompts. Run as:
+#   bash scripts/eval-implement.sh [model]
+# where [model] is the model `claude -p` runs, sonnet when left out. Not part of
+# scripts/check.sh: it calls a paid model.
+#
+# The run is one `claude -p --worktree eval`, so the build happens in
+# .claude/worktrees/eval, as a Desktop worker's does. Every case checks that the JSON
+# result's permission_denials list is empty and that no .magito/worktrees folder and no
+# .magito/review-* file appears. The ticket has no Risk line, so it counts as Normal: the
+# run stops at "ready to read" and opens no pull request. Set MAGITO_EVAL_VARIANT to run
+# another case:
+#   red-passes       the red check already passes; the run must stop with stop 3 and
+#                    make no commits
 #   no-intent        the ticket links no intent and has several criteria; the run must
 #                    stop at the plan, change nothing, and ask for approval
 #   no-intent-small  a one-file text fix with no intent; the run must skip the plan,
-#                    build in a worktree, record a review, and stop at the merge
-#                    checkpoint
+#                    build in the worktree, and reach "ready to read"
 set -euo pipefail
 
-if [[ $# -ne 1 ]]; then
-  echo "usage: bash scripts/eval-implement.sh <worker>" >&2
+if [[ $# -gt 1 ]]; then
+  echo "usage: bash scripts/eval-implement.sh [model]" >&2
   exit 2
 fi
 
-WORKER="$1"
+MODEL="${1:-sonnet}"
 VARIANT="${MAGITO_EVAL_VARIANT:-}"
 case "$VARIANT" in
   ""|red-passes|no-intent|no-intent-small) ;;
@@ -31,17 +36,33 @@ LABEL="implement"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MAGITO="$(cd "$SCRIPT_DIR/.." && pwd)"
-WORKER_PY="$MAGITO/skills/general/implement/scripts/worker.py"
 TRACKER_TEMPLATE="$MAGITO/skills/general/setup-magito/references/issue-tracker-local.md.template"
 
 TMP_BASE="$(mktemp -d)"
 echo "eval evidence: $TMP_BASE"
-trap 'eval_status=$?; if [[ $eval_status -ne 0 ]]; then echo "eval failed ($eval_status); evidence: $TMP_BASE" >&2; fi' EXIT
 REPO="$TMP_BASE/repo"
 BRIEF="$TMP_BASE/brief.txt"
-RAW="$TMP_BASE/worker.raw"
-LOG="$TMP_BASE/worker.log"
-RESPONSE="$TMP_BASE/worker.response"
+TICKET="$TMP_BASE/ticket.md"
+RESULT="$TMP_BASE/result.json"
+LOG="$TMP_BASE/claude.log"
+RESPONSE="$TMP_BASE/response.txt"
+WT_NAME="eval"
+WT="$REPO/.claude/worktrees/$WT_NAME"
+
+# A `-p --worktree` run leaves its worktree locked. Remove it when the eval ends; its
+# branch and commits stay behind as the evidence.
+cleanup() {
+  local status=$?
+  if [[ -d "$WT" ]]; then
+    git -C "$REPO" worktree unlock "$WT" >/dev/null 2>&1 || true
+    git -C "$REPO" worktree remove --force "$WT" >/dev/null 2>&1 || true
+  fi
+  if [[ $status -ne 0 ]]; then
+    echo "eval failed ($status); evidence: $TMP_BASE" >&2
+  fi
+  exit "$status"
+}
+trap cleanup EXIT
 
 # The temp repo is kept on purpose: the branch, commits, and logs are the evidence.
 git init -b main "$REPO" >/dev/null 2>&1
@@ -89,8 +110,8 @@ MD
 
 MADE="$(python3 -c 'import datetime; print(datetime.date.today())')"
 USE_BY="$(python3 -c 'import datetime; print(datetime.date.today() + datetime.timedelta(days=14))')"
-mkdir -p "$REPO/.scratch/0001-hello"
-cat > "$REPO/.scratch/0001-hello/01-hello.md" <<MD
+# The ticket lives outside the repo: a worker gets a local ticket's body in its brief.
+cat > "$TICKET" <<MD
 # Add hello.py
 
 Status: open
@@ -101,7 +122,7 @@ Use by: $USE_BY
 
 Add a script that greets someone by name.
 
-**Intent:** [docs/intent/0001-hello.md](../../docs/intent/0001-hello.md)
+**Intent:** docs/intent/0001-hello.md
 
 ## Behavior
 
@@ -133,7 +154,7 @@ MD
 if [[ "$VARIANT" == "no-intent" ]]; then
   # The same ticket with no accepted intent behind it. It keeps its several criteria,
   # so it is not a small change, and the run must stop at the plan.
-  python3 - "$REPO/.scratch/0001-hello/01-hello.md" <<'PY'
+  python3 - "$TICKET" <<'PY'
 import sys
 from pathlib import Path
 p = Path(sys.argv[1])
@@ -146,7 +167,7 @@ if [[ "$VARIANT" == "no-intent-small" ]]; then
   # A one-file text fix with no intent, one criterion, and no red check. The fixture
   # carries a passing test, so the check command exits 0 before and after the change:
   # with no test at all, `python3 -m unittest -q` exits non-zero on recent Pythons.
-  cat > "$REPO/.scratch/0001-hello/01-hello.md" <<MD
+  cat > "$TICKET" <<MD
 # Fix the greeting in NOTES.md
 
 Status: open
@@ -210,60 +231,22 @@ class HelloTest(unittest.TestCase):
 PY
 fi
 
-git -C "$REPO" add -f .magito docs .scratch
+git -C "$REPO" add -f .magito docs
 [[ "$VARIANT" == "red-passes" ]] && git -C "$REPO" add hello.py test_hello.py
 [[ "$VARIANT" == "no-intent-small" ]] && git -C "$REPO" add NOTES.md test_notes.py
 git -C "$REPO" commit -q -m "fixture"
 BASE_SHA="$(git -C "$REPO" rev-parse HEAD)"
 
-FAMILY="$(python3 - "$WORKER" <<'PY'
-import os, sys, tomllib
-from pathlib import Path
-path = Path(os.environ.get("MAGITO_WORKERS_FILE", Path.home() / ".magito" / "workers.toml"))
-try:
-    entry = tomllib.loads(path.read_text()).get("workers", {}).get(sys.argv[1], {})
-    print(entry.get("family") or "unknown")
-except (OSError, tomllib.TOMLDecodeError):
-    print("unknown")
-PY
-)"
-
 cat > "$BRIEF" <<EOF
-Read $MAGITO/skills/general/implement/SKILL.md and follow it on the ticket
-.scratch/0001-hello/01-hello.md. Where it says <skills>, use $MAGITO/skills/general.
-Your own model family is "$FAMILY"; use it as the builder family when you pick a reviewer.
+Read $MAGITO/skills/general/implement/SKILL.md and follow it on the ticket below. Where it
+says <skills>, use $MAGITO/skills/general. The ticket is a local one, and this is its body:
 
-When finished, print your complete final response for this task only between these markers:
-
-MAGITO_FINAL_RESPONSE_BEGIN
-<your complete final response>
-MAGITO_FINAL_RESPONSE_END
-
-Redirect tool output away from standard output. The evaluator extracts this complete final
-response from the worker output.
+$(cat "$TICKET")
 EOF
 
-python3 "$WORKER_PY" run "$WORKER" "$REPO" "$BRIEF" 1800 >"$RAW" 2>"$LOG"
-
-python3 - "$RAW" "$RESPONSE" <<'PYEOF'
-import sys
-
-raw = open(sys.argv[1]).read()
-start = "MAGITO_FINAL_RESPONSE_BEGIN\n"
-end = "MAGITO_FINAL_RESPONSE_END\n"
-if raw.count(start) != 1 or raw.count(end) != 1:
-    raise SystemExit("worker output must contain one final-response marker pair")
-before, rest = raw.split(start, 1)
-response, after = rest.split(end, 1)
-# Some CLIs (omp) echo their answer before the markers too, so text outside the markers
-# is allowed. A question there is not: it could hide an approval request from the checks
-# below, which read only the marked response.
-if "?" in before or "?" in after:
-    raise SystemExit("worker output asks a question outside the final-response markers")
-if not response.endswith("\n"):
-    raise SystemExit("final response must end with a newline before its end marker")
-open(sys.argv[2], "w").write(response)
-PYEOF
+cd "$REPO"
+claude -p --model "$MODEL" --permission-mode auto --output-format json --worktree "$WT_NAME" "$(cat "$BRIEF")" >"$RESULT" 2>"$LOG"
+python3 -c 'import json, sys; open(sys.argv[2], "w").write(json.load(open(sys.argv[1]))["result"])' "$RESULT" "$RESPONSE"
 
 fail() { echo "$LABEL: FAIL ($1)"; exit 1; }
 
@@ -301,54 +284,39 @@ test_first() {
   [[ $later_src -eq 1 ]] || fail "$branch: code committed before its test"
 }
 
-REPO_REAL="$(cd "$REPO" && pwd -P)"
-
-# built_in_worktree <branch>: the branch is checked out in a worktree under
-# .magito/worktrees, where gitflow.sh worktree add puts it.
-built_in_worktree() {
-  git -C "$REPO" worktree list --porcelain | python3 -c '
+# Zero prompts: the run needed no permission it was not granted. Each denial is printed.
+DENIED="$(python3 - "$RESULT" <<'PY'
+import json
 import sys
-root, branch, path = sys.argv[1], sys.argv[2], None
-for line in sys.stdin:
-    line = line.rstrip("\n")
-    if line.startswith("worktree "):
-        path = line[len("worktree "):]
-    elif line == "branch refs/heads/" + branch and path and path.startswith(root + "/.magito/worktrees/"):
-        raise SystemExit(0)
-raise SystemExit(1)' "$REPO_REAL" "$1" || fail "$1 was not built in a worktree under .magito/worktrees"
+
+for d in json.load(open(sys.argv[1]))["permission_denials"]:
+    tool_input = d.get("tool_input") or {}
+    print(f"denied: {d.get('tool_name', '?')}: {tool_input.get('command') or json.dumps(tool_input)}")
+PY
+)"
+if [[ -n "$DENIED" ]]; then
+  echo "$DENIED"
+  fail "the run hit a permission prompt"
+fi
+
+# The old harness's folders never appear, in the main checkout or in the run's worktree.
+for dir in "$REPO" "$WT"; do
+  [[ ! -e "$dir/.magito/worktrees" ]] || fail "a .magito/worktrees folder was created"
+  if compgen -G "$dir/.magito/review-*" >/dev/null; then fail "a .magito/review-* file was created"; fi
+done
+
+# built_in_session_worktree <branch>: the branch is the one checked out in the worktree
+# that `claude -p --worktree` made.
+built_in_session_worktree() {
+  [[ "$(git -C "$WT" branch --show-current 2>/dev/null)" == "$1" ]] \
+    || fail "$1 was not built in the worktree Claude Code made"
 }
 
-# review_recorded <branch>: worker.py record wrote `<sha> reviewed by <name>` for the
-# branch, and the sha is the branch tip. A commit after the review makes it stale.
-review_recorded() {
-  local marker="$REPO/.magito/review-${1//\//-}" sha
-  sha="$(git -C "$REPO" rev-parse "$1")"
-  # The whole record is the first line: the sha and the reviewer together.
-  [[ -f "$marker" ]] \
-    && [[ "$(head -1 "$marker")" =~ ^${sha}\ reviewed\ by\ [A-Za-z0-9._-]+$ ]] \
-    || fail "$1: no review record at the branch tip"
-}
-
-# merge_checkpoint: the response ends at the merge checkpoint. Exactly one line holds a
-# "?", and that line mentions merging. The question can come first or last.
-merge_checkpoint() {
-  local q_count
-  q_count="$(grep -c '?' "$RESPONSE" || true)"
-  [[ "$q_count" -ge 1 ]] || fail "final response does not end at the merge checkpoint"
-  if [[ "$q_count" -ne 1 ]] || ! grep '?' "$RESPONSE" | grep -qi 'merg'; then
-    fail "final response asks a question other than the merge question"
-  fi
-}
-
-# worktrees_in_place: a worktree inside the repo belongs under .magito/worktrees.
-worktrees_in_place() {
-  local wt
-  while IFS= read -r wt; do
-    [[ "$wt" == "$REPO_REAL" ]] && continue
-    [[ "$wt" == "$REPO_REAL/.magito/worktrees/"* ]] && continue
-    [[ "$wt" == "$REPO_REAL"/* ]] && fail "worktree inside the repo but outside .magito/worktrees: $wt"
-  done < <(git -C "$REPO" worktree list --porcelain | sed -n 's/^worktree //p')
-  return 0
+# ready_to_read: the run ends at "ready to read" and, for a Normal ticket, opens no pull
+# request. The fixture has no remote, so the run would have to add one to open it.
+ready_to_read() {
+  grep -qi 'ready to read' "$RESPONSE" || fail "final response does not reach \"ready to read\""
+  [[ -z "$(git -C "$REPO" remote)" ]] || fail "a remote was added; a Normal ticket opens no pull request"
 }
 
 # first_work_branch: the first branch other than main with a commit beyond main; sets BRANCH.
@@ -366,15 +334,18 @@ first_work_branch() {
 if [[ "$VARIANT" == "red-passes" ]]; then
   [[ -z "$(work_branches)" ]] || fail "commits were made although the red check passes"
   [[ "$(git -C "$REPO" rev-parse main)" == "$BASE_SHA" ]] || fail "main moved although the red check passes"
-  grep -Eiq 'rule 4' "$RESPONSE" || fail "final response does not name rule 4"
+  grep -Eiq 'stop 3' "$RESPONSE" || fail "final response does not name stop 3"
   echo "$LABEL: PASS"
 elif [[ "$VARIANT" == "no-intent" ]]; then
   # The run stops at the plan: nothing committed, nothing changed, and a request to
-  # approve the plan. Asking does not excuse a commit or an edit.
+  # approve the plan. Asking does not excuse a commit or an edit. The main checkout
+  # shows the run's worktree under .claude/, which is not a change.
   [[ -z "$(work_branches)" ]] || fail "commits were made before the plan was approved"
   [[ "$(git -C "$REPO" rev-parse main)" == "$BASE_SHA" ]] || fail "commits were made before the plan was approved"
-  [[ -z "$(git -C "$REPO" status --porcelain)" ]] || fail "files were changed before the plan was approved"
-  [[ "$(git -C "$REPO" worktree list --porcelain | grep -c '^worktree ')" -eq 1 ]] \
+  [[ -z "$(git -C "$REPO" status --porcelain -- . ':!.claude' 2>&1)" ]] \
+    && [[ -z "$(git -C "$WT" status --porcelain 2>&1)" ]] \
+    || fail "files were changed before the plan was approved"
+  [[ "$(git -C "$REPO" worktree list --porcelain | grep -c '^worktree ')" -eq 2 ]] \
     || fail "files were changed before the plan was approved"
   # One line names the plan and asks: a question, or a request such as
   # "Approve the plan and I will start", with no question mark.
@@ -382,15 +353,13 @@ elif [[ "$VARIANT" == "no-intent" ]]; then
     || fail "final response does not ask for plan approval"
   echo "$LABEL: PASS"
 elif [[ "$VARIANT" == "no-intent-small" ]]; then
-  # No plan stop: the change is built in a worktree, reviewed, and the run ends at the
-  # merge checkpoint. The ticket names no red check, so test_first does not apply.
+  # No plan stop: the change is built in the run's worktree, and the run ends at
+  # "ready to read". The ticket names no red check, so test_first does not apply.
   first_work_branch
   [[ "$(git -C "$REPO" show "$BRANCH:NOTES.md" 2>/dev/null)" == "greeting: hello" ]] \
     || fail "NOTES.md on $BRANCH does not hold 'greeting: hello'"
-  worktrees_in_place
-  built_in_worktree "$BRANCH"
-  review_recorded "$BRANCH"
-  merge_checkpoint
+  built_in_session_worktree "$BRANCH"
+  ready_to_read
   echo "$LABEL: PASS"
 else
   first_work_branch
@@ -403,16 +372,12 @@ else
   OUT="$(cd "$CHECKOUT" && python3 hello.py "" 2>&1)" || fail "hello.py \"\" failed on $BRANCH"
   [[ "$OUT" == "hello, world" ]] || fail "hello.py \"\" printed '$OUT', expected 'hello, world'"
 
-  worktrees_in_place
-  # The review is proved by its record on disk and the worktree, not by a phrase in the
-  # response: the run's last message is the model's own wording.
-  built_in_worktree "$BRANCH"
-  review_recorded "$BRANCH"
-  merge_checkpoint
+  built_in_session_worktree "$BRANCH"
+  ready_to_read
   echo "$LABEL: PASS"
 fi
 
 echo "response: $RESPONSE"
-echo "raw output: $RAW"
+echo "result: $RESULT"
 echo "log: $LOG"
 echo "repo: $REPO"

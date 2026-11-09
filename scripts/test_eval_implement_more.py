@@ -2,12 +2,12 @@
 # /// script
 # requires-python = ">=3.11"
 # ///
-"""More fake-worker cases for the paid implement evaluator, beside test_eval_implement.py.
+"""More fake-`claude` cases for the paid implement evaluator, beside test_eval_implement.py.
 
 Each case breaks exactly one thing the evaluator must check: a commit on main before the
-plan is approved, a second worktree, a small change built outside a worktree, a wrong
-NOTES.md, and a review record split over two lines. Stdlib only."""
-import json
+plan is approved, a third worktree, an edit in the main checkout, a small change built
+outside the run's worktree, a wrong NOTES.md, a review marker in the main checkout, and two
+permission denials, which must both be printed. Stdlib only."""
 import os
 import subprocess
 import tempfile
@@ -16,42 +16,37 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 EVAL = ROOT / "scripts/eval-implement.sh"
 
-FAKE_WORKER = """#!/usr/bin/env python3
+FAKE_CLAUDE = """#!/usr/bin/env python3
+import json
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 repo = Path.cwd()
 mode = os.environ["IMPLEMENT_FAKE_MODE"]
-BRANCH = "feat/1-hello"
-SLUG = "feat-1-hello"
+name = sys.argv[sys.argv.index("--worktree") + 1]
+WT = repo / ".claude" / "worktrees" / name
 
 
 def git(*args, cwd=repo):
     return subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True, text=True).stdout.strip()
 
 
-def commit(where, message, name, text):
-    (where / name).write_text(text)
-    git("add", name, cwd=where)
+def commit(where, message, file, text):
+    (where / file).write_text(text)
+    git("add", file, cwd=where)
     git("commit", "-m", message, cwd=where)
 
 
-def worktree():
-    path = repo / ".magito" / "worktrees" / SLUG
-    git("worktree", "add", "-q", "-b", BRANCH, str(path))
-    return path
-
-
-def record(text=None):
-    sha = git("rev-parse", BRANCH)
-    (repo / ".magito" / f"review-{SLUG}").write_text(text.format(sha=sha) if text else f"{sha} reviewed by fake\\n")
-
+git("worktree", "add", "-q", "-b", f"worktree-{name}", str(WT))
+git("worktree", "lock", str(WT))
 
 PLAN = "Plan: write the test, then the code.\\nIs this plan fine?\\n"
-MERGE = "Ready to merge feat/1-hello into main?\\n"
-TEST = "import unittest\\nclass T(unittest.TestCase):\\n    def test_x(self):\\n        self.assertTrue(True)\\n"
+READY = "Ready to read. Risk: Normal.\\n"
 CODE = "import sys\\nname = sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] else 'world'\\nprint(f'hello, {name}')\\n"
+TEST = "import subprocess, sys, unittest\\nclass T(unittest.TestCase):\\n    def test_x(self):\\n        self.assertTrue(True)\\n"
+denials = []
 
 if mode == "main-commit":
     commit(repo, "feat: straight onto main", "hello.py", CODE)
@@ -59,70 +54,75 @@ if mode == "main-commit":
 elif mode == "extra-worktree":
     git("worktree", "add", "-q", "--detach", str(repo.parent / "extra-worktree"))
     response = PLAN
+elif mode == "main-edit":
+    (repo / "hello.py").write_text(CODE)
+    response = PLAN
 elif mode == "small-green":
-    where = worktree()
-    commit(where, "docs: fix the greeting", "NOTES.md", "greeting: hello\\n")
-    record()
-    response = MERGE
+    commit(WT, "docs: fix the greeting", "NOTES.md", "greeting: hello\\n")
+    response = READY
 elif mode == "small-no-worktree":
-    git("checkout", "-b", BRANCH)
+    git("checkout", "-b", "feat/1-hello")
     commit(repo, "docs: fix the greeting", "NOTES.md", "greeting: hello\\n")
-    record()
-    response = MERGE
+    response = READY
 elif mode == "small-wrong-notes":
-    where = worktree()
-    commit(where, "docs: change the greeting", "NOTES.md", "greeting: hallo\\n")
-    record()
-    response = MERGE
-elif mode in ("split-record", "one-line-record"):
-    where = worktree()
-    commit(where, "test: add hello test", "test_hello.py", TEST)
-    commit(where, "feat: add hello", "hello.py", CODE)
-    record("{sha} pending\\nx reviewed by fake\\n" if mode == "split-record" else None)
-    response = MERGE
+    commit(WT, "docs: change the greeting", "NOTES.md", "greeting: hallo\\n")
+    response = READY
+elif mode in ("main-review-marker", "two-denials"):
+    commit(WT, "test: add hello test", "test_hello.py", TEST)
+    commit(WT, "feat: add hello", "hello.py", CODE)
+    if mode == "main-review-marker":
+        (repo / ".magito" / "review-worktree-eval").write_text("pending\\n")
+    else:
+        for command in ("git push -u origin worktree-eval", "gh pr create --base main"):
+            denials.append({"tool_name": "Bash", "tool_input": {"command": command}})
+    response = READY
 else:
     raise SystemExit(f"unknown mode {mode}")
 
-print("MAGITO_FINAL_RESPONSE_BEGIN")
-print(response, end="")
-print("MAGITO_FINAL_RESPONSE_END")
+print(json.dumps({"result": response, "permission_denials": denials}))
 """
 
 
 def main() -> None:
     with tempfile.TemporaryDirectory() as temp:
-        roster = Path(temp) / "workers.toml"
-        worker = Path(temp) / "fake_worker.py"
-        worker.write_text(FAKE_WORKER)
-        roster.write_text(f"[workers.fake]\ncmd = {json.dumps('python3 ' + str(worker))}\nfamily = \"test\"\n")
+        bindir = Path(temp)
+        claude = bindir / "claude"
+        claude.write_text(FAKE_CLAUDE)
+        claude.chmod(0o755)
 
         def run(mode: str, variant: str) -> subprocess.CompletedProcess[str]:
-            env = os.environ | {"MAGITO_WORKERS_FILE": str(roster), "IMPLEMENT_FAKE_MODE": mode}
+            env = os.environ | {"PATH": f"{bindir}{os.pathsep}{os.environ['PATH']}", "IMPLEMENT_FAKE_MODE": mode}
             env.pop("MAGITO_EVAL_VARIANT", None)
             if variant:
                 env["MAGITO_EVAL_VARIANT"] = variant
-            return subprocess.run(["bash", str(EVAL), "fake"], text=True, capture_output=True, env=env, check=False)
+            return subprocess.run(["bash", str(EVAL)], text=True, capture_output=True, env=env, check=False)
 
-        def fails(mode: str, variant: str, needle: str) -> None:
+        def fails(mode: str, variant: str, reason: str) -> str:
             r = run(mode, variant)
             label = f"implement ({variant})" if variant else "implement"
             assert r.returncode == 1, (mode, r.stdout + r.stderr)
-            assert f"{label}: FAIL ({needle}" in r.stdout, (mode, r.stdout)
+            assert f"{label}: FAIL ({reason})" in r.stdout, (mode, r.stdout)
+            return r.stdout
 
-        # no-intent: a commit made straight onto main, and a second worktree with a clean tree.
+        # no-intent: a commit straight onto main, a third worktree, and an edit in the
+        # main checkout. The run's own worktree under .claude/ is not a change.
         fails("main-commit", "no-intent", "commits were made before the plan was approved")
         fails("extra-worktree", "no-intent", "files were changed before the plan was approved")
+        fails("main-edit", "no-intent", "files were changed before the plan was approved")
 
         # no-intent-small: the control case passes, and each single fault fails.
         ok = run("small-green", "no-intent-small")
         assert ok.returncode == 0 and "implement (no-intent-small): PASS" in ok.stdout, ok.stdout + ok.stderr
-        fails("small-no-worktree", "no-intent-small", "feat/1-hello was not built in a worktree under .magito/worktrees")
-        fails("small-wrong-notes", "no-intent-small", "NOTES.md on feat/1-hello does not hold 'greeting: hello'")
+        fails("small-no-worktree", "no-intent-small", "feat/1-hello was not built in the worktree Claude Code made")
+        fails("small-wrong-notes", "no-intent-small", "NOTES.md on worktree-eval does not hold 'greeting: hello'")
 
-        # The review record is one line: the sha and the reviewer together.
-        ok = run("one-line-record", "")
-        assert ok.returncode == 0 and "implement: PASS" in ok.stdout, ok.stdout + ok.stderr
-        fails("split-record", "", "feat/1-hello: no review record at the branch tip")
+        # A review marker counts in the main checkout as well as in the run's worktree.
+        fails("main-review-marker", "", "a .magito/review-* file was created")
+
+        # Every denial is printed, not only the first.
+        out = fails("two-denials", "", "the run hit a permission prompt")
+        assert "denied: Bash: git push -u origin worktree-eval" in out, out
+        assert "denied: Bash: gh pr create --base main" in out, out
 
     print("eval-implement-more: ok")
 

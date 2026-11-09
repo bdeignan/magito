@@ -18,13 +18,9 @@
 #      writer's, probing candidates in roster order. See issue #183.
 #   7. The paid to-issues evaluator checks its complete final response and
 #      preserves a worker failure.
-#   8. The paid implement evaluator passes and fails as its fake workers dictate,
+#   8. The paid implement evaluator passes and fails as its fake `claude` dictates,
 #      in its default case and in the red-passes, no-intent, and no-intent-small
-#      variants. It proves a review by the record on disk, not by the response.
-#   9. The paid integrate evaluator (two tickets, resume, closing rule, semantic
-#      conflict) passes and fails as its fake workers dictate. It proves the
-#      final review by the record on disk and fails a pull request body that
-#      names a review result.
+#      variants. One permission denial fails the run.
 #  10. `install.py` links and registers the Codex hooks with a fail-open command, and
 #      installs clean when a stanza has no hooks keys.
 #  11. `gitflow.sh pr` refuses an empty body and a title that does not match
@@ -83,11 +79,9 @@
 #      reviewer failed: the pick skipping the failed workers, else the pick
 #      with no skip, else `subagent`. See issue #262.
 #
-# Not run here, because they start real tools and can cost money: the paid
-# evals (eval-to-issues.sh, eval-implement.sh, eval-integrate.sh, eval-catch-up.sh,
-# eval-handoff.sh, eval-intent.sh) and
-# eval-workers.sh, which runs the worker commands against the real roster and a
-# real reviewer from another model family.
+# Not run here, because they start a real `claude -p` and cost money: the paid
+# evals (eval-to-issues.sh, eval-implement.sh, eval-catch-up.sh, eval-handoff.sh,
+# eval-intent.sh).
 #
 # Collects all failures instead of stopping at the first one, prints a summary,
 # and exits 1 if anything failed, 0 otherwise. Bash and the stdlib Python
@@ -285,18 +279,6 @@ check_eval_implement() {
     echo "eval-implement: FAILED"
     echo "$out" | sed 's/^/    /'
     FAILURES+=("eval-implement pass/fail logic")
-  fi
-}
-
-check_eval_integrate() {
-  local out
-  if out=$(python3 "$REPO_ROOT/scripts/test_eval_integrate.py" 2>&1 \
-      && python3 "$REPO_ROOT/scripts/test_eval_integrate_more.py" 2>&1); then
-    echo "eval-integrate: ok"
-  else
-    echo "eval-integrate: FAILED"
-    echo "$out" | sed 's/^/    /'
-    FAILURES+=("eval-integrate pass/fail logic")
   fi
 }
 
@@ -519,7 +501,6 @@ check_model_invocation
 check_worker_reviewer
 check_eval_to_issues
 check_eval_implement
-check_eval_integrate
 check_install_codex_hooks
 check_gitflow_pr
 check_worker_review

@@ -3,9 +3,9 @@
 # file named NNNN-<slug>.md in the folder the repo configures, with the next free
 # number, the header line `Status: draft · Opened: <today>`, and the seven required
 # sections in order. No other file may change. Run as:
-#   bash scripts/eval-intent.sh <worker>
-# where <worker> names a roster worker. Not part of scripts/check.sh: it calls a
-# paid model. Set MAGITO_EVAL_VARIANT to run another case:
+#   bash scripts/eval-intent.sh [model]
+# where [model] is the model `claude -p` runs, sonnet when left out. Not part of
+# scripts/check.sh: it calls a paid model. Set MAGITO_EVAL_VARIANT to run another case:
 #   (default)    docs/intent/ is empty; the file is docs/intent/0001-<slug>.md
 #   next-number  docs/intent/ holds 0001-a.md and 0003-c.md; the file is
 #                docs/intent/0004-<slug>.md
@@ -13,12 +13,12 @@
 #                design/intents/0001-<slug>.md and nothing is created under docs/intent/
 set -euo pipefail
 
-if [[ $# -ne 1 ]]; then
-  echo "usage: bash scripts/eval-intent.sh <worker>" >&2
+if [[ $# -gt 1 ]]; then
+  echo "usage: bash scripts/eval-intent.sh [model]" >&2
   exit 2
 fi
 
-WORKER="$1"
+MODEL="${1:-sonnet}"
 VARIANT="${MAGITO_EVAL_VARIANT:-}"
 case "$VARIANT" in
   ""|next-number|custom-dir) ;;
@@ -29,16 +29,15 @@ LABEL="intent"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MAGITO="$(cd "$SCRIPT_DIR/.." && pwd)"
-WORKER_PY="$MAGITO/skills/general/implement/scripts/worker.py"
 
 TMP_BASE="$(mktemp -d)"
 echo "eval evidence: $TMP_BASE"
 trap 'eval_status=$?; if [[ $eval_status -ne 0 ]]; then echo "eval failed ($eval_status); evidence: $TMP_BASE" >&2; fi' EXIT
 REPO="$TMP_BASE/repo"
 BRIEF="$TMP_BASE/brief.txt"
-RAW="$TMP_BASE/worker.raw"
-LOG="$TMP_BASE/worker.log"
-RESPONSE="$TMP_BASE/worker.response"
+RESULT="$TMP_BASE/result.json"
+LOG="$TMP_BASE/claude.log"
+RESPONSE="$TMP_BASE/response.txt"
 
 # The temp repo is kept on purpose: the files and logs are the evidence.
 git init -b main "$REPO" >/dev/null 2>&1
@@ -139,31 +138,11 @@ decided. It should stay simple."
 
 Run intent on that change. Do recon, open the draft doc, ask your first question, and stop
 there. Do not wait for an answer and do not accept the doc.
-
-When finished, print your complete final response for this task only between these markers:
-
-MAGITO_FINAL_RESPONSE_BEGIN
-<your complete final response>
-MAGITO_FINAL_RESPONSE_END
-
-Redirect tool output away from standard output. The evaluator extracts this complete final
-response from the worker output.
 EOF
 
-python3 "$WORKER_PY" run "$WORKER" "$REPO" "$BRIEF" 1800 >"$RAW" 2>"$LOG"
-
-python3 - "$RAW" "$RESPONSE" <<'PYEOF'
-import sys
-
-raw = open(sys.argv[1]).read()
-start = "MAGITO_FINAL_RESPONSE_BEGIN\n"
-end = "MAGITO_FINAL_RESPONSE_END\n"
-if raw.count(start) != 1 or raw.count(end) != 1:
-    raise SystemExit("worker output must contain one final-response marker pair")
-before, rest = raw.split(start, 1)
-response, after = rest.split(end, 1)
-open(sys.argv[2], "w").write(response)
-PYEOF
+cd "$REPO"
+claude -p --model "$MODEL" --permission-mode auto --output-format json "$(cat "$BRIEF")" >"$RESULT" 2>"$LOG"
+python3 -c 'import json, sys; open(sys.argv[2], "w").write(json.load(open(sys.argv[1]))["result"])' "$RESULT" "$RESPONSE"
 
 fail() { echo "$LABEL: FAIL ($1)"; exit 1; }
 
@@ -217,6 +196,6 @@ PYEOF
 echo "$LABEL: PASS"
 
 echo "response: $RESPONSE"
-echo "raw output: $RAW"
+echo "result: $RESULT"
 echo "log: $LOG"
 echo "repo: $REPO"

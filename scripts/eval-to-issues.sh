@@ -1,21 +1,20 @@
 #!/usr/bin/env bash
 # eval-to-issues.sh — headless check that to-issues publishes for accepted intents
 # and does not publish for draft intents. Run as:
-#   bash scripts/eval-to-issues.sh <worker>
-# where <worker> names a roster worker. Not part of scripts/check.sh: it calls a
-# paid model.
+#   bash scripts/eval-to-issues.sh [model]
+# where [model] is the model `claude -p` runs, sonnet when left out. Not part of
+# scripts/check.sh: it calls a paid model.
 set -euo pipefail
 
-if [[ $# -ne 1 ]]; then
-  echo "usage: bash scripts/eval-to-issues.sh <worker>" >&2
+if [[ $# -gt 1 ]]; then
+  echo "usage: bash scripts/eval-to-issues.sh [model]" >&2
   exit 2
 fi
 
-WORKER="$1"
+MODEL="${1:-sonnet}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MAGITO="$(cd "$SCRIPT_DIR/.." && pwd)"
-WORKER_PY="$MAGITO/skills/general/implement/scripts/worker.py"
 TRACKER_TEMPLATE="$MAGITO/skills/general/setup-magito/references/issue-tracker-local.md.template"
 
 TMP_BASE="$(mktemp -d)"
@@ -81,29 +80,12 @@ None.
 EOF
 }
 
-run_worker() {
-  local repo="$1" raw="$2" log="$3"
-  python3 "$WORKER_PY" run "$WORKER" "$repo" "$BRIEF" 900 >"$raw" 2>"$log"
-}
-
-extract_final_response() {
-  local raw="$1" response="$2"
-  python3 - "$raw" "$response" <<'PYEOF'
-import sys
-
-raw = open(sys.argv[1]).read()
-start = "MAGITO_FINAL_RESPONSE_BEGIN\n"
-end = "MAGITO_FINAL_RESPONSE_END\n"
-if raw.count(start) != 1 or raw.count(end) != 1:
-    raise SystemExit("worker output must contain one final-response marker pair")
-before, rest = raw.split(start, 1)
-response, after = rest.split(end, 1)
-if before.strip() or after.strip():
-    raise SystemExit("worker output contains text outside the final-response markers")
-if not response.endswith("\n"):
-    raise SystemExit("final response must end with a newline before its end marker")
-open(sys.argv[2], "w").write(response)
-PYEOF
+# run_claude <repo> <result> <log> <response>: one claude -p run in <repo>; its final
+# reply goes to <response>.
+run_claude() {
+  cd "$1"
+  claude -p --model "$MODEL" --permission-mode auto --output-format json "$(cat "$BRIEF")" >"$2" 2>"$3"
+  python3 -c 'import json, sys; open(sys.argv[2], "w").write(json.load(open(sys.argv[1]))["result"])' "$2" "$4"
 }
 
 check_accepted() {
@@ -158,33 +140,22 @@ check_response() {
 
 cat > "$BRIEF" <<EOF
 Read $MAGITO/skills/general/to-issues/SKILL.md and follow it on docs/intent/0001-hello.md. Where it says <skills>, use $MAGITO/skills/general. Do not call implement at the end.
-
-When finished, print your complete final response for this task only between these markers:
-
-MAGITO_FINAL_RESPONSE_BEGIN
-<your complete final response>
-MAGITO_FINAL_RESPONSE_END
-
-Redirect tool output away from standard output. The evaluator extracts this complete final
-response from the worker output.
 EOF
 
 make_repo "$ACCEPTED_DIR" "Status: accepted · Opened: 2026-09-28 · Accepted: 2026-09-28"
 make_repo "$DRAFT_DIR" "Status: draft · Opened: 2026-09-28"
 
 # Logs sit next to the repos, not inside them, so they never land in the tree
-# the worker is running in.
+# claude is running in.
 ACCEPTED_LOG="$TMP_BASE/accepted.log"
 DRAFT_LOG="$TMP_BASE/draft.log"
-ACCEPTED_RAW="$TMP_BASE/accepted.raw"
-DRAFT_RAW="$TMP_BASE/draft.raw"
+ACCEPTED_RESULT="$TMP_BASE/accepted.json"
+DRAFT_RESULT="$TMP_BASE/draft.json"
 ACCEPTED_RESPONSE="$TMP_BASE/accepted.response"
 DRAFT_RESPONSE="$TMP_BASE/draft.response"
 
-run_worker "$ACCEPTED_DIR" "$ACCEPTED_RAW" "$ACCEPTED_LOG"
-extract_final_response "$ACCEPTED_RAW" "$ACCEPTED_RESPONSE"
-run_worker "$DRAFT_DIR" "$DRAFT_RAW" "$DRAFT_LOG"
-extract_final_response "$DRAFT_RAW" "$DRAFT_RESPONSE"
+run_claude "$ACCEPTED_DIR" "$ACCEPTED_RESULT" "$ACCEPTED_LOG" "$ACCEPTED_RESPONSE"
+run_claude "$DRAFT_DIR" "$DRAFT_RESULT" "$DRAFT_LOG" "$DRAFT_RESPONSE"
 
 ACCEPTED_OK=0
 DRAFT_OK=0
@@ -205,8 +176,8 @@ printf 'accepted: %s\n' "$([[ $ACCEPTED_OK -eq 1 ]] && echo PASS || echo FAIL)"
 printf 'draft: %s\n' "$([[ $DRAFT_OK -eq 1 ]] && echo PASS || echo FAIL)"
 echo "accepted response: $ACCEPTED_RESPONSE"
 echo "draft response: $DRAFT_RESPONSE"
-echo "accepted raw output: $ACCEPTED_RAW"
-echo "draft raw output: $DRAFT_RAW"
+echo "accepted result: $ACCEPTED_RESULT"
+echo "draft result: $DRAFT_RESULT"
 echo "accepted log: $ACCEPTED_LOG"
 echo "draft log: $DRAFT_LOG"
 
