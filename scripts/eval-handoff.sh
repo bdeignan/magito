@@ -3,9 +3,9 @@
 # The entry is the only new file under .magito/journal/, it is named
 # YYYY-MM-DD-HHMMSS-<slug>-<six hex digits>.md, and the whole file holds at most 300
 # words. No other file in the repo changes. Run as:
-#   bash scripts/eval-handoff.sh <worker>
-# where <worker> names a roster worker. Not part of scripts/check.sh: it calls a
-# paid model. Set MAGITO_EVAL_VARIANT to run another case:
+#   bash scripts/eval-handoff.sh [model]
+# where [model] is the model `claude -p` runs, sonnet when left out. Not part of
+# scripts/check.sh: it calls a paid model. Set MAGITO_EVAL_VARIANT to run another case:
 #   (default)        the session landed work; the entry holds a **Landed:**, a
 #                    **Next:**, and a **Gotcha:** line
 #   nothing-landed   the session did nothing; the entry holds **Landed:** followed by
@@ -14,12 +14,12 @@
 #                    300 words and the three lines
 set -euo pipefail
 
-if [[ $# -ne 1 ]]; then
-  echo "usage: bash scripts/eval-handoff.sh <worker>" >&2
+if [[ $# -gt 1 ]]; then
+  echo "usage: bash scripts/eval-handoff.sh [model]" >&2
   exit 2
 fi
 
-WORKER="$1"
+MODEL="${1:-sonnet}"
 VARIANT="${MAGITO_EVAL_VARIANT:-}"
 case "$VARIANT" in
   ""|nothing-landed|long-session) ;;
@@ -30,7 +30,6 @@ LABEL="handoff"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MAGITO="$(cd "$SCRIPT_DIR/.." && pwd)"
-WORKER_PY="$MAGITO/skills/general/implement/scripts/worker.py"
 TRACKER_TEMPLATE="$MAGITO/skills/general/setup-magito/references/issue-tracker-local.md.template"
 
 TMP_BASE="$(mktemp -d)"
@@ -38,8 +37,8 @@ echo "eval evidence: $TMP_BASE"
 trap 'eval_status=$?; if [[ $eval_status -ne 0 ]]; then echo "eval failed ($eval_status); evidence: $TMP_BASE" >&2; fi' EXIT
 REPO="$TMP_BASE/repo"
 BRIEF="$TMP_BASE/brief.txt"
-RAW="$TMP_BASE/worker.raw"
-LOG="$TMP_BASE/worker.log"
+RESULT="$TMP_BASE/result.json"
+LOG="$TMP_BASE/claude.log"
 BEFORE="$TMP_BASE/before.json"
 AFTER="$TMP_BASE/after.json"
 
@@ -165,26 +164,10 @@ Read $MAGITO/skills/general/handoff/SKILL.md and follow it to close this session
 names ~/.magito/bin/journal, use $MAGITO/bin/journal. Here is what happened in the session:
 
 $SUMMARY
-
-When finished, print your complete final response for this task only between these markers:
-
-MAGITO_FINAL_RESPONSE_BEGIN
-<your complete final response>
-MAGITO_FINAL_RESPONSE_END
-
-Redirect tool output away from standard output. The evaluator extracts this complete final
-response from the worker output.
 BRIEF_END
 
-python3 "$WORKER_PY" run "$WORKER" "$REPO" "$BRIEF" 900 >"$RAW" 2>"$LOG"
-
-python3 - "$RAW" <<'PYEOF'
-import sys
-
-raw = open(sys.argv[1]).read()
-if raw.count("MAGITO_FINAL_RESPONSE_BEGIN\n") != 1 or raw.count("MAGITO_FINAL_RESPONSE_END\n") != 1:
-    raise SystemExit("worker output must contain one final-response marker pair")
-PYEOF
+cd "$REPO"
+claude -p --model "$MODEL" --permission-mode auto --output-format json "$(<"$BRIEF")" >"$RESULT" 2>"$LOG"
 
 fail() { echo "$LABEL: FAIL ($1)"; exit 1; }
 

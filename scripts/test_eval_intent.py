@@ -2,9 +2,8 @@
 # /// script
 # requires-python = ">=3.11"
 # ///
-"""Process-boundary checks for the paid intent evaluator, using fake workers."""
+"""Process-boundary checks for the paid intent evaluator, using a fake `claude` on PATH."""
 import datetime
-import json
 import os
 import re
 import subprocess
@@ -16,8 +15,9 @@ ROOT = Path(__file__).resolve().parents[1]
 EVAL = ROOT / "scripts/eval-intent.sh"
 TODAY = str(datetime.date.today())
 
-FAKE_WORKER = '''#!/usr/bin/env python3
+FAKE_CLAUDE = '''#!/usr/bin/env python3
 import datetime
+import json
 import os
 import re
 import subprocess
@@ -73,27 +73,26 @@ if mode == "commits":
     subprocess.run(["git", "add", str(folder / name)], cwd=repo, check=True)
     subprocess.run(["git", "commit", "-qm", "draft"], cwd=repo, check=True)
 
-print("MAGITO_FINAL_RESPONSE_BEGIN")
-print("Opened the draft. First question: search or tags? I recommend search.")
-print("MAGITO_FINAL_RESPONSE_END")
+print(json.dumps({"result": "Opened the draft. First question: search or tags? I recommend search.\\n",
+                  "permission_denials": []}))
 '''
 
 
-def run(mode: str, roster: Path, variant: str = "") -> subprocess.CompletedProcess[str]:
-    env = os.environ | {"MAGITO_WORKERS_FILE": str(roster), "INTENT_FAKE_MODE": mode}
+def run(mode: str, bindir: Path, variant: str = "") -> subprocess.CompletedProcess[str]:
+    env = os.environ | {"PATH": f"{bindir}{os.pathsep}{os.environ['PATH']}", "INTENT_FAKE_MODE": mode}
     env.pop("MAGITO_EVAL_VARIANT", None)
     if variant:
         env["MAGITO_EVAL_VARIANT"] = variant
-    return subprocess.run(["bash", str(EVAL), "fake"], text=True, capture_output=True, env=env, check=False)
+    return subprocess.run(["bash", str(EVAL)], text=True, capture_output=True, env=env, check=False)
 
 
 HEADINGS = ("Problem, Proposed outcome, Decisions so far, Affected users and systems, "
             "Out of scope, Constraints, Open questions")
 
 
-def passes(roster: Path, mode: str, variant: str) -> None:
+def passes(bindir: Path, mode: str, variant: str) -> None:
     label = f"intent ({variant})" if variant else "intent"
-    r = run(mode, roster, variant)
+    r = run(mode, bindir, variant)
     assert r.returncode == 0, (mode, variant, r.stdout + r.stderr)
     assert f"{label}: PASS" in r.stdout, (mode, variant, r.stdout)
     # The evidence line is printed and names a directory that still exists.
@@ -101,9 +100,9 @@ def passes(roster: Path, mode: str, variant: str) -> None:
     assert m and Path(m.group(1)).is_dir(), r.stdout
 
 
-def fails(roster: Path, mode: str, variant: str, reason: str) -> None:
+def fails(bindir: Path, mode: str, variant: str, reason: str) -> None:
     label = f"intent ({variant})" if variant else "intent"
-    r = run(mode, roster, variant)
+    r = run(mode, bindir, variant)
     assert r.returncode == 1, (mode, variant, r.stdout + r.stderr)
     expected = f"{label}: FAIL ({reason})"
     assert expected in r.stdout.splitlines(), (mode, variant, expected, r.stdout)
@@ -111,46 +110,42 @@ def fails(roster: Path, mode: str, variant: str, reason: str) -> None:
 
 def main() -> None:
     with tempfile.TemporaryDirectory() as temp:
-        roster = Path(temp) / "workers.toml"
-        worker = Path(temp) / "fake_worker.py"
-        worker.write_text(FAKE_WORKER)
-        roster.write_text(
-            "[workers.fake]\n"
-            f"cmd = {json.dumps('python3 ' + str(worker))}\n"
-            'family = "test"\n'
-        )
+        bindir = Path(temp)
+        claude = bindir / "claude"
+        claude.write_text(FAKE_CLAUDE)
+        claude.chmod(0o755)
 
         # Passing runs, one per scenario. An optional "Not yet clear" section is allowed.
         for variant in ("", "next-number", "custom-dir"):
-            passes(roster, "green", variant)
-        passes(roster, "with-not-yet-clear", "")
+            passes(bindir, "green", variant)
+        passes(bindir, "with-not-yet-clear", "")
 
         # default: docs/intent/ is empty, the file is 0001-<slug>.md.
-        fails(roster, "no-file", "", "expected exactly one new file, found 0")
-        fails(roster, "extra-file", "", "expected exactly one new file, found 2")
-        fails(roster, "edits-tracked", "", "a file other than the new one changed")
-        fails(roster, "commits", "", "a commit was made; intent must leave the draft uncommitted")
-        fails(roster, "wrong-slug", "", "new file is docs/intent/0001-Bad_Slug.md, expected docs/intent/0001-<slug>.md")
-        fails(roster, "accepted", "", f"header line does not start with 'Status: draft · Opened: {TODAY}'")
-        fails(roster, "old-date", "", f"header line does not start with 'Status: draft · Opened: {TODAY}'")
-        fails(roster, "swapped-sections", "", f"headings are not {HEADINGS} in order")
-        fails(roster, "missing-section", "", f"headings are not {HEADINGS} in order")
+        fails(bindir, "no-file", "", "expected exactly one new file, found 0")
+        fails(bindir, "extra-file", "", "expected exactly one new file, found 2")
+        fails(bindir, "edits-tracked", "", "a file other than the new one changed")
+        fails(bindir, "commits", "", "a commit was made; intent must leave the draft uncommitted")
+        fails(bindir, "wrong-slug", "", "new file is docs/intent/0001-Bad_Slug.md, expected docs/intent/0001-<slug>.md")
+        fails(bindir, "accepted", "", f"header line does not start with 'Status: draft · Opened: {TODAY}'")
+        fails(bindir, "old-date", "", f"header line does not start with 'Status: draft · Opened: {TODAY}'")
+        fails(bindir, "swapped-sections", "", f"headings are not {HEADINGS} in order")
+        fails(bindir, "missing-section", "", f"headings are not {HEADINGS} in order")
 
         # next-number: 0001 and 0003 exist, so the next free number is 0004.
-        fails(roster, "gap-filled", "next-number",
+        fails(bindir, "gap-filled", "next-number",
               "new file is docs/intent/0002-find-old-notes.md, expected docs/intent/0004-<slug>.md")
-        fails(roster, "no-file", "next-number", "expected exactly one new file, found 0")
+        fails(bindir, "no-file", "next-number", "expected exactly one new file, found 0")
 
         # custom-dir: the file goes to design/intents/, and docs/intent/ stays absent.
-        fails(roster, "wrong-dir", "custom-dir",
+        fails(bindir, "wrong-dir", "custom-dir",
               "new file is docs/intent/0001-find-old-notes.md, expected design/intents/0001-<slug>.md")
-        fails(roster, "no-file", "custom-dir", "expected exactly one new file, found 0")
+        fails(bindir, "no-file", "custom-dir", "expected exactly one new file, found 0")
 
-        failed = run("worker-failure", roster)
+        failed = run("worker-failure", bindir)
         assert failed.returncode == 73, failed.stdout + failed.stderr
 
         # An unknown variant is a usage error.
-        r = run("green", roster, "no-such-variant")
+        r = run("green", bindir, "no-such-variant")
         assert r.returncode == 2 and "unknown MAGITO_EVAL_VARIANT" in r.stderr, r.stdout + r.stderr
 
     print("eval-intent: ok")

@@ -2,8 +2,7 @@
 # /// script
 # requires-python = ">=3.11"
 # ///
-"""Process-boundary checks for the paid handoff evaluator, using fake workers."""
-import json
+"""Process-boundary checks for the paid handoff evaluator, using a fake `claude` on PATH."""
 import os
 import subprocess
 import tempfile
@@ -14,7 +13,8 @@ ROOT = Path(__file__).resolve().parents[1]
 EVAL = ROOT / "scripts/eval-handoff.sh"
 
 
-FAKE_WORKER = '''#!/usr/bin/env python3
+FAKE_CLAUDE = '''#!/usr/bin/env python3
+import json
 import os
 from datetime import datetime
 from pathlib import Path
@@ -89,30 +89,28 @@ elif mode == "nothing-later":
 else:
     write(name, text)
 
-print("MAGITO_FINAL_RESPONSE_BEGIN")
-print("Wrote the journal entry.")
-print("MAGITO_FINAL_RESPONSE_END")
+print(json.dumps({"result": "Wrote the journal entry.\\n", "permission_denials": []}))
 '''
 
 
-def run(mode: str, roster: Path, variant: str = "") -> subprocess.CompletedProcess[str]:
-    env = os.environ | {"MAGITO_WORKERS_FILE": str(roster), "HANDOFF_FAKE_MODE": mode}
+def run(mode: str, bindir: Path, variant: str = "") -> subprocess.CompletedProcess[str]:
+    env = os.environ | {"PATH": f"{bindir}{os.pathsep}{os.environ['PATH']}", "HANDOFF_FAKE_MODE": mode}
     env.pop("MAGITO_EVAL_VARIANT", None)
     if variant:
         env["MAGITO_EVAL_VARIANT"] = variant
-    return subprocess.run(["bash", str(EVAL), "fake"], text=True, capture_output=True, env=env, check=False)
+    return subprocess.run(["bash", str(EVAL)], text=True, capture_output=True, env=env, check=False)
 
 
-def expect_pass(mode: str, roster: Path, variant: str = "") -> None:
+def expect_pass(mode: str, bindir: Path, variant: str = "") -> None:
     label = "handoff" + (f" ({variant})" if variant else "")
-    r = run(mode, roster, variant)
+    r = run(mode, bindir, variant)
     assert r.returncode == 0, (mode, variant, r.stdout + r.stderr)
     assert f"{label}: PASS" in r.stdout, (mode, variant, r.stdout)
 
 
-def expect_fail(mode: str, roster: Path, reason: str, variant: str = "") -> None:
+def expect_fail(mode: str, bindir: Path, reason: str, variant: str = "") -> None:
     label = "handoff" + (f" ({variant})" if variant else "")
-    r = run(mode, roster, variant)
+    r = run(mode, bindir, variant)
     assert r.returncode == 1, (mode, variant, r.stdout + r.stderr)
     assert f"{label}: FAIL ({reason})" in r.stdout, (mode, variant, r.stdout)
 
@@ -125,51 +123,47 @@ LONG = "journal entry is over 300 words"
 
 def main() -> None:
     with tempfile.TemporaryDirectory() as temp:
-        roster = Path(temp) / "workers.toml"
-        worker = Path(temp) / "fake_worker.py"
-        worker.write_text(FAKE_WORKER)
-        roster.write_text(
-            "[workers.fake]\n"
-            f"cmd = {json.dumps('python3 ' + str(worker))}\n"
-            'family = "test"\n'
-        )
+        bindir = Path(temp)
+        claude = bindir / "claude"
+        claude.write_text(FAKE_CLAUDE)
+        claude.chmod(0o755)
 
         # Default: the session landed work.
-        expect_pass("green", roster)
-        expect_pass("limit-exact", roster)  # 300 words, title included, is allowed
-        expect_fail("no-entry", roster, ONE_FILE.format(0))
-        expect_fail("two-entries", roster, ONE_FILE.format(2))
-        expect_fail("extra-file", roster, OTHER)
-        expect_fail("new-other-file", roster, OTHER)
-        expect_fail("edits-old-entry", roster, OTHER)
-        expect_fail("bad-name", roster, NAME)
-        expect_fail("no-hex", roster, NAME)
-        expect_fail("minutes-only", roster, NAME)
-        expect_fail("too-long", roster, LONG)
-        expect_fail("limit-over", roster, LONG)
-        expect_fail("no-landed", roster, "journal entry has no **Landed:** line")
-        expect_fail("no-next", roster, "journal entry has no **Next:** line")
-        expect_fail("no-gotcha", roster, "journal entry has no **Gotcha:** line")
+        expect_pass("green", bindir)
+        expect_pass("limit-exact", bindir)  # 300 words, title included, is allowed
+        expect_fail("no-entry", bindir, ONE_FILE.format(0))
+        expect_fail("two-entries", bindir, ONE_FILE.format(2))
+        expect_fail("extra-file", bindir, OTHER)
+        expect_fail("new-other-file", bindir, OTHER)
+        expect_fail("edits-old-entry", bindir, OTHER)
+        expect_fail("bad-name", bindir, NAME)
+        expect_fail("no-hex", bindir, NAME)
+        expect_fail("minutes-only", bindir, NAME)
+        expect_fail("too-long", bindir, LONG)
+        expect_fail("limit-over", bindir, LONG)
+        expect_fail("no-landed", bindir, "journal entry has no **Landed:** line")
+        expect_fail("no-next", bindir, "journal entry has no **Next:** line")
+        expect_fail("no-gotcha", bindir, "journal entry has no **Gotcha:** line")
 
         # nothing-landed: one Landed line that says nothing, and no Next or Gotcha line.
-        expect_pass("green", roster, "nothing-landed")
-        expect_fail("landed-work", roster, "the Landed line does not say nothing", "nothing-landed")
-        expect_fail("nothing-later", roster, "the Landed line does not say nothing", "nothing-landed")
-        expect_fail("two-entries", roster, ONE_FILE.format(2), "nothing-landed")
-        expect_fail("bad-name", roster, NAME, "nothing-landed")
-        expect_fail("too-long", roster, LONG, "nothing-landed")
+        expect_pass("green", bindir, "nothing-landed")
+        expect_fail("landed-work", bindir, "the Landed line does not say nothing", "nothing-landed")
+        expect_fail("nothing-later", bindir, "the Landed line does not say nothing", "nothing-landed")
+        expect_fail("two-entries", bindir, ONE_FILE.format(2), "nothing-landed")
+        expect_fail("bad-name", bindir, NAME, "nothing-landed")
+        expect_fail("too-long", bindir, LONG, "nothing-landed")
 
         # long-session: a summary over 1,000 words still gives an entry of at most 300.
-        expect_pass("green", roster, "long-session")
-        expect_fail("too-long", roster, LONG, "long-session")
-        expect_fail("no-gotcha", roster, "journal entry has no **Gotcha:** line", "long-session")
-        expect_fail("two-entries", roster, ONE_FILE.format(2), "long-session")
+        expect_pass("green", bindir, "long-session")
+        expect_fail("too-long", bindir, LONG, "long-session")
+        expect_fail("no-gotcha", bindir, "journal entry has no **Gotcha:** line", "long-session")
+        expect_fail("two-entries", bindir, ONE_FILE.format(2), "long-session")
 
-        failed = run("worker-failure", roster)
+        failed = run("worker-failure", bindir)
         assert failed.returncode == 73, failed.stdout + failed.stderr
 
         # An unknown variant is a usage error.
-        r = run("green", roster, "no-such-variant")
+        r = run("green", bindir, "no-such-variant")
         assert r.returncode == 2 and "unknown MAGITO_EVAL_VARIANT" in r.stderr, r.stdout + r.stderr
 
     print("eval-handoff: ok")
