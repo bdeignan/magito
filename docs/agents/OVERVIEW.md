@@ -17,8 +17,8 @@ take on the governed multi-agent idea — not a framework built for anyone else 
 - **Install by symlink, not copy.** Each tool's native config path points back at this repo,
   so there is one source of truth and editing a skill or instruction takes effect without a
   copy step in between.
-- **Stdlib-only Python.** The installer and hooks must run on a bare Python with no
-  dependency step — they are plumbing, not an application.
+- **Stdlib-only Python.** The installer must run on a bare Python with no
+  dependency step — it is plumbing, not an application.
 - **Skills are prose; the user is the check.** Behavior lives in prose skills an agent reads,
   and the core rules are restated in a shared instruction file every tool reads. magito keeps
   no enforcement layer of scripts or hooks (ADR 0021). A slip shows in the diff the user reads,

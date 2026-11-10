@@ -42,7 +42,7 @@ Read the starting state and classify each item. **Configured** = present and cur
 | Legacy notes to import | scan for pre-magito notes (see §Legacy notes) | repo root, `docs/` |
 | magi seats | `~/.magito/bench.toml` present | `~/.magito/bench.toml` |
 | Python toolchain | `pyproject.toml`, `tests/`, `src/` layout, and a `## Python` section in whichever of `CLAUDE.md`/`AGENTS.md` holds the repo's instructions that matches `references/python-rules.md.template`. No `pyproject.toml`, and the user does not ask for a Python scaffold: `skipped: not a Python project` | repo root, `CLAUDE.md`/`AGENTS.md` |
-| Managed symlinks | dangling magito-owned links in tool dirs | `~/.magito/bin`, tool skills/agents/hooks dirs |
+| Managed symlinks | dangling magito-owned links in tool dirs | `~/.magito/bin`, tool skills/agents dirs |
 
 Read, do not assume: `git remote -v` (is this GitHub?), `CLAUDE.md`/`AGENTS.md`, `docs/agents/` and which files it holds, whether `CLAUDE.md` already imports `@docs/agents/INDEX.md`, `docs/adr/`, `pyproject.toml`, `.scratch/`, `.magito/config.toml`, `GEMINI.md`/`.gemini/settings.json`, and `.git/info/exclude`. A tracker doc or a `docs/agents/` file that already exists is a **diff-and-propose**, never an overwrite.
 
@@ -209,7 +209,7 @@ After writing the section, count the lines of the file that holds it (`wc -l`). 
 
 ### Managed symlinks
 
-`install.py` links this repo's skills, agents, hooks, and `bin/` into each tool's config dirs. A renamed or deleted skill can leave a **dangling** link behind (the old name still points at a file that is gone). Report any you find as **stale**, and offer to run `python install.py` from the magito checkout (found as the Audit version section describes), not from this repo — which prunes magito-owned dangling links as part of a normal run (`--dry-run` shows what it would remove first). Do not delete links here yourself; `install.py` owns its destinations.
+`install.py` links this repo's skills, agents, and `bin/` into each tool's config dirs. A renamed or deleted skill can leave a **dangling** link behind (the old name still points at a file that is gone). Report any you find as **stale**, and offer to run `python install.py` from the magito checkout (found as the Audit version section describes), not from this repo — which prunes magito-owned dangling links as part of a normal run (`--dry-run` shows what it would remove first). Do not delete links here yourself; `install.py` owns its destinations.
 
 ### Agent docs (`docs/agents/`)
 

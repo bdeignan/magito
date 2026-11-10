@@ -14,8 +14,6 @@ Reads install.toml (copy from install.toml.example and edit), or the file given 
     ~/.agents/skills standard for most tools, ~/.claude/skills for Claude, ~/.gemini/config/skills
     for Antigravity)
   - For Claude (detected by presence of 'agents' key): also links skills/claude/* and agents/*.md
-  - For tools with a 'hooks' key: also links hooks/*.py and merges them into the adjacent settings.json as PreToolUse hooks.
-    With a 'hooks_config' key, they merge into that file instead, as fail-open commands (Codex)
   - Symlinks bin/* to ~/.magito/bin/ (machine-global commands like journal, tool-independent)
   - Regenerates skills/INDEX.md from SKILL.md frontmatter (human reference only; agents discover via SKILL.md)
 
@@ -26,9 +24,7 @@ Safety:
 """
 
 import argparse
-import json
 import os
-import shlex
 import tomllib
 from datetime import datetime
 from pathlib import Path
@@ -75,91 +71,9 @@ def link(src: Path, dst: Path, dry_run: bool, force: bool) -> str:
     return "created"
 
 
-def fail_open_command(path: str) -> str:
-    """A hook command that exits 0 without output when its script is missing."""
-    return f"""sh -c 'test -x "$0" || exit 0; exec "$0"' {shlex.quote(path)}"""
-
-
-def merge_hook_settings(
-    settings_path: Path, commands: list[str], dry_run: bool, fail_open: bool = False
-) -> str:
-    """Register hook scripts as PreToolUse hooks in settings_path.
-
-    commands holds the absolute path of each hook script. With fail_open, each is
-    registered as fail_open_command(path), and an existing command that names the
-    same script (bare, quoted, or wrapped) is rewritten in place instead of added
-    a second time.
-    """
-    name = settings_path.name
-    existed = settings_path.exists()
-    settings: dict = {}
-    if existed:
-        text = settings_path.read_text()
-        if text.strip():
-            try:
-                settings = json.loads(text)
-            except json.JSONDecodeError:
-                return f"SKIPPED ({name} unparseable — merge hooks manually)"
-
-    entries = settings.get("hooks", {}).get("PreToolUse", [])
-    to_add: list[str] = []
-    rewrites = 0
-    for path in commands:
-        desired = fail_open_command(path) if fail_open else path
-        found = False
-        for entry in entries:
-            for h in entry.get("hooks", []):
-                cmd = h.get("command")
-                if not cmd:
-                    continue
-                if cmd == desired:
-                    found = True
-                elif fail_open:
-                    try:
-                        belongs = path in shlex.split(cmd)
-                    except ValueError:
-                        belongs = False
-                    if belongs:
-                        found = True
-                        rewrites += 1
-                        h["command"] = desired
-        if not found:
-            to_add.append(desired)
-
-    if not to_add and not rewrites:
-        return "already configured"
-
-    changes = ", ".join(
-        part
-        for part in (
-            f"merged {len(to_add)} hook(s)" if to_add else "",
-            f"upgraded {rewrites} hook(s)" if rewrites else "",
-        )
-        if part
-    )
-    if dry_run:
-        return f"would change: {changes}"
-
-    settings.setdefault("hooks", {}).setdefault("PreToolUse", [])
-    for cmd in to_add:
-        settings["hooks"]["PreToolUse"].append(
-            {"matcher": "Bash", "hooks": [{"type": "command", "command": cmd}]}
-        )
-
-    if existed:
-        timestamp = datetime.now().strftime("%Y%m%dT%H%M%S")
-        backup = settings_path.parent / (settings_path.name + f".bak.{timestamp}")
-        settings_path.rename(backup)
-        print(f"    backed up → {backup.name}")
-
-    settings_path.parent.mkdir(parents=True, exist_ok=True)
-    settings_path.write_text(json.dumps(settings, indent=2) + "\n")
-    return changes
-
-
 def prune_orphans(managed_dirs: set[Path], repo_root: Path, dry_run: bool) -> list[tuple[str, str, str, str]]:
     """Remove dangling symlinks left behind in managed_dirs by a renamed or
-    deleted skill/agent/hook/bin command.
+    deleted skill/agent/bin command.
 
     Only touches immediate children of managed_dirs that are (a) symlinks
     (never a regular file or directory) and (b) dangling — their target no
@@ -325,34 +239,6 @@ def main() -> None:
                     dst = output_styles_dst / style_file.name
                     status = link(style_file, dst, args.dry_run, args.force)
                     results.append((tool_name, f"output-styles/claude/{style_file.name}", str(dst), status))
-
-        # Hook scripts + settings.json registration
-        hooks_dst_raw = tool_config.get("hooks")
-        if hooks_dst_raw:
-            hooks_dst = Path(hooks_dst_raw).expanduser()
-            managed_dirs.add(hooks_dst)
-            hooks_src_dir = repo_root / "hooks"
-            hook_dst_paths: list[str] = []
-            if hooks_src_dir.exists():
-                for hook_file in sorted(hooks_src_dir.glob("*.py")):
-                    dst = hooks_dst / hook_file.name
-                    status = link(hook_file, dst, args.dry_run, args.force)
-                    results.append((tool_name, f"hooks/{hook_file.name}", str(dst), status))
-                    # Codex may run a command from any directory, so its registration needs an absolute path.
-                    hook_dst_paths.append(os.path.abspath(dst) if tool_config.get("hooks_config") else str(dst))
-                    if not args.dry_run:
-                        hook_file.chmod(0o755)
-
-            if hook_dst_paths:
-                hooks_config_raw = tool_config.get("hooks_config")
-                if hooks_config_raw:
-                    settings_path = Path(hooks_config_raw).expanduser()
-                    fail_open = True
-                else:
-                    settings_path = hooks_dst.parent / "settings.json"
-                    fail_open = False
-                status = merge_hook_settings(settings_path, hook_dst_paths, args.dry_run, fail_open)
-                results.append((tool_name, f"{settings_path.name} (hooks)", str(settings_path), status))
 
     # Machine-local session tooling (the journal command): tool-independent, always
     # installed.

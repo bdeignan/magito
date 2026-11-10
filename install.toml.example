@@ -3,17 +3,12 @@ enabled = true
 instructions = "~/.claude/CLAUDE.md"
 skills = "~/.claude/skills"
 agents = "~/.claude/agents"
-hooks = "~/.claude/hooks"
 output-styles = "~/.claude/output-styles"
 
 [tools.codex]
 enabled = true
 instructions = "~/.codex/AGENTS.md"
 skills = "~/.agents/skills"
-# Guardrail hooks are optional quality of life. A machine that cannot run hooks deletes
-# the next two lines and works normally.
-hooks = "~/.codex/hooks"
-hooks_config = "~/.codex/hooks.json"
 
 [tools.gemini]
 enabled = false

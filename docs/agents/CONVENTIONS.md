@@ -52,9 +52,8 @@ one points rather than recopies.
 The one exception, and its cost: when an agent must apply a rule *at the point of decision*
 mid-flow — `intent/references/recon.md` states both gates inline because promotion is judged
 right there — a restatement is allowed, but as a synced copy, not a fork. Name the canonical
-source and flag it "change one, change the other," the way `hooks/staging-guard.py` and
-`hooks/review-gate.py` already do. The unflagged paraphrase is the failure; the flagged,
-sourced copy is the accepted cost.
+source and flag it "change one, change the other." The unflagged paraphrase is the failure;
+the flagged, sourced copy is the accepted cost.
 
 ## Commands in skills
 
@@ -134,7 +133,5 @@ happened to block them from being called by another skill.
 audit (#150) found no agent CLI charges less for a script than for the command inside it, and
 the ones that inspect commands charge more — while reading a file is free on every tool. So
 phrase an operation as a file read where you can, a plain native command otherwise, and reserve
-wrapper scripts for work that carries real behaviour: a gate, an argument check. `issues.sh`'s
-mutating verbs earn their wrapper; `list`/`view` did not, which is why the tracker doc leads
-with plain `gh` for those. For the `awk`-vs-`head` split between scripts and prose, see the
-comment in `gitflow.sh`'s `main_worktree`.
+wrapper scripts for work that carries real behaviour: a gate, an argument check. That is
+why the tracker doc names plain `gh` commands.
