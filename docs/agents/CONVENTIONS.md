@@ -133,5 +133,5 @@ happened to block them from being called by another skill.
 audit (#150) found no agent CLI charges less for a script than for the command inside it, and
 the ones that inspect commands charge more — while reading a file is free on every tool. So
 phrase an operation as a file read where you can, a plain native command otherwise, and reserve
-wrapper scripts for work that carries real behaviour: a gate, an argument check. The old
-tracker wrapper script is gone for that reason: the tracker doc names plain `gh` commands.
+wrapper scripts for work that carries real behaviour: a gate, an argument check. That is
+why the tracker doc names plain `gh` commands.
