@@ -6,7 +6,7 @@
 - The stops
 
 Every ticket runs these steps, whether it comes from an accepted intent or not, alone or in a
-batch. `SKILL.md` runs first: for a ticket with no accepted intent, it stops once for plan
+batch. `SKILL.md` runs first: for a ticket nobody approved, it stops once for plan
 approval. The user watches the session, and reads the diff after the "ready to read" message
 in step 11. Run each command as one plain call, with no `;`, `&&`, `|`, `$(...)`, or shell
 variables (`docs/agents/CONVENTIONS.md`, "Commands in skills").
