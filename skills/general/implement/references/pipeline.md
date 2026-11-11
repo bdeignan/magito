@@ -58,7 +58,7 @@ variables (`docs/agents/CONVENTIONS.md`, "Commands in skills").
       holds `test_*.py` files: `uv run pytest` when `uv.lock` exists, otherwise
       `python3 -m pytest`.
 
-   If none of these exists, that is stop 4. The check must pass.
+   If none of these exists, that is stop 4. Whichever command you use, it must pass.
 6. **Commit** whenever the check passes: after the build, after `/simplify`, and after each
    round of review fixes. Run `git add <file>` for each file you changed, by name, then
    `git commit -m "<title>"` with a Conventional Commits title. Leave changes you did not make
@@ -83,9 +83,9 @@ variables (`docs/agents/CONVENTIONS.md`, "Commands in skills").
 11. **"Ready to read".** Send one message. It holds each command you ran and its output (not a
     claim that it passed), each finding marked fixed or dismissed with a reason, the
     Pre-existing findings, and the ticket's risk. When the check command came from the
-    step 5 fallback, name that command and the file where you found it. On a High ticket, add that the user's read
-    includes `reviewing-changes` (the conformance check). On a Normal or High ticket, stop
-    after this message and wait for the user.
+    step 5 fallback, name that command and the file where you found it. On a High ticket, add
+    that the user's read includes `reviewing-changes` (the conformance check). On a Normal or
+    High ticket, stop after this message and wait for the user.
 12. **Pull request.** When `git remote -v` shows a GitHub remote: on a Low ticket, open it now,
     right after the "ready to read" message. On Normal and High tickets, open it only when the
     user says to. First run `git status --short`. If it shows a change you made that is not
