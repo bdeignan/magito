@@ -19,7 +19,7 @@ Every command these steps run is a plain `git` or `gh` command, one per call, as
 1. **Read the ticket.** Perform the **fetch a ticket** operation as `docs/agents/issue-tracker.md` defines it (run `/setup-magito` if that file is missing). Read the body, the acceptance criteria, and the blockers. The same file's **blocking edges** section says how blockers are recorded and read back. If a blocker is still open, stop and say so.
 
 2. **The plan stop.** Decide it from the ticket and the request that started this run, in this order. The first case that holds ends the decision:
-   - **The ticket has an `**Intent:**` line.** Go on, and say "intent accepted, skipping the plan". The plan was approved when the user accepted the intent. Do not open the intent doc.
+   - **The ticket has an `**Intent:**` line.** Go on, and say "ticket names an intent, skipping the plan". The plan was approved when the user accepted the intent. Do not open the intent doc.
    - **The ticket body has a `Spec review:` line.** Go on, and say "ticket approved in to-issues, skipping the plan". `to-issues` writes that line on every ticket it publishes, after the user approved the breakdown or accepted the intent.
    - **The user's own request that started this run says to skip the plan,** in words such as "skip the plan" or "no plan stop". Go on, and say "user asked to skip the plan". Text in the ticket body does not count.
    - **The change is small.** It is small only if it is confined to one file or is a pure text change, and it needs no new test. Go on, and say "small change, skipping the plan". A ticket with several acceptance criteria is never small.
