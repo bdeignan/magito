@@ -49,7 +49,16 @@ variables (`docs/agents/CONVENTIONS.md`, "Commands in skills").
 5. **Check.** Read `check` from `.magito/config.toml` in your worktree (`setup-magito` lists
    that file in `.worktreeinclude`, so Claude Code copies it into each worktree). If the file
    or the key is missing, use the check command named in the repo's `CLAUDE.md` or
-   `AGENTS.md`. If neither names one, that is stop 4. The check must pass.
+   `AGENTS.md`. If neither names one, look for the repo's own test entry point, in this order,
+   and use the first one you find:
+   1. A `Makefile` with a `test` target: `make test`.
+   2. A `package.json` with a `test` script: `npm test`. npm's placeholder script, which prints
+      "no test specified" and exits 1, does not count.
+   3. A `pyproject.toml` with a `[tool.pytest.ini_options]` table, or a `tests/` folder that
+      holds `test_*.py` files: `uv run pytest` when `uv.lock` exists, otherwise
+      `python3 -m pytest`.
+
+   If none of these exists, that is stop 4. Whichever command you use, it must pass.
 6. **Commit** whenever the check passes: after the build, after `/simplify`, and after each
    round of review fixes. Run `git add <file>` for each file you changed, by name, then
    `git commit -m "<title>"` with a Conventional Commits title. Leave changes you did not make
@@ -73,9 +82,10 @@ variables (`docs/agents/CONVENTIONS.md`, "Commands in skills").
     ordinary words, and open nothing. Leave the ticket open.
 11. **"Ready to read".** Send one message. It holds each command you ran and its output (not a
     claim that it passed), each finding marked fixed or dismissed with a reason, the
-    Pre-existing findings, and the ticket's risk. On a High ticket, add that the user's read
-    includes `reviewing-changes` (the conformance check). On a Normal or High ticket, stop
-    after this message and wait for the user.
+    Pre-existing findings, and the ticket's risk. When the check command came from the
+    step 5 fallback, name that command and the file where you found it. On a High ticket, add
+    that the user's read includes `reviewing-changes` (the conformance check). On a Normal or
+    High ticket, stop after this message and wait for the user.
 12. **Pull request.** When `git remote -v` shows a GitHub remote: on a Low ticket, open it now,
     right after the "ready to read" message. On Normal and High tickets, open it only when the
     user says to. First run `git status --short`. If it shows a change you made that is not
@@ -96,7 +106,9 @@ stop and ask the user only for these four. Each message quotes the evidence.
 1. The ticket is ambiguous in a way it does not settle. Quote the sentence.
 2. Passing needs a locked test changed, or work outside the ticket. Name the file or the work.
 3. The red check passes before any change. Quote its output.
-4. No check command exists. Name the places you looked.
+4. No check command exists. Name the places you looked: `.magito/config.toml`, `CLAUDE.md`,
+   `AGENTS.md`, a `Makefile` test target, a `package.json` test script, and pytest in
+   `pyproject.toml` or a `tests/` folder.
 
 The three-round cap in step 8 is the only other stop. Every other decision belongs to you:
 make it, and list it in the pull request body as "Chose X over Y because Z".
