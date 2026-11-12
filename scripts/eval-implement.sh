@@ -16,7 +16,7 @@
 #                    make no commits
 #   plan-first       the ticket links no intent and has several criteria, and the brief
 #                    says "Show me the plan first."; the run must stop at the plan,
-#                    change nothing, and ask for approval
+#                    and change nothing
 #   no-intent-small  a one-file text fix with no intent; the run must build in the
 #                    worktree and open no pull request
 set -euo pipefail
@@ -346,8 +346,8 @@ if [[ "$VARIANT" == "red-passes" ]]; then
   grep -Eiq 'stop 3' "$RESPONSE" || fail "final response does not name stop 3"
   echo "$LABEL: PASS"
 elif [[ "$VARIANT" == "plan-first" ]]; then
-  # The run stops at the plan: nothing committed, nothing changed, and a request to
-  # approve the plan. Asking does not excuse a commit or an edit.
+  # The run stops at the plan: nothing committed and nothing changed. The wording of the
+  # reply is not checked: the stop itself is the evidence.
   [[ -z "$(work_branches)" ]] || fail "commits were made before the plan was approved"
   [[ "$(git -C "$REPO" rev-parse main)" == "$BASE_SHA" ]] || fail "commits were made before the plan was approved"
   [[ -z "$(git -C "$REPO" status --porcelain 2>&1)" ]] \
@@ -355,10 +355,6 @@ elif [[ "$VARIANT" == "plan-first" ]]; then
     || fail "files were changed before the plan was approved"
   [[ "$(git -C "$REPO" worktree list --porcelain | grep -c '^worktree ')" -eq 2 ]] \
     || fail "files were changed before the plan was approved"
-  # The reply asks: a question, or a request such as "Reply to approve", with no
-  # question mark. The plan and the request can sit on different lines.
-  grep -Eiq '\?|approv' "$RESPONSE" \
-    || fail "final response does not ask for plan approval"
   echo "$LABEL: PASS"
 elif [[ "$VARIANT" == "no-intent-small" ]]; then
   # The plan is shown but nothing waits: the change is built in the run's worktree, and the

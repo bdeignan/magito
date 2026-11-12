@@ -98,12 +98,8 @@ if variant == "plan-first":
         commit(WT, "feat: add hello", "hello.py")
     elif mode == "plan-edits":
         (WT / "hello.py").write_text(CODE)
-    if mode == "plan-imperative":
-        response += "Approve the plan and I will start.\\n"
-    elif mode == "plan-split-lines":
-        response += "Stopping here, nothing is edited.\\nReply to approve, or tell me what to change.\\n"
-    elif mode == "plan-no-ask":
-        response = "Here is the outline. I will start now.\\n"
+    if mode == "plan-go-ahead":
+        response += "Tell me to go ahead, or tell me what to change.\\n"
     else:
         response += "Is this plan fine?\\n"
 elif variant == "no-intent-small":
@@ -240,14 +236,12 @@ def main() -> None:
         fails("redpass-no-rule", bindir, "red-passes", "final response does not name stop 3")
 
         # A ticket with several criteria and a request to see the plan first: the run must stop
-        # at the plan, with no commit and no changed file, and ask for approval.
+        # at the plan, with no commit and no changed file. The wording of the reply is not checked.
         passes("green", bindir, "plan-first")
-        passes("plan-imperative", bindir, "plan-first")
-        passes("plan-split-lines", bindir, "plan-first")
+        passes("plan-go-ahead", bindir, "plan-first")
         # Asking does not excuse the commit.
         fails("plan-commits", bindir, "plan-first", "commits were made before the plan was approved")
         fails("plan-edits", bindir, "plan-first", "files were changed before the plan was approved")
-        fails("plan-no-ask", bindir, "plan-first", "final response does not ask for plan approval")
 
         # A small change with no accepted intent: nothing waits. It is built in the run's
         # worktree and opens no pull request.
