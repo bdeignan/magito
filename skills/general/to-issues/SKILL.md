@@ -135,8 +135,9 @@ Every path below that starts with `.scratch/` is in the folder the planner works
    card per ticket that is ready to start. A ticket is ready when all its blockers are
    closed: run the ready check in the tracker adapter from step 2 for each published ticket.
    - **Each card** starts a worker session with Sonnet, Worktree on, and Auto mode. Its brief
-     is "Run `/implement <ticket>`". With the local tracker, the brief also carries the full
-     ticket body, because a worker cannot read the planner's `.scratch/`.
+     is "Run `/implement <ticket>`. The planner reviews the diff before the user reads it. Done
+     means the 'ready to read' message." With the local tracker, the brief also carries the
+     full ticket body, because a worker cannot read the planner's `.scratch/`.
    - **A blocked ticket** gets no card yet. Tell the user which tickets are blocked, and that
      when one of their blockers merges, they ask you for the next cards. Then run the ready
      check again on the tickets that had no card, and offer a card for each one that is now
