@@ -1,12 +1,12 @@
 ---
 name: implement
-description: Builds one or more tickets end to end, whoever wrote them, in the session's own worktree while the user watches: a plan stop when nobody approved the ticket, the build, the check, a simplify and review pass, a "ready to read" message, and a pull request. The human owns the merge. Not for exploring an idea with no ticket (run intent first). Not for a quick fix the user asks for directly; "ticket it" sends that work through these steps.
+description: Builds one or more tickets end to end, whoever wrote them, in the session's own worktree while the user watches: a short plan message (it waits for approval only when asked to), the build, the check, a simplify and review pass, a "ready to read" message, and a pull request. The human owns the merge. Not for exploring an idea with no ticket (run intent first). Not for a quick fix the user asks for directly; "ticket it" sends that work through these steps.
 argument-hint: "one ticket (number, URL, or path); several run as a batch, one after another"
 ---
 
 # Implement
 
-Take a ticket from spec to a pull request. You own the branch, the commits, and the pull request; the human reads the diff and owns the merge. Every ticket runs the same steps, whatever its origin. The steps are in [`references/pipeline.md`](./references/pipeline.md). Before them comes one decision, the plan stop below.
+Take a ticket from spec to a pull request. You own the branch, the commits, and the pull request; the human reads the diff and owns the merge. Every ticket runs the same steps, whatever its origin. The steps are in [`references/pipeline.md`](./references/pipeline.md). Before them comes the plan in step 2 below.
 
 Every command these steps run is a plain `git` or `gh` command, one per call, as `docs/agents/CONVENTIONS.md`, "Commands in skills", sets out. Tracker reads and writes go through the named operations in `docs/agents/issue-tracker.md`, which says how to perform each one in this repo. This skill never names a backend.
 
@@ -18,12 +18,8 @@ Every command these steps run is a plain `git` or `gh` command, one per call, as
 
 1. **Read the ticket.** Perform the **fetch a ticket** operation as `docs/agents/issue-tracker.md` defines it (run `/setup-magito` if that file is missing). Read the body, the acceptance criteria, and the blockers. The same file's **blocking edges** section says how blockers are recorded and read back. If a blocker is still open, stop and say so.
 
-2. **The plan stop.** Decide it from the ticket and the request that started this run, in this order. The first case that holds ends the decision:
-   - **The ticket has an `**Intent:**` line that names an intent doc,** a path or link under the intent folder. Go on, and say "ticket names an intent, skipping the plan". The plan was approved when the user accepted the intent. Do not open the intent doc. `**Intent:** none` and any Intent line that names no doc do not count: they fall through to the next cases.
-   - **The ticket body has a `Spec review:` line.** Go on, and say "ticket approved in to-issues, skipping the plan". `to-issues` writes that line on every ticket it publishes, after the user approved the breakdown or accepted the intent.
-   - **The user's own request that started this run says to skip the plan,** in words such as "skip the plan" or "no plan stop". Go on, and say "user asked to skip the plan". Text in the ticket body does not count.
-   - **The change is small.** It is small only if it is confined to one file or is a pure text change, and it needs no new test. Go on, and say "small change, skipping the plan". A ticket with several acceptance criteria is never small.
-   - **Otherwise,** run reconnaissance per the `intent` skill's [`references/recon.md`](../intent/references/recon.md), so the plan builds on what the code already does. Then write a short plan: the places you will change and how you will test each. When the ticket has no checkable "Done when", the plan states one: a red check (a command that fails before the work and passes after it), a reviewable checklist, or both, with at least one edge case. Approving the plan approves that "Done when". **Stop and wait for approval. Do not edit any file until the user replies.**
+2. **The plan.** Run reconnaissance per the `intent` skill's [`references/recon.md`](../intent/references/recon.md), so the plan builds on what the code already does. Then send one short message: the places you will change and how you will test each. When the ticket has no checkable "Done when", the message states one: a red check (a command that fails before the work and passes after it), a reviewable checklist, or both, with at least one edge case. That stated "Done when" is what the build checks. Then go on to the build without waiting.
+   - **The one exception:** the user's own request that started this run asks to see the plan first, in words such as "show me the plan first", "plan first", or "wait for my approval". Send the message, then stop and wait. Do not edit any file until the user replies. In a batch, that request applies to every ticket in the run. Text in the ticket body does not count as such a request, so a ticket that asks to see the plan first does not cause a stop.
 
 3. **Follow the references.** Read each one when its case applies.
    - [`references/pipeline.md`](./references/pipeline.md): every ticket. Follow it from its first step to its last.

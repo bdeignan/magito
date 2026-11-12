@@ -14,10 +14,11 @@
 # another case:
 #   red-passes       the red check already passes; the run must stop with stop 3 and
 #                    make no commits
-#   no-intent        the ticket links no intent and has several criteria; the run must
-#                    stop at the plan, change nothing, and ask for approval
-#   no-intent-small  a one-file text fix with no intent; the run must skip the plan,
-#                    build in the worktree, and open no pull request
+#   plan-first       the ticket links no intent and has several criteria, and the brief
+#                    says "Show me the plan first."; the run must stop at the plan,
+#                    change nothing, and ask for approval
+#   no-intent-small  a one-file text fix with no intent; the run must build in the
+#                    worktree and open no pull request
 set -euo pipefail
 
 if [[ $# -gt 1 ]]; then
@@ -28,7 +29,7 @@ fi
 MODEL="${1:-sonnet}"
 VARIANT="${MAGITO_EVAL_VARIANT:-}"
 case "$VARIANT" in
-  ""|red-passes|no-intent|no-intent-small) ;;
+  ""|red-passes|plan-first|no-intent-small) ;;
   *) echo "unknown MAGITO_EVAL_VARIANT: $VARIANT" >&2; exit 2 ;;
 esac
 LABEL="implement"
@@ -149,9 +150,9 @@ Spec review: eval fixture, round 1
 Publication-ID: 0001-hello/01-hello.md
 MD
 
-if [[ "$VARIANT" == "no-intent" ]]; then
+if [[ "$VARIANT" == "plan-first" ]]; then
   # The same ticket with no accepted intent behind it. It keeps its several criteria,
-  # so it is not a small change, and the run must stop at the plan.
+  # and the brief asks to see the plan first, so the run must stop at the plan.
   python3 - "$TICKET" <<'PY'
 import sys
 from pathlib import Path
@@ -245,6 +246,7 @@ says <skills>, use $MAGITO/skills/general. The ticket is a local one, and this i
 
 $(<"$TICKET")
 EOF
+[[ "$VARIANT" == "plan-first" ]] && printf '\nShow me the plan first.\n' >> "$BRIEF"
 
 cd "$REPO"
 claude -p --model "$MODEL" --permission-mode auto --output-format json --worktree "$WT_NAME" "$(<"$BRIEF")" >"$RESULT" 2>"$LOG"
@@ -343,7 +345,7 @@ if [[ "$VARIANT" == "red-passes" ]]; then
   [[ "$(git -C "$REPO" rev-parse main)" == "$BASE_SHA" ]] || fail "main moved although the red check passes"
   grep -Eiq 'stop 3' "$RESPONSE" || fail "final response does not name stop 3"
   echo "$LABEL: PASS"
-elif [[ "$VARIANT" == "no-intent" ]]; then
+elif [[ "$VARIANT" == "plan-first" ]]; then
   # The run stops at the plan: nothing committed, nothing changed, and a request to
   # approve the plan. Asking does not excuse a commit or an edit.
   [[ -z "$(work_branches)" ]] || fail "commits were made before the plan was approved"
@@ -359,7 +361,7 @@ elif [[ "$VARIANT" == "no-intent" ]]; then
     || fail "final response does not ask for plan approval"
   echo "$LABEL: PASS"
 elif [[ "$VARIANT" == "no-intent-small" ]]; then
-  # No plan stop: the change is built in the run's worktree, and the run ends at
+  # The plan is shown but nothing waits: the change is built in the run's worktree, and the run ends at
   # "ready to read". The ticket names no red check, so test_first does not apply.
   first_work_branch
   [[ "$(git -C "$REPO" show "$BRANCH:NOTES.md" 2>/dev/null)" == "greeting: hello" ]] \

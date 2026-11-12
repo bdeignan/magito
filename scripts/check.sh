@@ -15,7 +15,7 @@
 #   4. The paid to-issues evaluator checks its complete final response and
 #      preserves a worker failure.
 #   5. The paid implement evaluator passes and fails as its fake `claude` dictates,
-#      in its default case and in the red-passes, no-intent, and no-intent-small
+#      in its default case and in the red-passes, plan-first, and no-intent-small
 #      variants. One permission denial fails the run.
 #   6. `standards.py` (in the reviewing-changes skill) prints the docs and ADRs a review checks a diff
 #      against, and the doc lines that name something the diff removed or

@@ -80,8 +80,8 @@ needs the user to approve every command defeats the point of a separate session.
 **A skill or script stops work in one of two ways, and both happen where the user can see
 them.** When something is wrong, it refuses at once, in the same command or step, and says
 what is wrong and how to fix it. When the next move is the user's decision, it asks the user a
-question in the live session and waits for the answer. The plan stop and the "ready to read"
-stop are questions of this kind.
+question in the live session and waits for the answer. The "ready to read" stop, and a plan
+the user asked to approve first, are questions of this kind.
 
 It never holds work on a sign-off that waits somewhere the user cannot see, such as a marker
 file or a recorded attestation that some later command checks.
