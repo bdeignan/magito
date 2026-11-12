@@ -6,10 +6,10 @@
 - The stops
 
 Every ticket runs these steps, whether it comes from an accepted intent or not, alone or in a
-batch. `SKILL.md` runs first: for a ticket nobody approved, it stops once for plan
-approval. The user watches the session, and reads the diff after the "ready to read" message
-in step 11. Run each command as one plain call, with no `;`, `&&`, `|`, `$(...)`, or shell
-variables (`docs/agents/CONVENTIONS.md`, "Commands in skills").
+batch. `SKILL.md` runs first: it shows the plan and goes on, and stops for approval only when
+the user asked to see the plan first. The user watches the session, and reads the diff after
+the "ready to read" message in step 11. Run each command as one plain call, with no `;`, `&&`,
+`|`, `$(...)`, or shell variables (`docs/agents/CONVENTIONS.md`, "Commands in skills").
 
 ## Steps
 
@@ -29,7 +29,7 @@ variables (`docs/agents/CONVENTIONS.md`, "Commands in skills").
 2. **Base branch.** Run `git config --get magito.baseBranch`. If it prints a name, that is the
    base branch. If it prints nothing, run `git symbolic-ref --short refs/remotes/origin/HEAD`
    and drop the leading `origin/` from what it prints. Never assume `main`.
-3. **Red run.** Only when the ticket names a red check, or the "Done when" that the plan stop
+3. **Red run.** Only when the ticket names a red check, or the "Done when" that the plan
    stated does. Before any code change, run it. Save the command and its failing output. If it
    passes before any change, that is stop 3. Make no commit for this step: the check proves
    nothing yet. A ticket with only a reviewable check skips this step.
@@ -107,9 +107,9 @@ variables (`docs/agents/CONVENTIONS.md`, "Commands in skills").
 
 ## The stops
 
-Apart from the plan stop in `SKILL.md`, its two refusals at the start (an open blocker, and a
-passed `tracker_adapter` file that does not exist), and the "ready to read" stop in step 11,
-stop and ask the user only for these four. Each message quotes the evidence.
+Apart from the plan stop in `SKILL.md` (only when the user asked for it), its two refusals
+at the start (an open blocker, and a passed `tracker_adapter` file that does not exist), and
+the "ready to read" stop in step 11, stop and ask the user only for these four. Each message quotes the evidence.
 
 1. The ticket is ambiguous in a way it does not settle. Quote the sentence.
 2. Passing needs a locked test changed, or work outside the ticket. Name the file or the work.

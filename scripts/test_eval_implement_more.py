@@ -107,11 +107,11 @@ def main() -> None:
             assert f"{label}: FAIL ({reason})" in r.stdout, (mode, r.stdout)
             return r.stdout
 
-        # no-intent: a commit straight onto main, a third worktree, and an edit in the
+        # plan-first: a commit straight onto main, a third worktree, and an edit in the
         # main checkout. The run's own worktree under .claude/ is not a change.
-        fails("main-commit", "no-intent", "commits were made before the plan was approved")
-        fails("extra-worktree", "no-intent", "files were changed before the plan was approved")
-        fails("main-edit", "no-intent", "files were changed before the plan was approved")
+        fails("main-commit", "plan-first", "commits were made before the plan was approved")
+        fails("extra-worktree", "plan-first", "files were changed before the plan was approved")
+        fails("main-edit", "plan-first", "files were changed before the plan was approved")
 
         # no-intent-small: the control case passes, and each single fault fails.
         ok = run("small-green", "no-intent-small")

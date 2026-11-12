@@ -36,6 +36,9 @@ fixed = ["-p", "--model", model, "--permission-mode", "auto", "--output-format",
 if sys.argv[1:-1] != fixed:
     raise SystemExit(f"unexpected command line: {sys.argv[1:-1]}")
 
+if ("Show me the plan first." in sys.argv[-1]) != (variant == "plan-first"):
+    raise SystemExit("the brief asks to see the plan first only in the plan-first variant")
+
 if mode == "worker-failure":
     raise SystemExit(73)
 
@@ -87,8 +90,8 @@ BAD_CODE = "print('hello, ' + __import__('sys').argv[-1])\\n"
 READY = "Ready to read. Ran python3 -m unittest -q: OK. Risk: Normal.\\n"
 
 denials = []
-if variant == "no-intent":
-    # A ticket with no accepted intent and several criteria: the run stops at the plan.
+if variant == "plan-first":
+    # A ticket with several criteria and a request to see the plan first: the run stops at the plan.
     response = "Plan: write test_hello.py first, then hello.py.\\n"
     if mode == "plan-commits":
         (WT / "hello.py").write_text(CODE)
@@ -97,15 +100,17 @@ if variant == "no-intent":
         (WT / "hello.py").write_text(CODE)
     if mode == "plan-imperative":
         response += "Approve the plan and I will start.\\n"
+    elif mode == "plan-split-lines":
+        response += "Stopping here, nothing is edited.\\nReply to approve, or tell me what to change.\\n"
     elif mode == "plan-no-ask":
         response = "Here is the outline. I will start now.\\n"
     else:
         response += "Is this plan fine?\\n"
 elif variant == "no-intent-small":
-    # A small change with no accepted intent: no plan stop, straight to the steps.
+    # A small change with no accepted intent: the plan is shown, then straight to the steps.
     (WT / "NOTES.md").write_text("greeting: hello\\n")
     commit(WT, "docs: fix the greeting", "NOTES.md")
-    response = "Small change, skipping the plan.\\nFixed the greeting in NOTES.md.\\n" + READY
+    response = "Plan: change NOTES.md only.\\nFixed the greeting in NOTES.md.\\n" + READY
 elif red_passes:
     if mode == "redpass-commits":
         (WT / "extra.txt").write_text("x\\n")
@@ -234,16 +239,17 @@ def main() -> None:
         fails("redpass-commits", bindir, "red-passes", "commits were made although the red check passes")
         fails("redpass-no-rule", bindir, "red-passes", "final response does not name stop 3")
 
-        # A ticket with no accepted intent and several criteria: the run must stop at the
-        # plan, with no commit and no changed file, and ask for approval.
-        passes("green", bindir, "no-intent")
-        passes("plan-imperative", bindir, "no-intent")
+        # A ticket with several criteria and a request to see the plan first: the run must stop
+        # at the plan, with no commit and no changed file, and ask for approval.
+        passes("green", bindir, "plan-first")
+        passes("plan-imperative", bindir, "plan-first")
+        passes("plan-split-lines", bindir, "plan-first")
         # Asking does not excuse the commit.
-        fails("plan-commits", bindir, "no-intent", "commits were made before the plan was approved")
-        fails("plan-edits", bindir, "no-intent", "files were changed before the plan was approved")
-        fails("plan-no-ask", bindir, "no-intent", "final response does not ask for plan approval")
+        fails("plan-commits", bindir, "plan-first", "commits were made before the plan was approved")
+        fails("plan-edits", bindir, "plan-first", "files were changed before the plan was approved")
+        fails("plan-no-ask", bindir, "plan-first", "final response does not ask for plan approval")
 
-        # A small change with no accepted intent: no plan stop. It is built in the run's
+        # A small change with no accepted intent: nothing waits. It is built in the run's
         # worktree and opens no pull request.
         passes("green", bindir, "no-intent-small")
 
