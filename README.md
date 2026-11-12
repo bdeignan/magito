@@ -30,7 +30,7 @@ file your CLI reads. The ambition here is deliberately *scoped*.
 
 | MAGI core      | …governs       | Role here                                  |
 |----------------|----------------|--------------------------------------------|
-| **MELCHIOR**   | Claude Code    | Primary orchestrator — subagents, skills, worker delegation |
+| **MELCHIOR**   | Claude Code    | Primary orchestrator — subagents and skills            |
 | **BALTHASAR**  | Codex          | Shares the same persona via `AGENTS.md`    |
 | **CASPER**     | Gemini CLI     | Shares the same persona via `GEMINI.md`    |
 | —              | Antigravity    | Shares Gemini CLI's persona via the same `GEMINI.md` (enable only one) |
@@ -41,13 +41,9 @@ file your CLI reads. The ambition here is deliberately *scoped*.
 Every tool reads from a **single source of truth** (`shared/SYSTEM-INSTRUCTIONS.md`), so
 your standards stay identical no matter which CLI you reach for.
 
-The governance layer goes further than shared instructions: the primary orchestrator
-can delegate implementation work to *other* CLIs as headless workers — a cheap model
-builds in an isolated worktree, the orchestrator reviews and lands it. Worker
-commands are machine-local (`~/.magito/workers.toml`), so each machine hires from
-whatever CLIs it actually has. It also keeps a session journal — one file per
-session recording what happened and what is unfinished — so a fresh session can
-pick up where the last one left off.
+The governance layer goes further than shared instructions. It keeps a session
+journal — one file per session recording what happened and what is unfinished — so a
+fresh session can pick up where the last one left off.
 
 Learning to drive it? Read [Which skill when](#which-skill-when): the main path, one line for
 every other skill, and the promises magito keeps.
@@ -60,7 +56,7 @@ creates those symlinks for every tool you have enabled. Because they are symlink
 
 - **Editing the content of an existing file is live instantly** — no reinstall. The tool
   reads through the link to the repo file.
-- **Adding a *new* skill, agent, or hook requires a reinstall** — a new file needs a new link.
+- **Adding a *new* skill or agent requires a reinstall** — a new file needs a new link.
 
 The script is idempotent (safe to re-run), and regenerates `skills/INDEX.md` from each
 skill's frontmatter on every run. Exactly which repo path maps to which tool's native
@@ -95,30 +91,42 @@ Short steps to remember. [Which skill when](#which-skill-when) explains each one
 
 ### The daily loop
 
+You run the loop in a planner session. Each ticket then builds in its own worker session.
+
 ```
-/catch-up            start: what happened last time, and what is next
-/intent              describe the change; answer one question at a time; say "accept"
-                     → tickets, build, and review run on their own
-                     → you answer only escalations
+/catch-up              start: what happened last time, and what is next
+/intent                describe the change; answer one question at a time; say "accept"
+to-issues              runs after "accept": publishes tickets, offers one session
+                       card per ticket that is ready to start
+/implement <n>         each card starts a worker session that runs this
+read the diff          the worker stops at "ready to read"; you read its diff
+open the pull request  you tell the worker to open it (a Low-risk ticket's opens before your read)
 merge the pull request on GitHub
-/handoff             end: one short journal entry
+/handoff               end: one short journal entry
 ```
 
-- **Already know exactly what to build?** Skip `/intent`. Run `/to-issues` with your plan, which asks you to approve the breakdown. Or run `/implement 42` on one clear issue: it stops once for you to approve its plan, unless the change is small, and then builds on its own. When the branch has a commit ahead of its base, it reviews the change and opens the pull request. When it has none, it posts its findings on the ticket and opens nothing.
-- **A quick fix?** Ask the agent directly and call no skill. That work gets no worktree and no paid review, and you decide yourself whether to review it.
-- **Several unrelated issues at once?** `/implement 12 13 14` builds each in its own worktree and opens one pull request for each ticket whose branch has a commit ahead of its base. It stops once for the whole batch when a ticket needs a plan.
-- **Interrupted?** Start a new session and run the same `/implement <tickets>` again. For tickets from one intent, it skips any ticket already merged into the run's integration branch and carries on.
+- **Already know exactly what to build?** Skip `/intent`. Run `/to-issues` with your plan, which asks you to approve the breakdown. Or run `/implement 42` on one clear issue. It shows its plan and goes on. It waits for your approval only when you ask to see the plan first. When the branch has a commit ahead of its base, it reviews the change and stops at "ready to read". A Low-risk ticket's pull request opens then. A Normal or High ticket's pull request opens when you say so. When the branch has no commit, it posts its findings on the ticket and opens nothing.
+- **A quick fix?** Ask the agent directly and call no skill. You decide yourself whether to review it.
+- **Several unrelated issues at once?** Run each in its own worker session, one per ticket. Run one session at a time by default. Run two at once only when the planner says the tickets are independent. Or give one worker a batch such as `/implement 14 15 16`, which builds each ticket in turn. For a Normal or High ticket, it stops at "ready to read". For a Low ticket, it opens the pull request and the batch moves on. Each ticket gets its own pull request.
+- **Interrupted?** Start a new session and run the same `/implement <tickets>` again. It carries on.
 
 ### What stops for you
 
-Only these: accepting an intent, approving the plan for a ticket with no accepted intent, answering an **escalation**, and merging. An escalation is one of seven named reasons to stop:
-1. the ticket is ambiguous;
-2. three review rounds end without a pass;
-3. a locked test or out-of-scope work must change;
-4. the red check passes before any change;
-5. no check command exists;
-6. a merge turns the check red;
-7. no reviewer is available: no roster worker of another family answers and the tool cannot start a subagent.
+Only these:
+
+1. **A refusal at the start of an `implement` run.** The ticket has an open blocker, or the tracker adapter file that was passed does not exist.
+2. **Accepting an intent.** You say "accept" to `/intent`.
+3. **Approving the `to-issues` breakdown**, only when its input is a plan rather than an accepted intent.
+4. **A failed `to-issues` spec review.** A defect is still open after three rounds, or the reply is malformed.
+5. **The plan**, only when you ask to see it first.
+6. **"Ready to read".** You read the diff. A Low-risk ticket opens its pull request first.
+7. **An escalation.** `implement` stops and asks for one of four named reasons:
+   1. the ticket is ambiguous in a way it does not settle;
+   2. passing needs a locked test changed, or work outside the ticket;
+   3. the red check passes before any change;
+   4. no check command exists.
+8. **Three `/code-review` rounds that end with findings.** `implement` lists what remains and names the next tries.
+9. **The merge.** You own every merge.
 
 The agent quotes the evidence each time. Everything else it decides alone and lists in the pull request body for you to overrule at the merge.
 
@@ -129,11 +137,7 @@ The agent quotes the evidence each time. Everything else it decides alone and li
 | `mode` | `.magito/config.toml` | `owner` or `guest`, as above |
 | `check` | `.magito/config.toml` | the one command that must pass after every build step |
 | `Tracker:` in an intent's header | the intent doc | use `local` or `other` instead of the repo's default tracker for that intent |
-| `thrifty = true`, or `MAGITO_THRIFTY=1` | `~/.magito/workers.toml`, or your shell | builds and reviews use cheap models only |
-| `reviewers = [...]` | `~/.magito/workers.toml` | which reviewer to try first; it must come from another model family |
-| "via omp" (any worker name) | your request | hands the build to that worker instead of your own session |
 | `magito.prTitlePattern` | `git config` | the pull request title rule; `off` for a guest repo with its own style |
-| `magito.worktreeDir` | `git config` | put worktrees somewhere other than `.magito/worktrees/` |
 | `magito.baseBranch` | `git config` | merge into a branch other than the default, such as `develop` |
 
 ### Where things live
@@ -142,9 +146,7 @@ The agent quotes the evidence each time. Everything else it decides alone and li
 |---|---|
 | `.magito/config.toml` | this repo's magito settings (never committed) |
 | `.magito/journal/` | one file per session, read by `/catch-up` |
-| `.magito/worktrees/<branch>` | each build's working copy, visible from your editor, hidden from git |
 | `docs/intent/` | intent docs (in a guest repo, hidden from git) |
-| `~/.magito/workers.toml` | this machine's workers and reviewers |
 | `~/.magito/bench.toml` | this machine's `/magi` seats |
 | `install.toml` | which tools this machine installs into (gitignored) |
 
@@ -155,20 +157,20 @@ this section needs a fix.
 
 ### The main path
 
-Most work follows one path. You act at three points: accepting the intent, answering an
-escalation, and the merge.
+Most work follows one path. You act at three points: accepting the intent, reading each
+diff, and the merge.
 
 1. **`/catch-up`** starts a session. It reads the journal, the tracker, and git, then names the next move.
 2. **`/intent`** interviews you one question at a time and produces an intent doc. You act here: you accept the doc.
-3. **`to-issues`** runs on its own after you accept. It turns the intent into reviewed tickets and publishes them.
-4. **`implement`** runs on its own after that. It builds each ticket, gets each change reviewed by a model from a different family when the roster has one, and stops only for an escalation. You act here when it escalates.
+3. **`to-issues`** runs on its own after you accept. It turns the intent into reviewed tickets, publishes them, and offers one session card per ticket that is ready to start.
+4. **`implement`** runs in a worker session that each card starts. It shows its plan and goes on, builds the ticket, and reviews the change with `/code-review`. It stops at "ready to read". You act here: you read the diff. A Low-risk ticket opens its pull request at this point. For a Normal or High ticket, you tell the worker to open it.
 5. **The pull request** is the result. You act here: you merge it. In a repo with no remote, the agent stops and asks instead, and merges only after you approve.
 6. **`/handoff`** ends the session with one entry in `.magito/journal/`.
 
 Work with no accepted intent can still enter at `/to-issues` (a plan) or `/implement` (one clear
 issue). `/to-issues` asks you to approve its breakdown. `/implement` runs the same steps for
-that ticket as for any other, with one stop in front: you approve its plan, unless the change
-is small. It never asks whether to review. A branch with no commit ahead of its base holds no
+that ticket as for any other. It shows its plan and goes on, and waits for your approval only
+when you ask to see the plan first. A branch with no commit ahead of its base holds no
 change, so it gets no review and no pull request, and the run posts its findings on the ticket.
 
 ### Every other skill
@@ -177,8 +179,7 @@ change, so it gets no review and no pull request, and the run posts its findings
 - **`/decruft`**: a harsh structural review for the cruft that agents leave behind. It proposes cuts; you approve them.
 - **`/challenging-assumptions`**: an adversarial pre-mortem of a plan before you commit, ending in a verdict.
 - **`/research`**: an evidence-backed report on an open question, with options and a recommendation.
-- **`/finding-lacunae`**: a hunt for the essential element that a topic or design is missing.
-- **`/reviewing-changes`**: the two-axis review (Standards and Spec) of work done outside `implement`. Its Standards check follows the same procedure as `implement`'s review.
+- **`/reviewing-changes`**: the two-axis review (Standards and Spec) of work done outside `implement`.
 - **`/speaking-plainly`**: reset your writing voice, or rewrite dense text plainly.
 - **`/teach`**: learn a concept over several sessions, using the current directory as the workspace.
 - **`/to-questionnaire`**: turn a decision you cannot make alone into a questionnaire for one person.
@@ -186,23 +187,23 @@ change, so it gets no review and no pull request, and the run posts its findings
 - **`/domain-modeling`**: sharpen the project vocabulary and record decisions in the glossary and ADRs.
 - **`/verifying`**: the testing discipline for Python work: real seams, red-green, and data checks.
 - **`/writing-for-agents`**: write skills, `AGENTS.md`, `CLAUDE.md`, issues, and prompts that agents read well.
-- **`/workers`**: see which other coding tools on this machine magito can use to build and review, and why the rest are not ready. It creates the roster when the machine has none.
 - **`/setup-magito`**: audit and repair one repo's magito configuration. Run it once per new project; it is safe to re-run.
 
 ### What magito promises
 
 1. **You own every merge.** Agents branch, commit, and open pull requests. You merge a pull request yourself. In a repo with no remote, an agent merges only after your explicit approval.
-2. **Nothing lands unreviewed by accident.** Every change `implement` makes gets an automatic review, from a different model family when the roster has one. A branch with no commit ahead of its base holds no change, so it gets no review and no pull request. Work you ask an agent for directly, outside `implement`, reaches a deliberate choice first: a full review, a lightweight pass, or a knowing skip.
-3. **Delegation is explicit.** Every `implement` run opens with one line that names who builds and who reviews. The review goes to a roster worker from a different model family, chosen by `worker.py start`. When no such worker answers, a fresh-context subagent reviews instead, and the run's last message to you says so. A pull request never says who reviewed. Builds delegate only to a worker you name ("via omp"); in a batch, tickets built at the same time go to a worker or a subagent, and the batch stop names each one. Thrifty mode limits every step to cheap models. `/workers` shows which workers this machine can use.
-4. **Worker failures are loud.** A named build worker that is dead or denied stops the run instead of quietly handing the work to your subscription. Your tool's own permission prompts still apply to each worker launch.
-5. **Machine-local files are yours.** `~/.magito/` is bootstrapped once with your consent and never overwritten on an agent's own initiative. `bin/` is the exception: `install.py` owns it.
-6. **Staging is always explicit.** No agent bulk-stages files. A hook blocks `git add -A` everywhere.
-7. **Costs are stated before they are incurred.** A fan-out declares its executor count and workers up front. Magi deliberate mode asks before it convenes.
+2. **You read every diff before its pull request opens.** The one exception is a Low-risk ticket, whose pull request opens right after the "ready to read" message. A branch with no commit ahead of its base holds no change, so it gets no pull request. Work you ask an agent for directly, outside `implement`, gets a review only when you decide it does.
+3. **Machine-local files are yours.** `~/.magito/` is bootstrapped once with your consent and never overwritten on an agent's own initiative. `bin/` is the exception: `install.py` owns it.
+4. **Staging is always explicit.** The shared instructions tell every agent never to bulk-stage files.
+5. **Costs are stated before they are incurred.** Magi deliberate mode asks before it convenes.
 
-You stay in the loop at these moments only: accepting an intent, approving the plan for a
-ticket with no accepted intent, answering an escalation, the one-time roster bootstrap, magi
-deliberate cost consent, and every merge. Everything else runs
-without you and stops loudly when it cannot continue.
+You stay in the loop at these moments only: a refusal at the start of an `implement` run (an
+open blocker, or a tracker adapter file that does not exist), accepting an intent, approving
+the breakdown for a plan with no accepted intent, a `to-issues` spec review that still has a
+defect after three rounds, the plan when you ask to see it first, reading each diff at
+"ready to read", an escalation, three review rounds that end with findings, magi deliberate
+cost consent, and every merge. The build runs on its own between those moments, in a session
+you can watch.
 
 ---
 
@@ -224,17 +225,17 @@ python install.py        # only strictly needed if NEW skills/agents/tools/bin f
 | What changed in the pull                                  | Reinstall needed? |
 |-----------------------------------------------------------|-------------------|
 | Edited `SYSTEM-INSTRUCTIONS.md` or an existing `SKILL.md`  | **No** — symlink already points there, change is live |
-| Added a brand-new skill, agent, hook, tool stanza, or `bin/` file (e.g. `journal`) | **Yes** — needs a new symlink |
+| Added a brand-new skill, agent, tool stanza, or `bin/` file (e.g. `journal`) | **Yes** — needs a new symlink |
 | Not sure                                                  | Just run it — it is idempotent and harmless |
 
 When in doubt, run `python install.py`. It never does damage on a re-run.
 
 <details>
-<summary>➕ Adding a new skill, subagent, hook, or tool</summary>
+<summary>➕ Adding a new skill, subagent, or tool</summary>
 
-Full steps for each — which directory a skill goes in, subagent frontmatter fields, the
-hook contract, wiring up a new tool stanza — live in [`CLAUDE.md`](CLAUDE.md) under
-"Adding a New Skill / Agent / Hook / Tool". That is the file the agents themselves read
+Full steps for each — which directory a skill goes in, subagent frontmatter fields,
+wiring up a new tool stanza — live in [`CLAUDE.md`](CLAUDE.md) under
+"Adding a New Skill / Agent / Tool". That is the file the agents themselves read
 before extending this repo, so it stays the one source of truth for these steps.
 
 Short version, every case: create the file with the right frontmatter, then run
