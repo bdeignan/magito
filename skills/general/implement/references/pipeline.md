@@ -67,9 +67,17 @@ variables (`docs/agents/CONVENTIONS.md`, "Commands in skills").
    commit. It runs before `/code-review` because it changes code.
 8. **Review.** Run `/code-review` and fix what it finds. On High tickets, run it at a higher
    effort. After each round's fixes, run the check and commit. Run at most three rounds.
-   Rounds 2 and 3 review only the new diff. If findings remain after round 3, stop and tell the
-   user the approach may need rethinking. A finding in code the ticket did not touch is
-   labeled Pre-existing: do not fix it; list it for the planner in step 11.
+   Rounds 2 and 3 review only the new diff. If findings remain after round 3, stop. List the
+   findings that remain, then tell the user two next tries, in this order:
+   1. Rerun the ticket in a new worker session at one effort level higher than this run. On a
+      High ticket, this run already used a higher effort for `/code-review`, so the rerun goes
+      one level above that. If this run already used the highest effort level, skip this try.
+   2. If the first try was skipped, or its rerun also ends with findings after round 3, rerun
+      the ticket in a new worker session on Opus.
+
+   Only after both tries does the message point to rethinking the approach. A finding in code
+   the ticket did not touch is labeled Pre-existing: do not fix it; list it for the planner in
+   step 11.
 9. **Verify.** Run `/verify` when the change has something to run: an app or a command-line
    tool. A library skips this step.
 
