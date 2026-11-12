@@ -355,9 +355,9 @@ elif [[ "$VARIANT" == "plan-first" ]]; then
     || fail "files were changed before the plan was approved"
   [[ "$(git -C "$REPO" worktree list --porcelain | grep -c '^worktree ')" -eq 2 ]] \
     || fail "files were changed before the plan was approved"
-  # One line names the plan and asks: a question, or a request such as
-  # "Approve the plan and I will start", with no question mark.
-  { grep -Ei 'plan' "$RESPONSE" || true; } | grep -Eiq '\?|approv' \
+  # The reply asks: a question, or a request such as "Reply to approve", with no
+  # question mark. The plan and the request can sit on different lines.
+  grep -Eiq '\?|approv' "$RESPONSE" \
     || fail "final response does not ask for plan approval"
   echo "$LABEL: PASS"
 elif [[ "$VARIANT" == "no-intent-small" ]]; then

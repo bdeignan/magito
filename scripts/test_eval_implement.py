@@ -100,6 +100,8 @@ if variant == "plan-first":
         (WT / "hello.py").write_text(CODE)
     if mode == "plan-imperative":
         response += "Approve the plan and I will start.\\n"
+    elif mode == "plan-split-lines":
+        response += "Stopping here, nothing is edited.\\nReply to approve, or tell me what to change.\\n"
     elif mode == "plan-no-ask":
         response = "Here is the outline. I will start now.\\n"
     else:
@@ -241,6 +243,7 @@ def main() -> None:
         # at the plan, with no commit and no changed file, and ask for approval.
         passes("green", bindir, "plan-first")
         passes("plan-imperative", bindir, "plan-first")
+        passes("plan-split-lines", bindir, "plan-first")
         # Asking does not excuse the commit.
         fails("plan-commits", bindir, "plan-first", "commits were made before the plan was approved")
         fails("plan-edits", bindir, "plan-first", "files were changed before the plan was approved")
