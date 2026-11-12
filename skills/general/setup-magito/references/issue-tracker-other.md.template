@@ -1,6 +1,6 @@
 <!-- issue-tracker-other.md.template — the skeleton for a tracker that is neither GitHub nor
      local markdown: Jira, Linear, Beads, a wiki, a spreadsheet, a person you message.
-     Copied to docs/agents/issue-tracker.md by /setup-project and filled in from the user's
+     Copied to docs/agents/issue-tracker.md by /setup-magito and filled in from the user's
      own description of the workflow.
 
      This file is also the canonical list of the named operations. Every skill calls an
