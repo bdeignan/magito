@@ -119,7 +119,10 @@ prompt, that is the signal to make it a skill.
       before `/code-review` because it changes code.
    3. Run `/code-review` and fix what it finds, at most three rounds. On High tickets, run it
       at a higher effort. Later rounds re-review only the new diff. After round three, the
-      worker stops and says the approach can need rethinking.
+      worker stops and lists the findings that remain. It names two next tries: rerun the
+      ticket in a new worker session at one effort level higher, then, if that run also ends
+      with findings after round three, rerun it on Opus. Only after both does it point to
+      rethinking the approach.
    4. Run `/verify` when the change has something to run: an app or a command-line tool. A
       library skips it.
 
