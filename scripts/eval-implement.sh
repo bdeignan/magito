@@ -15,7 +15,7 @@
 #   red-passes       the red check already passes; the run must stop with stop 3 and
 #                    make no commits
 #   plan-first       the ticket links no intent and has several criteria, and the brief
-#                    says "Show me the plan first."; the run must stop at the plan,
+#                    says "Show me the plan first."; the run must stop at the plan
 #                    and change nothing
 #   no-intent-small  a one-file text fix with no intent; the run must build in the
 #                    worktree and open no pull request
