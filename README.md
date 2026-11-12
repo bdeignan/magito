@@ -164,7 +164,7 @@ diff, and the merge.
 2. **`/intent`** interviews you one question at a time and produces an intent doc. You act here: you accept the doc.
 3. **`to-issues`** runs on its own after you accept. It turns the intent into reviewed tickets, publishes them, and offers one session card per ticket that is ready to start.
 4. **`implement`** runs in a worker session that each card starts. It shows its plan and goes on, builds the ticket, and reviews the change with `/code-review`. It stops at "ready to read". You act here: you read the diff. A Low-risk ticket opens its pull request at this point. For a Normal or High ticket, you tell the worker to open it.
-5. **The pull request** is the result. You act here: you merge it. In a repo with no remote, the agent stops and asks instead, and merges only after you approve.
+5. **The pull request** is the result. You act here: you decide the merge. The planner session runs the merge only when you say so for that pull request. In a repo with no remote, the agent stops and asks instead, and merges only after you approve.
 6. **`/handoff`** ends the session with one entry in `.magito/journal/`.
 
 Work with no accepted intent can still enter at `/to-issues` (a plan) or `/implement` (one clear
@@ -191,7 +191,7 @@ change, so it gets no review and no pull request, and the run posts its findings
 
 ### What magito promises
 
-1. **You own every merge.** Agents branch, commit, and open pull requests. You merge a pull request yourself. In a repo with no remote, an agent merges only after your explicit approval.
+1. **You own every merge.** Agents branch, commit, and open pull requests. You decide every merge, and the planner session runs the merge only when you say so for that pull request. In a repo with no remote, an agent merges only after your explicit approval.
 2. **You read every diff before its pull request opens.** The one exception is a Low-risk ticket, whose pull request opens right after the "ready to read" message. A branch with no commit ahead of its base holds no change, so it gets no pull request. Work you ask an agent for directly, outside `implement`, gets a review only when you decide it does.
 3. **Machine-local files are yours.** `~/.magito/` is bootstrapped once with your consent and never overwritten on an agent's own initiative. `bin/` is the exception: `install.py` owns it.
 4. **Staging is always explicit.** The shared instructions tell every agent never to bulk-stage files.
