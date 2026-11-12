@@ -361,8 +361,8 @@ elif [[ "$VARIANT" == "plan-first" ]]; then
     || fail "final response does not ask for plan approval"
   echo "$LABEL: PASS"
 elif [[ "$VARIANT" == "no-intent-small" ]]; then
-  # The plan is shown but nothing waits: the change is built in the run's worktree, and the run ends at
-  # "ready to read". The ticket names no red check, so test_first does not apply.
+  # The plan is shown but nothing waits: the change is built in the run's worktree, and the
+  # run ends at "ready to read". The ticket names no red check, so test_first does not apply.
   first_work_branch
   [[ "$(git -C "$REPO" show "$BRANCH:NOTES.md" 2>/dev/null)" == "greeting: hello" ]] \
     || fail "NOTES.md on $BRANCH does not hold 'greeting: hello'"
