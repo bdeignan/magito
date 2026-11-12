@@ -197,8 +197,10 @@ change, so it gets no review and no pull request, and the run posts its findings
 4. **Staging is always explicit.** The shared instructions tell every agent never to bulk-stage files.
 5. **Costs are stated before they are incurred.** Magi deliberate mode asks before it convenes.
 
-You stay in the loop at these moments only: accepting an intent, approving the breakdown for
-a plan with no accepted intent, the plan when you ask to see it first, reading each diff at
+You stay in the loop at these moments only: a refusal at the start of an `implement` run (an
+open blocker, or a tracker adapter file that does not exist), accepting an intent, approving
+the breakdown for a plan with no accepted intent, a `to-issues` spec review that still has a
+defect after three rounds, the plan when you ask to see it first, reading each diff at
 "ready to read", an escalation, three review rounds that end with findings, magi deliberate
 cost consent, and every merge. The build runs on its own between those moments, in a session
 you can watch.
