@@ -111,8 +111,8 @@ prompt, that is the signal to make it a skill.
 
 1. **Start the worker.** Click the planner's card, or open a session yourself with Sonnet,
    Worktree on, and Auto. Do not run `session-catch-up`: the ticket is the worker's whole context.
-2. **`/ticket-to-pr <n>`.** It fetches the ticket and builds it. For a ticket no accepted
-   intent covers, it stops once to show a plan for you to approve.
+2. **`/ticket-to-pr <n>`.** It fetches the ticket and builds it. For a ticket nobody
+   approved, it stops once to show a plan for you to approve.
 3. **The worker's checks, in this order:**
    1. Run the check command.
    2. On Normal and High tickets: run `/simplify`, then the check again. `/simplify` comes
