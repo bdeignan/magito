@@ -72,8 +72,8 @@ variables (`docs/agents/CONVENTIONS.md`, "Commands in skills").
    1. Rerun the ticket in a new worker session at one effort level higher than this run. On a
       High ticket, this run already used a higher effort for `/code-review`, so the rerun goes
       one level above that. If this run already used the highest effort level, skip this try.
-   2. If that rerun also ends with findings after round 3, rerun the ticket in a new worker
-      session on Opus.
+   2. If the first try was skipped, or its rerun also ends with findings after round 3, rerun
+      the ticket in a new worker session on Opus.
 
    Only after both tries does the message point to rethinking the approach. A finding in code
    the ticket did not touch is labeled Pre-existing: do not fix it; list it for the planner in
