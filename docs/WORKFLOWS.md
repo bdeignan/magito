@@ -133,17 +133,20 @@ prompt, that is the signal to make it a skill.
    reason, and the ticket's risk. No pull request exists yet, except on a Low ticket: the
    worker opens its pull request now (see Risk levels).
 5. **Your read, by risk** (see Risk levels). For a diff in an area you do not know, first ask
-   the worker to explain the module. Leave line comments where you want changes.
+   the worker to explain the module. The planner offers to review the diff first. Its review
+   does not replace your read. Leave line comments where you want changes.
 6. **Revise.** The worker revises from your comments. Repeat step 5 as needed. Your rounds
    have no cap.
 7. **Open the pull request.** On Normal and High tickets, tell the worker to open it. Every
    pull request body, a Low ticket's included, has a Testing field and a Risk field (the
    ticket's level). It has a "How to revert" field only when reverting the pull request is
    not enough, such as a data migration or a config change.
-8. **Merge and archive.** You own every merge. In a local session you can press "Merge when
-   ready": it waits for CI, then squash-merges. In an SSH session, merge on GitHub. A worker
-   never presses it and never asks GitHub to merge. Then archive the session and start the
-   next ticket in a fresh one.
+8. **Merge and archive.** You own every merge. Merge it yourself, or tell the planner "merge
+   #N". The planner then merges at the commit it reviewed, with
+   `gh pr merge <n> --match-head-commit <reviewed sha>`. In a repo that requires a review
+   nobody else can give, merge with your own override. The planner never passes `--admin`
+   unless you ask for it on that pull request. A worker never merges and never asks GitHub to
+   merge. Then archive the session and start the next ticket in a fresh one.
 
 Outside Desktop, where `/simplify`, `/code-review`, or `/verify` does not exist: the fallback
 for `/simplify` is the build ladder in the shared instructions, and the fallback for

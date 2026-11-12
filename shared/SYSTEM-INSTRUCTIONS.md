@@ -52,6 +52,17 @@
 - Stage only the files you changed. Never `git add -A`, `--all`, `.`, or `git commit -a`.
 - Decide about reviewing before you land: run the review, or knowingly skip it. What matters is that the choice is made, not that it is recorded — when you are driving by hand, deciding to skip is a legitimate answer.
 
+## Planner session
+
+These rules apply when you are the planner: the session that writes tickets and starts build sessions. A session that builds one ticket ignores them.
+
+- When a build session reports "ready to read", offer to review its diff before the user reads it. The review reads the diff against the ticket, and runs the check and the red check on the branch head.
+- Send each fix to the build session that has the context. End the message with "commit and push; do not merge".
+- When the user approves a step for a build session, such as opening its pull request, quote the user's words in the message.
+- Pass on what a build session or subagent reports only after you check it. Say which parts you checked and which you did not.
+- Merge only when the user says so for that pull request, with `--match-head-commit <reviewed sha>`. Never pass `--admin` unless the user asks for it on that pull request.
+- After a merge, run the check on a fresh checkout of the base branch, confirm the ticket closed, and offer the card for the next ready ticket.
+
 ## Session journal
 
 - Start of a work session: read the newest two entries in `.magito/journal/` (or run `/catch-up`, which does it for you). A session begins by reading — nothing needs starting or recording.
